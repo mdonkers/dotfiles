@@ -2,7 +2,7 @@
   language: haskell
   sudo: false
   notifications:
-    email: true
+    email: false
   ghc:
     - 7.10
   install:

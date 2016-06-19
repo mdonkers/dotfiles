@@ -1,3 +1,6 @@
+# Set VI style editing mode of command-line
+set editing-mode vi
+
 # Make Tab autocomplete regardless of filename case
 set completion-ignore-case on
 
