@@ -1,10 +1,16 @@
 # Load the shell dotfiles, and then some:
 # * ~/.path can be used to extend `$PATH`.
 # * ~/.extra can be used for other settings you don’t want to commit.
-for file in ~/.{bash_prompt,aliases,functions,path,dockerfunc,extra,exports}; do
+for file in ~/.{bash_prompt,aliases,functions,path,extra,exports}; do
 	[[ -r "$file" ]] && [[ -f "$file" ]] && source "$file"
 done
 unset file
+
+# set the number of open files to be 1024
+ulimit -S -n 1024
+
+# Change Bash behaviour to 'vi' style command line editing
+set -o vi
 
 # Case-insensitive globbing (used in pathname expansion)
 shopt -s nocaseglob

@@ -31,3 +31,14 @@ export GDK_DPI_SCALE=0.5
 export QT_DEVICE_PIXEL_RATIO=2
 
 export DOCKER_CONTENT_TRUST=1
+
+
+
+export MAVEN_OPTS="-Xms1024m -Xmx2048m"
+
+# pip (Python installer) should only run if there is a virtualenv currently activated
+export PIP_REQUIRE_VIRTUALENV=true
+# use syspip (= pip) to update global packages without a virtualenv environment
+syspip() {
+   PIP_REQUIRE_VIRTUALENV="" pip3 "$@"
+ }

@@ -90,6 +90,9 @@ fi
 for file in /etc/bash_completion.d/* ; do
 	source "$file"
 done
+for file in $HOME/.bash_scripts/*-completion.bash ; do
+        source "$file"
+done
 
 if [[ -f $HOME/.bash_profile ]]; then
 	source $HOME/.bash_profile

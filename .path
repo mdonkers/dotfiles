@@ -1,0 +1,11 @@
+
+export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
+
+export M2_HOME=/Development/java/apache-maven-3.3.9
+export M2=$M2_HOME/bin
+export GRADLE_HOME=/Development/java/gradle-2.10
+export SCALA_HOME=/Development/java/scala-2.11.7
+export NODE_HOME=/Development/java/node-v5.7.0-darwin-x64
+export JBOSS_HOME=/Development/java/wildfly-8.2.0.Final
+
+export PATH=/usr/local/bin:${JAVA_HOME}/bin:${M2}:${GRADLE_HOME}/bin:${SCALA_HOME}/bin:${NODE_HOME}/bin:${PATH}
