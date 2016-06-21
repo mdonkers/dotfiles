@@ -35,6 +35,9 @@
 	# Amend the currently staged files to the latest commit
 	amend = commit --amend --reuse-message=HEAD
 
+        # Show all unpushed commits in short format
+        unpushed = log --branches --not --remotes --simplify-by-decoration --decorate --oneline
+
 	# Credit an author on the latest commit
 	credit = "!f() { git commit --amend --author \"$1 <$2>\" -C HEAD; }; f"
 
