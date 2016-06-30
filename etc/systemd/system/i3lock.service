@@ -7,9 +7,9 @@ Before=suspend.target
 
 [Service]
 Type=forking
-User=jessie
+User=miel
 Environment=DISPLAY=:0.0
-ExecStart=/bin/su - jessie -c "/bin/sh -c 'DISPLAY=:0.0 /usr/bin/i3lock -c 111111'"
+ExecStart=/bin/su - miel -c "/bin/sh -c 'DISPLAY=:0.0 /usr/bin/i3lock -c 111111'"
 
 [Install]
 WantedBy=suspend.target
