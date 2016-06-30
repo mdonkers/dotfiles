@@ -121,8 +121,6 @@ base() {
 		network-manager \
 		openvpn \
 		rxvt-unicode-256color \
-		s3cmd \
-		scdaemon \
 		silversearcher-ag \
 		ssh \
 		strace \
@@ -148,7 +146,7 @@ base() {
 
 	install_docker
 	install_scripts
-	install_syncthing
+	#install_syncthing
 }
 
 # setup sudo for a user
@@ -167,10 +165,10 @@ setup_sudo() {
 	gpasswd -a "$USERNAME" systemd-journal
 	gpasswd -a "$USERNAME" systemd-network
 
-	# add go path to secure path
+	# set secure path
 	{ \
-		echo -e 'Defaults	secure_path="/usr/local/go/bin:/home/jessie/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"'; \
-		echo -e 'Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy GOPATH EDITOR"'; \
+		echo -e 'Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"'; \
+		echo -e 'Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy EDITOR"'; \
 		echo -e "${USERNAME} ALL=(ALL) NOPASSWD:ALL"; \
 		echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery"; \
 	} >> /etc/sudoers
@@ -179,7 +177,7 @@ setup_sudo() {
 	# that way things are removed on reboot
 	# i like things clean but you may not want this
 	mkdir -p "/home/$USERNAME/Downloads"
-	echo -e "\n# tmpfs for downloads\ntmpfs\t/home/${USERNAME}/Downloads\ttmpfs\tnodev,nosuid,size=2G\t0\t0" >> /etc/fstab
+	# echo -e "\n# tmpfs for downloads\ntmpfs\t/home/${USERNAME}/Downloads\ttmpfs\tnodev,nosuid,size=2G\t0\t0" >> /etc/fstab
 }
 
 # installs docker master
@@ -194,8 +192,8 @@ install_docker() {
 		-C /usr/local/bin --strip-components 1
 	chmod +x /usr/local/bin/docker*
 
-	curl -sSL https://raw.githubusercontent.com/jfrazelle/dotfiles/master/etc/systemd/system/docker.service > /etc/systemd/system/docker.service
-	curl -sSL https://raw.githubusercontent.com/jfrazelle/dotfiles/master/etc/systemd/system/docker.socket > /etc/systemd/system/docker.socket
+	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/docker.service > /etc/systemd/system/docker.service
+	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/docker.socket > /etc/systemd/system/docker.socket
 
 	systemctl daemon-reload
 	systemctl enable docker
@@ -204,115 +202,6 @@ install_docker() {
 	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 i915.enable_psr=0 pcie_asm=force i915.i915_enable_fbc=1 i915.i915_enable_rc6=7 i915.lvds_downclock=1 apparmor=1 security=apparmor"/g' /etc/default/grub
 	echo "Docker has been installed. If you want memory management & swap"
 	echo "run update-grub & reboot"
-}
-
-# install/update golang from source
-install_golang() {
-	export GO_VERSION=1.6.2
-	export GO_SRC=/usr/local/go
-
-	# if we are passing the version
-	if [[ ! -z "$1" ]]; then
-		export GO_VERSION=$1
-	fi
-
-	# purge old src
-	if [[ -d "$GO_SRC" ]]; then
-		sudo rm -rf "$GO_SRC"
-		sudo rm -rf "$GOPATH"
-	fi
-
-	# subshell because we `cd`
-	(
-	curl -sSL "https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz" | sudo tar -v -C /usr/local -xz
-	)
-
-	# get commandline tools
-	(
-	set -x
-	set +e
-	go get github.com/golang/lint/golint
-	go get golang.org/x/tools/cmd/cover
-	go get golang.org/x/review/git-codereview
-	go get golang.org/x/tools/cmd/goimports
-	go get golang.org/x/tools/cmd/gorename
-	go get golang.org/x/tools/cmd/guru
-
-	go get github.com/jfrazelle/apk-file
-	go get github.com/jfrazelle/bane
-	go get github.com/jfrazelle/battery
-	go get github.com/jfrazelle/cliaoke
-	go get github.com/jfrazelle/magneto
-	go get github.com/jfrazelle/netns
-	go get github.com/jfrazelle/netscan
-	go get github.com/jfrazelle/onion
-	go get github.com/jfrazelle/pastebinit
-	go get github.com/jfrazelle/pony
-	go get github.com/jfrazelle/riddler
-	go get github.com/jfrazelle/udict
-	go get github.com/jfrazelle/weather
-
-	go get github.com/axw/gocov/gocov
-	go get github.com/brianredbeard/gpget
-	go get github.com/cloudflare/cfssl/cmd/cfssl
-	go get github.com/cloudflare/cfssl/cmd/cfssljson
-	go get github.com/crosbymichael/gistit
-	go get github.com/crosbymichael/ip-addr
-	go get github.com/cbednarski/hostess/cmd/hostess
-	go get github.com/FiloSottile/gvt
-	go get github.com/FiloSottile/vendorcheck
-	go get github.com/nsf/gocode
-	go get github.com/rogpeppe/godef
-	go get github.com/shurcooL/git-branches
-	go get github.com/shurcooL/gostatus
-	go get github.com/shurcooL/markdownfmt
-	go get github.com/Soulou/curl-unix-socket
-
-	aliases=( cloudflare/cfssl docker/docker kubernetes/kubernetes letsencrypt/boulder opencontainers/runc jfrazelle/binctr jfrazelle/contained.af )
-	for project in "${aliases[@]}"; do
-		owner=$(dirname "$project")
-		repo=$(basename "$project")
-		if [[ -d "${HOME}/${repo}" ]]; then
-			rm -rf "${HOME}/${repo}"
-		fi
-
-		mkdir -p "${GOPATH}/src/github.com/${owner}"
-
-		if [[ ! -d "${GOPATH}/src/github.com/${project}" ]]; then
-			(
-			# clone the repo
-			cd "${GOPATH}/src/github.com/${owner}"
-			git clone "https://github.com/${project}.git"
-			# fix the remote path, since our gitconfig will make it git@
-			cd "${GOPATH}/src/github.com/${project}"
-			git remote set-url origin "https://github.com/${project}.git"
-			)
-		else
-			echo "found ${project} already in gopath"
-		fi
-
-		# make sure we create the right git remotes
-		if [[ "$owner" != "jfrazelle" ]]; then
-			(
-			cd "${GOPATH}/src/github.com/${project}"
-			git remote set-url --push origin no_push
-			git remote add jfrazelle "https://github.com/jfrazelle/${repo}.git"
-			)
-		fi
-
-		# create the alias
-		ln -snvf "${GOPATH}/src/github.com/${project}" "${HOME}/${repo}"
-	done
-
-	# create symlinks from personal projects to
-	# the ${HOME} directory
-	projectsdir=$GOPATH/src/github.com/jfrazelle
-	base=$(basename "$projectsdir")
-	find "$projectsdir" -maxdepth 1 -not -name "$base" -type d -print0 | while read -d '' -r dir; do
-	base=$(basename "$dir")
-	ln -snvf "$dir" "${HOME}/${base}"
-done
-)
 }
 
 # install graphics drivers
@@ -353,24 +242,17 @@ install_scripts() {
 	chmod +x /usr/local/bin/lolcat
 
 	# download syncthing binary
-	if [[ ! -f /usr/local/bin/syncthing ]]; then
-		curl -sSL https://jesss.s3.amazonaws.com/binaries/syncthing > /usr/local/bin/syncthing
-		chmod +x /usr/local/bin/syncthing
-	fi
+	#if [[ ! -f /usr/local/bin/syncthing ]]; then
+	#	curl -sSL https://jesss.s3.amazonaws.com/binaries/syncthing > /usr/local/bin/syncthing
+	#	chmod +x /usr/local/bin/syncthing
+	#fi
 
-	syncthing -upgrade
-
-	local scripts=( go-md2man have light )
-
-	for script in "${scripts[@]}"; do
-		curl -sSL "http://jesss.s3.amazonaws.com/binaries/$script" > /usr/local/bin/$script
-		chmod +x /usr/local/bin/$script
-	done
+	#syncthing -upgrade
 }
 
 # install syncthing
 install_syncthing() {
-	curl -sSL https://raw.githubusercontent.com/jfrazelle/dotfiles/master/etc/systemd/system/syncthing@.service > /etc/systemd/system/syncthing@.service
+	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/syncthing@.service > /etc/systemd/system/syncthing@.service
 
 	systemctl daemon-reload
 	systemctl enable "syncthing@${USERNAME}"
@@ -402,16 +284,16 @@ install_wmapps() {
 
 	# update clickpad settings
 	mkdir -p /etc/X11/xorg.conf.d/
-	curl -sSL https://raw.githubusercontent.com/jfrazelle/dotfiles/master/etc/X11/xorg.conf.d/50-synaptics-clickpad.conf > /etc/X11/xorg.conf.d/50-synaptics-clickpad.conf
+	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/50-synaptics-clickpad.conf > /etc/X11/xorg.conf.d/50-synaptics-clickpad.conf
 
 	# add xorg conf
-	curl -sSL https://raw.githubusercontent.com/jfrazelle/dotfiles/master/etc/X11/xorg.conf > /etc/X11/xorg.conf
+	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf > /etc/X11/xorg.conf
 
 	# get correct sound cards on boot
-	curl -sSL https://raw.githubusercontent.com/jfrazelle/dotfiles/master/etc/modprobe.d/intel.conf > /etc/modprobe.d/intel.conf
+	#curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/modprobe.d/intel.conf > /etc/modprobe.d/intel.conf
 
 	# pretty fonts
-	curl -sSL https://raw.githubusercontent.com/jfrazelle/dotfiles/master/etc/fonts/local.conf > /etc/fonts/local.conf
+	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/fonts/local.conf > /etc/fonts/local.conf
 
 	echo "Fonts file setup successfully now run:"
 	echo "	dpkg-reconfigure fontconfig-config"
@@ -427,7 +309,7 @@ get_dotfiles() {
 	cd "/home/$USERNAME"
 
 	# install dotfiles from repo
-	git clone git@github.com:jfrazelle/dotfiles.git "/home/$USERNAME/dotfiles"
+	git clone git@github.com:mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
 	cd "/home/$USERNAME/dotfiles"
 
 	# installs all the things
@@ -442,8 +324,6 @@ get_dotfiles() {
 	cd "/home/$USERNAME"
 
 	# install .vim files
-	git clone --recursive git@github.com:jfrazelle/.vim.git "/home/$USERNAME/.vim"
-	ln -snf "/home/$USERNAME/.vim/vimrc" "/home/$USERNAME/.vimrc"
 	sudo ln -snf "/home/$USERNAME/.vim" /root/.vim
 	sudo ln -snf "/home/$USERNAME/.vimrc" /root/.vimrc
 
@@ -463,9 +343,6 @@ get_dotfiles() {
 	sudo update-alternatives --config vim
 	sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
 	sudo update-alternatives --config editor
-
-	mkdir -p ~/Pictures
-	mkdir -p ~/Torrents
 	)
 }
 
@@ -533,7 +410,6 @@ usage() {
 	echo "  graphics {dell,mac,lenovo}  - install graphics drivers"
 	echo "  wm                          - install window manager/desktop pkgs"
 	echo "  dotfiles                    - get dotfiles"
-	echo "  golang                      - install golang and packages"
 	echo "  scripts                     - install scripts"
 	echo "  syncthing                   - install syncthing"
 	echo "  vagrant                     - install vagrant and virtualbox"
