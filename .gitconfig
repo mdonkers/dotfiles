@@ -119,6 +119,9 @@
 	changed = green
 	untracked = cyan
 
+[commit]
+        gpgsign = true
+
 [diff]
 
 	# Detect copies as well as renames
@@ -173,6 +176,7 @@
         
         name = Miel Donkers
         email = miel.donkers@codecentric.nl
+        signingkey = 24046A96
 
 [github]
 
