@@ -115,8 +115,10 @@ base() {
 		libseccomp-dev \
 		locales \
 		lsof \
+                macfanctld \
 		make \
 		mount \
+                neovim \
 		net-tools \
 		network-manager \
 		openvpn \
@@ -278,7 +280,7 @@ install_wifi() {
 
 # install stuff for i3 window manager
 install_wmapps() {
-	local pkgs="feh i3 i3lock i3status scrot slim neovim"
+	local pkgs="feh i3 i3lock i3status scrot slim arandr network-manager-gnome chromium"
 
 	apt-get install -y $pkgs --no-install-recommends
 
@@ -309,7 +311,7 @@ get_dotfiles() {
 	cd "/home/$USERNAME"
 
 	# install dotfiles from repo
-	git clone git@github.com:mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
+	git clone git://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
 	cd "/home/$USERNAME/dotfiles"
 
 	# installs all the things
@@ -442,8 +444,6 @@ main() {
 		install_wmapps
 	elif [[ $cmd == "dotfiles" ]]; then
 		get_dotfiles
-	elif [[ $cmd == "golang" ]]; then
-		install_golang "$2"
 	elif [[ $cmd == "scripts" ]]; then
 		install_scripts
 	elif [[ $cmd == "syncthing" ]]; then

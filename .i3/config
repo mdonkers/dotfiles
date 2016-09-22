@@ -198,6 +198,9 @@ exec --no-startup-id feh --bg-fill /usr/share/slim/themes/default/background.jpg
 exec xrdb -merge /home/jessie/.Xresources
 exec xrdb -merge /home/jessie/.Xdefaults
 
+# run the network manager applet
+exec --no-startup-id nm-applet
+
 # startup programs
 #exec --no-starup-id i3-msg 'workspace "1: irssi"; exec rxvt-unicode;'
 #exec --no-startup-id i3msg 'workspace 3; exec rxvt-unicode;'
