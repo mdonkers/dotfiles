@@ -322,6 +322,7 @@ get_dotfiles() {
 
 	sudo systemctl enable i3lock
 	sudo systemctl enable suspend-sedation.service
+	sudo systemctl enable powertop.service
 
 	cd "/home/$USERNAME"
 
