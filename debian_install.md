@@ -172,6 +172,10 @@ Now we can start installing tools to make the MacBook work as intended. First we
 
     apt-get install powertop tlp macfanctld pommed firmware-linux-nonfree broadcom-sta-dkms
 
+Verify wlan is working
+
+    iwconfig
+
 ### Configure PowerTOP ###
 First run PowerTOP calibration to let it learn the system. This will turn the screen black. Don't touch the computer for a while until PowerTOP finishes.
 

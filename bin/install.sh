@@ -273,6 +273,9 @@ install_wifi() {
 		local pkg="broadcom-sta-dkms"
 
 		apt-get install -y "$pkg" --no-install-recommends
+                # Unload conflicting modules and load the wireless module
+                modprobe -r b44 b43 b43legacy ssb brcmsmac bcma
+                modprobe wl
 	else
 		update-iwlwifi
 	fi
