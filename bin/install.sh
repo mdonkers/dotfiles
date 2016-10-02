@@ -77,6 +77,12 @@ setup_sources() {
 	echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
 }
 
+dist_upgrade() {
+	apt-get update
+	apt-get -y upgrade
+        apt-get dist-upgrade
+}
+
 # installs base packages
 # the utter bare minimal shit
 base() {
@@ -412,13 +418,14 @@ usage() {
 	echo -e "install.sh\n\tThis script installs my basic setup for a debian laptop\n"
 	echo "Usage:"
 	echo "  sources                     - setup sources & install base pkgs"
+        echo "  dist                        - setup sources & dist upgrade"
 	echo "  wifi {broadcom,intel}       - install wifi drivers"
 	echo "  graphics {dell,mac,lenovo}  - install graphics drivers"
 	echo "  wm                          - install window manager/desktop pkgs"
 	echo "  dotfiles                    - get dotfiles"
-	echo "  scripts                     - install scripts"
-	echo "  syncthing                   - install syncthing"
-	echo "  vagrant                     - install vagrant and virtualbox"
+        echo "  scripts                     - install scripts (not needed)"
+        echo "  syncthing                   - install syncthing (not needed)"
+        echo "  vagrant                     - install vagrant and virtualbox (not needed)"
 }
 
 main() {
@@ -436,6 +443,11 @@ main() {
 		setup_sources
 
 		base
+	elif [[ $cmd == "dist" ]]; then
+		check_is_sudo
+		# setup /etc/apt/sources.list
+		setup_sources
+                dist_upgrade
 	elif [[ $cmd == "wifi" ]]; then
 		install_wifi "$2"
 	elif [[ $cmd == "graphics" ]]; then
