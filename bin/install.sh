@@ -380,6 +380,16 @@ install_keybase() {
 
         sudo apt-get update
         sudo apt-get install keybase
+        
+        echo
+        echo ">>>>>>>>>>"
+        echo Run the following commands:
+        echo   run_keybase
+        echo   keybase login
+        echo   keybase gpg export
+        echo   keybase pgp export -q <...key...> | gpg --import
+        echo   keybase pgp export -q <...key...> --secret | gpg --allow-secret-key-import --import
+        echo "<<<<<<<<<<"
 }
 
 install_virtualbox() {
