@@ -212,8 +212,11 @@ install_docker() {
 
 	# update grub with docker configs and power-saving items
 	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 i915.enable_psr=0 pcie_asm=force i915.i915_enable_fbc=1 i915.i915_enable_rc6=7 i915.lvds_downclock=1 apparmor=1 security=apparmor"/g' /etc/default/grub
+        echo
+        echo ">>>>>>>>>>"
 	echo "Docker has been installed. If you want memory management & swap"
 	echo "run update-grub & reboot"
+        echo "<<<<<<<<<<"
 }
 
 # install graphics drivers
@@ -310,12 +313,15 @@ install_wmapps() {
 	# pretty fonts
 	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/fonts/local.conf > /etc/fonts/local.conf
 
+        echo
+        echo ">>>>>>>>>>"
 	echo "Fonts file setup successfully now run:"
 	echo "	dpkg-reconfigure fontconfig-config"
 	echo "with settings: "
 	echo "	Autohinter, Automatic, No."
 	echo "Run: "
 	echo "	dpkg-reconfigure fontconfig"
+        echo "<<<<<<<<<<"
 }
 
 get_dotfiles() {
