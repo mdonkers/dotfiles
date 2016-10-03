@@ -148,13 +148,17 @@ base() {
 
 	setup_sudo
 
-	apt-get autoremove
-	apt-get autoclean
-	apt-get clean
+        cleanup
 
 	install_docker
 	install_scripts
 	#install_syncthing
+}
+
+cleanup() {
+	apt-get autoremove
+	apt-get autoclean
+	apt-get clean
 }
 
 # setup sudo for a user
@@ -320,6 +324,7 @@ get_dotfiles() {
 	cd "/home/$USERNAME"
 
 	# install dotfiles from repo
+        rm -rf "/home/$USERNAME/dotfiles"
 	git clone git://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
 	cd "/home/$USERNAME/dotfiles"
 
@@ -426,6 +431,7 @@ usage() {
         echo "  scripts                     - install scripts (not needed)"
         echo "  syncthing                   - install syncthing (not needed)"
         echo "  vagrant                     - install vagrant and virtualbox (not needed)"
+        echo "  cleanup                     - clean apt etc"
 }
 
 main() {
@@ -466,6 +472,8 @@ main() {
 		install_syncthing
 	elif [[ $cmd == "vagrant" ]]; then
 		install_vagrant "$2"
+	elif [[ $cmd == "cleanup" ]]; then
+	        cleanup
 	else
 		usage
 	fi
