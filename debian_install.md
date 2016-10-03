@@ -109,7 +109,7 @@ Set the graphics correct for GRUB and some other config for stability etc
     GRUB_VIDEO_BACKEND="efi-uga"
 
     GRUB_CMDLINE_LINUX_DEFAULT="quit libata.force=noncq"
-    GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1"
+    GRUB_CMDLINE_LINUX=""
     ...
 
 Update GRUB and then reboot
