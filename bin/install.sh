@@ -433,7 +433,7 @@ usage() {
 	echo "  wifi {broadcom,intel}       - install wifi drivers"
 	echo "  graphics {dell,mac,lenovo}  - install graphics drivers"
 	echo "  wm                          - install window manager/desktop pkgs"
-	echo "  dotfiles                    - get dotfiles"
+        echo "  dotfiles                    - get dotfiles (!! as user !!)"
         echo "  scripts                     - install scripts (not needed)"
         echo "  syncthing                   - install syncthing (not needed)"
         echo "  vagrant                     - install vagrant and virtualbox (not needed)"

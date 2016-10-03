@@ -70,7 +70,7 @@ Boot the Debian installer, easiest is to opt for the graphical installer
 When arriving at the partitioning step, delete - if needed - the unused HFS+ partition. Make sure _NOT_ to touch the EFI, OSX Recovery and existing OSX install partition (/dev/sda1, /dev/sda2 and /dev/sda3).
 Create at least the SWAP and EXT4 partition.
 
-Continue with the installation until the GRUB boot loader installation step. Skip this, we'll set it up later manually.
+Continue with the installation until the GRUB boot loader installation step (choose 'back' option). Skip this, we'll set it up later manually.
 Finish the installation.
 
 If you don't have the option to enter into a Terminal window before the installation finishes, reboot and enter the Debian installer from USB again. Choose 'Recovery mode' and boot into the Debian installation, probably /dev/sda5 or /dev/sda6.
@@ -94,7 +94,7 @@ Check you have rEFInd and APPLE directories inside the mounted EFI partitions
 Create a Debian directory and install GRUB into it
 
     mkdir /boot/efi/EFI/debian
-    grub-install --target=x86_64-efi /dev/sda1
+    grub-install --target=x86_64 --directory=/usr/lib/grub/x86_64-efi /dev/sda1
 
 Verify the debian directory now contains the `grubx64.efi` file. Rename it so that rEFInd can show a nice icon
 
@@ -133,34 +133,25 @@ Select the correct keyboard layout.
 
 Choose `apple laptop` type keyboard. In some cases this might only have the tilde (~) and paragraph (§) keys exchanged.
 
-Install some handy tools
+Install git to fetch our `dotfiles` repository
 
-    apt-get install vim curl sudo
+    apt-get install --no-install-recommends git
 
-Add our user to sudo
+Fetch the dotfiles repo
 
-    adduser <your username> sudo
+    git clone git://github.com/mdonkers/dotfiles.git "/tmp/dotfiles"
 
 
-## *Optional* dist upgrade to Stretch ##
+## Dist upgrade to Stretch ##
+We need to do the dist-upgrade because for some reason 'Stretch' won't install directly. Hopefully at some point not needed anymore.
 Check the status of packages, you should see no warnings or either fix them
 
     dpkg --audit
 
-Change the sources for Apt so that they point to Stretch instead of Jessie.
-In the `/etc/apt/sources.list` change *Jessie* to *Stretch*. (Advised to copy lines and comment-out the old ones with #)
-While at it, in the same file, add `contrib non-free` to every line. For example the line should look something like this:
-
-    deb http://ftp.us.debian.org/debian stretch main contrib non-free
-    deb-src http://ftp.us.debian.org/debian/ stretch main contrib non-free
-    deb http://ftp.debian.org/debian/ stretch-updates main contrib non-free
-    deb http://security.debian.org/ stretch/updates main contrib non-free
-
 Run the following commands to do the upgrade:
 
-    apt-get update
-    apt-get upgrade
-    apt-get dist-upgrade
+    cd /tmp/dotfiles/bin
+    install.sh dist
 
 Because the kernel is upgraded, GRUB also needs to be updated to boot the correct stuff. Re-run the `mount` and `grub-install` steps to fix GRUB before rebooting.
 
@@ -169,24 +160,25 @@ Now you're ready to reboot! Cross your fingers...
 
 ## Continue Debian configuration ##
 Now we can start installing tools to make the MacBook work as intended. First we'll install them and then setup one by one.
+(might need to fetch the `dotfiles` repo again)
 
-    apt-get install powertop tlp macfanctld pommed firmware-linux-nonfree broadcom-sta-dkms
+    cd /tmp/dotfiles
+    bin/install.sh sources
+    bin/install.sh wifi broadcom
+    bin/install.sh graphics mac
+    bin/install.sh wm
+
+As user, **not as root** !
+
+    bin/install.sh dotfiles
 
 Verify wlan is working
 
     iwconfig
 
-### Configure PowerTOP ###
-First run PowerTOP calibration to let it learn the system. This will turn the screen black. Don't touch the computer for a while until PowerTOP finishes.
+Cleanup
 
-    powertop --calibrate
-
-Now we can install PowerTOP as service to let it run in 'auto-tune' mode during startup. Create a systemd file for the service under `/etc/systemd/system/powertop.service` with the following contents:
-
-    [service]
-    Type=oneshot
-    ExecStart=/usr/sbin/powertop --auto-tune
-
+    bin/install.sh cleanup
 
 
 
@@ -209,15 +201,4 @@ To easily configure the wifi you may use the Gnome network manager as applet und
     exec --no-startup-id nm-applet
 
 The applet will show up in the status bar after i3 is restarted.
-
-
-
-
-
-
-## Cleanup ##
-To cleanup after all the installation steps, run the following commands
-
-    apt-get autoremove
-    apt-get clean
 
