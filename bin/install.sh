@@ -60,6 +60,11 @@ setup_sources() {
 	deb https://apt.dockerproject.org/repo debian-stretch experimental
 	EOF
 
+	# add keybase apt repo
+	cat <<-EOF > /etc/apt/sources.list.d/keybase.list
+        deb http://dist.keybase.io/linux/deb/repo/ stable main
+	EOF
+
 	# add docker gpg key
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 
@@ -369,6 +374,14 @@ get_dotfiles() {
 	)
 }
 
+install_keybase() {
+        curl https://keybase.io/docs/server_security/code_signing_key.asc | gpg --import
+        gpg --export 222B85B0F90BE2D24CFEB93F47484E50656D16C7 | sudo apt-key add -
+
+        sudo apt-get update
+        sudo apt-get install keybase
+}
+
 install_virtualbox() {
 	# check if we need to install libvpx1
 	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' libvpx1 | grep "install ok installed")
@@ -437,6 +450,7 @@ usage() {
         echo "  scripts                     - install scripts (not needed)"
         echo "  syncthing                   - install syncthing (not needed)"
         echo "  vagrant                     - install vagrant and virtualbox (not needed)"
+        echo "  keybase                     - install keybase (!! as user !!)"
         echo "  cleanup                     - clean apt etc"
 }
 
@@ -478,6 +492,8 @@ main() {
 		install_syncthing
 	elif [[ $cmd == "vagrant" ]]; then
 		install_vagrant "$2"
+	elif [[ $cmd == "keybase" ]]; then
+		install_keybase"$2"
 	elif [[ $cmd == "cleanup" ]]; then
 	        cleanup
 	else
