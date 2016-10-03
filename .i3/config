@@ -108,9 +108,9 @@ bindsym $mod+a focus parent
 #bindsym $mod+d focus child
 
 # switch to workspace
-bindsym $mod+1 workspace 1: irssi
-bindsym $mod+2 workspace 2: mutt
-bindsym $mod+3 workspace 3: www
+bindsym $mod+1 workspace 1: www
+bindsym $mod+2 workspace 2: console
+bindsym $mod+3 workspace 3: dev
 bindsym $mod+4 workspace 4
 bindsym $mod+5 workspace 5
 bindsym $mod+6 workspace 6
@@ -120,9 +120,9 @@ bindsym $mod+9 workspace 9
 bindsym $mod+0 workspace 10
 
 # move focused container to workspace
-bindsym $mod+Shift+1 move container to workspace 1: irssi
-bindsym $mod+Shift+2 move container to workspace 2: mutt
-bindsym $mod+Shift+3 move container to workspace 3: www
+bindsym $mod+Shift+1 move container to workspace 1: www
+bindsym $mod+Shift+2 move container to workspace 2: console
+bindsym $mod+Shift+3 move container to workspace 3: dev
 bindsym $mod+Shift+4 move container to workspace 4
 bindsym $mod+Shift+5 move container to workspace 5
 bindsym $mod+Shift+6 move container to workspace 6
@@ -195,12 +195,12 @@ bar {
 exec --no-startup-id feh --bg-fill /usr/share/slim/themes/default/background.jpg
 
 # run the merge for good colors
-exec xrdb -merge /home/jessie/.Xresources
-exec xrdb -merge /home/jessie/.Xdefaults
+exec xrdb -merge /home/miel/.Xresources
+exec xrdb -merge /home/miel/.Xdefaults
 
 # run the network manager applet
 exec --no-startup-id nm-applet
 
 # startup programs
-#exec --no-starup-id i3-msg 'workspace "1: irssi"; exec rxvt-unicode;'
-#exec --no-startup-id i3msg 'workspace 3; exec rxvt-unicode;'
+exec --no-startup-id i3-msg 'workspace 1: www; exec rxvt-unicode;'
+exec --no-startup-id i3-msg 'workspace 2: console; exec rxvt-unicode;'

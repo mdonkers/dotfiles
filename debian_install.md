@@ -106,8 +106,6 @@ Set the graphics correct for GRUB and some other config for stability etc
     vi /etc/default/grub
 
     ...
-    GRUB_VIDEO_BACKEND="efi-uga"
-
     GRUB_CMDLINE_LINUX_DEFAULT="quit libata.force=noncq"
     GRUB_CMDLINE_LINUX=""
     ...
