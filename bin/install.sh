@@ -288,9 +288,9 @@ install_wifi() {
 	fi
 
 	if [[ $system == "broadcom" ]]; then
-		local pkg="broadcom-sta-dkms"
+		local pkg="broadcom-sta-dkms wireless-tools"
 
-		apt-get install -y "$pkg" --no-install-recommends
+		apt-get install -y "$pkg"
                 # Unload conflicting modules and load the wireless module
                 modprobe -r b44 b43 b43legacy ssb brcmsmac bcma
                 modprobe wl
