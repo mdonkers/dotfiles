@@ -52,6 +52,10 @@ alias week='date +%V'
 # Stopwatch
 alias timer='echo "Timer started. Stop with Ctrl-D." && date && time cat && date'
 
+# Add an "alert" alias for long running commands.  Use like so:
+#       sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
 # IP addresses
 alias pubip="dig +short myip.opendns.com @resolver1.opendns.com"
 alias localip="sudo ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'"
@@ -113,7 +117,7 @@ alias cp='cp -i'
 alias mv='mv -i'
 
 # untar
-alias untar='tar xvf'
+alias untar='tar xzvf'
 
 # Pipe my public key to my clipboard.
 alias pubkey="more ~/.ssh/id_ed25519.pub | xclip -selection clipboard | echo '=> Public key copied to pasteboard.'"
