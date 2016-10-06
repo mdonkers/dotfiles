@@ -290,7 +290,7 @@ install_wifi() {
 	if [[ $system == "broadcom" ]]; then
 		local pkg="broadcom-sta-dkms wireless-tools"
 
-		apt-get install -y "$pkg"
+		apt-get install -y $pkg
                 # Unload conflicting modules and load the wireless module
                 modprobe -r b44 b43 b43legacy ssb brcmsmac bcma
                 modprobe wl
@@ -382,15 +382,10 @@ install_keybase() {
         sudo apt-get update
         sudo apt-get install keybase
         
-        echo
-        echo ">>>>>>>>>>"
-        echo Run the following commands:
-        echo   run_keybase
-        echo   keybase login
-        echo   keybase gpg export
-        echo   keybase pgp export -q <...key...> | gpg --import
-        echo   keybase pgp export -q <...key...> --secret | gpg --allow-secret-key-import --import
-        echo "<<<<<<<<<<"
+	# Login and get private key
+        keybase login
+        keybase pgp export -q 24046A96 | gpg --import
+        keybase pgp export -q 24046A96 --secret | gpg --allow-secret-key-import --import
 }
 
 install_virtualbox() {
