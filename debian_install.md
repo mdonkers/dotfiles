@@ -189,20 +189,6 @@ Cleanup
 
 
 
-### Installing the graphical environment i3 ###
-Install more stuff
-
-    apt-get install xorg xserver-xorg-video-intel
-    apt-get install dunst feh i3 i3lock i3status scrot suckless-tools
-    apt-get install arandr network-manager-gnome rxvt-unicode chromium
-
-A reboot might be welcome. After that you can start the i3 window manager with the `startx` command. The first time the user is asked which modifier key is wanted (I prefer the CMD key) and an i3 config file is created.
-
 Use `arandr` as graphical interface to `xrandr` to configure the screen resolution. A resolution of 1440x900 works for me (1680x1050 if you like small fonts).
 
-To easily configure the wifi you may use the Gnome network manager as applet under i3. Add the following line to your i3 config file `~/.i3/config`:
-
-    exec --no-startup-id nm-applet
-
-The applet will show up in the status bar after i3 is restarted.
 
