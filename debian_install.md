@@ -174,6 +174,12 @@ Verify wlan is working
 
     iwconfig
 
+If wlan is not working (no network found), execute the following commands and reboot
+
+    sudo apt-get install linux-headers-$(uname -r)
+    sudo apt-get remove broadcom-sta-dkms
+    sudo bin/install.sh wifi broadcom
+
 Cleanup
 
     bin/install.sh cleanup
