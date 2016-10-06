@@ -334,6 +334,7 @@ get_dotfiles() {
 	# create subshell
 	(
 	cd "/home/$USERNAME"
+        mkdir "/home/$USERNAME/.gnupg"
 
 	# install dotfiles from repo
         rm -rf "/home/$USERNAME/dotfiles"
