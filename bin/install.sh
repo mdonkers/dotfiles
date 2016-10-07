@@ -190,11 +190,6 @@ setup_sudo() {
 		echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery"; \
 	} >> /etc/sudoers
 
-	# setup downloads folder as tmpfs
-	# that way things are removed on reboot
-	# i like things clean but you may not want this
-	mkdir -p "/home/$USERNAME/Downloads"
-	# echo -e "\n# tmpfs for downloads\ntmpfs\t/home/${USERNAME}/Downloads\ttmpfs\tnodev,nosuid,size=2G\t0\t0" >> /etc/fstab
 }
 
 # installs docker master
@@ -335,6 +330,12 @@ get_dotfiles() {
 	(
 	cd "/home/$USERNAME"
         mkdir "/home/$USERNAME/.gnupg"
+
+	# setup downloads folder as tmpfs
+	# that way things are removed on reboot
+	# i like things clean but you may not want this
+	mkdir -p "/home/$USERNAME/Downloads"
+	# echo -e "\n# tmpfs for downloads\ntmpfs\t/home/${USERNAME}/Downloads\ttmpfs\tnodev,nosuid,size=2G\t0\t0" >> /etc/fstab
 
 	# install dotfiles from repo
         rm -rf "/home/$USERNAME/dotfiles"

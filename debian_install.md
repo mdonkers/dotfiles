@@ -180,6 +180,11 @@ If wlan is not working (no network found), execute the following commands and re
     sudo apt-get remove broadcom-sta-dkms
     sudo bin/install.sh wifi broadcom
 
+To install Slack, first download the Debian package. Then the following commands:
+
+    sudo dpkg -i path/to/deb/file
+    sudo apt-get install -f
+
 Cleanup
 
     bin/install.sh cleanup
