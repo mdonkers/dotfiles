@@ -23,21 +23,22 @@ update_docker() {
 		systemctl stop docker || true
 	fi
 
+        # Include contributed completions
+        mkdir -p /etc/bash_completion.d
+        curl -sSL -o /etc/bash_completion.d/docker https://raw.githubusercontent.com/docker/docker/master/contrib/completion/bash/docker
+
+        if [[ `/sbin/init --version` =~ upstart ]]; then
+          # Update the upstart file
+          curl -sSL -o /etc/init/docker.conf https://raw.githubusercontent.com/docker/docker/master/contrib/init/upstart/docker.conf
+        fi
+
+
 	if [[ -d "${docker_dir}" ]]; then
 		(
 		cd "${docker_dir}"
 
 		# Clean up bundles
 		rm -rf bundles
-
-		# Include contributed completions
-		mkdir -p /etc/bash_completion.d
-		curl -sSL -o /etc/bash_completion.d/docker https://raw.githubusercontent.com/docker/docker/master/contrib/completion/bash/docker
-
-		if [[ `/sbin/init --version` =~ upstart ]]; then
-			# Update the upstart file
-			curl -sSL -o /etc/init/docker.conf https://raw.githubusercontent.com/docker/docker/master/contrib/init/upstart/docker.conf
-		fi
 
 		# Include contributed man pages
 		man/md2man-all.sh -q

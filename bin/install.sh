@@ -195,6 +195,7 @@ setup_sudo() {
 # installs docker master
 # and adds necessary items to boot params
 install_docker() {
+
 	# create docker group
 	sudo groupadd docker
 	sudo gpasswd -a "$USERNAME" docker
@@ -296,7 +297,7 @@ install_wifi() {
 
 # install stuff for i3 window manager
 install_wmapps() {
-	local pkgs="feh i3 i3lock i3status suckless-tools scrot slim arandr network-manager-gnome chromium"
+	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome chromium"
 
 	apt-get install -y $pkgs --no-install-recommends
 

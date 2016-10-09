@@ -205,6 +205,6 @@ exec xrdb -merge /home/miel/.Xdefaults
 exec --no-startup-id nm-applet
 
 # startup programs
-exec --no-startup-id i3-msg 'workspace 1: slack; exec slack;'
-exec --no-startup-id i3-msg 'workspace 2: www; exec chromium;'
-exec --no-startup-id i3-msg 'workspace 3: console; exec rxvt-unicode;'
+exec --no-startup-id "i3-msg 'workspace 1: slack; append_layout ~/.i3/workspace-slack.json'"
+exec --no-startup-id "i3-msg 'workspace 2: www; append_layout ~/.i3/workspace-www.json'"
+exec --no-startup-id "i3-msg 'workspace 3: console; append_layout ~/.i3/workspace-console.json'"

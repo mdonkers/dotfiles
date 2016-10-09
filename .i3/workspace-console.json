@@ -1,0 +1,37 @@
+{
+    "border": "normal",
+    "floating": "auto_off",
+    "layout": "splith",
+    "percent": 0.35,
+    "type": "con",
+    "nodes": [
+        {
+            "border": "normal",
+            "current_border_width": 4,
+            "floating": "auto_off",
+            "percent": 1,
+            "swallows": [
+               {
+                "class": "^URxvt$",
+                "instance": "^urxvt$"
+               }
+            ],
+            "type": "con"
+        }
+    ]
+}
+
+{
+    "border": "normal",
+    "current_border_width": 4,
+    "floating": "auto_off",
+    "percent": 0.65,
+    "swallows": [
+       {
+        "class": "^URxvt$",
+        "instance": "^urxvt$"
+       }
+    ],
+    "type": "con"
+}
+
