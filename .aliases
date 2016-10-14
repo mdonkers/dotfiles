@@ -46,6 +46,9 @@ alias grep='grep --color=auto '
 # Enable aliases to be sudo’ed
 alias sudo='sudo '
 
+# Redo previous command but as sudo
+alias redo='sudo $(history -p !!)'
+
 # Get week number
 alias week='date +%V'
 
