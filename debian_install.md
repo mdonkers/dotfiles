@@ -196,4 +196,15 @@ Cleanup
 
 Use `arandr` as graphical interface to `xrandr` to configure the screen resolution. A resolution of 1440x900 works for me (1680x1050 if you like small fonts).
 
+## Use of FN-key
+Apple keyboard has special functions for the F1 - F12 keys, which are enabled by default. To use them directly
+as F1 - F12 keys the file `/sys/module/hid_apple/parameters/fnmode` can be switched from `1` to `2`. Setup scripts
+will do this automatically (because I like it that way).
+
+To find keycodes for any key pressed, use the following command (the second prints the full keymap):
+
+    xev | sed -n 's/^.*keycode *\([0-9]\+\).*$/keycode \1 = /p'
+    xmodmap -pke
+
+
 
