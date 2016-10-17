@@ -33,7 +33,8 @@ export QT_DEVICE_PIXEL_RATIO=2
 export DOCKER_CONTENT_TRUST=1
 
 
-
+# Prevent terminal losing focus when running Maven commands
+export JAVA_TOOL_OPTIONS="-Djava.awt.headless=true"
 export MAVEN_OPTS="-Xms1024m -Xmx2048m"
 
 # pip (Python installer) should only run if there is a virtualenv currently activated
