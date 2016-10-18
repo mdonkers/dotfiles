@@ -69,3 +69,5 @@ set expandtab
 "set shiftwidth=2
 "set tabstop=2
 
+# Set CTRL-L to redraw the screen and turn off search highlights
+nnoremap <silent> <C-l> :nohlsearch<CR><C-l>
