@@ -378,6 +378,21 @@ get_dotfiles() {
 	)
 }
 
+install_facetimehd() {
+        git clone https://github.com/patjak/bcwc_pcie.git /tmp/bcwc_pcie
+        # create subshell
+        (
+        cd /tmp/bcwc_pcie/firmware
+        make
+        make install
+        cd ..
+        make
+        make install
+        depmod
+        modprobe facetimehd
+        )
+}
+
 install_keybase() {
         curl https://keybase.io/docs/server_security/code_signing_key.asc | gpg --import
         gpg --export 222B85B0F90BE2D24CFEB93F47484E50656D16C7 | sudo apt-key add -
@@ -459,6 +474,7 @@ usage() {
         echo "  scripts                     - install scripts (not needed)"
         echo "  syncthing                   - install syncthing (not needed)"
         echo "  vagrant                     - install vagrant and virtualbox (not needed)"
+        echo "  facetimehd                  - install facetimehd camera for Macbook"
         echo "  keybase                     - install keybase (!! as user !!)"
         echo "  cleanup                     - clean apt etc"
 }
@@ -501,8 +517,12 @@ main() {
 		install_syncthing
 	elif [[ $cmd == "vagrant" ]]; then
 		install_vagrant "$2"
+	elif [[ $cmd == "facetimehd" ]]; then
+		check_is_sudo
+
+		install_facetimehd
 	elif [[ $cmd == "keybase" ]]; then
-		install_keybase"$2"
+		install_keybase
 	elif [[ $cmd == "cleanup" ]]; then
 	        cleanup
 	else
