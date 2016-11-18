@@ -303,7 +303,7 @@ isup() {
 unpushed() {
   echo
 
-  find . -type d -maxdepth 1 -mindepth 1 -print0 | while IFS= read -r -d '' DIR; do
+  find . -type d -maxdepth 2 -mindepth 1 -print0 | while IFS= read -r -d '' DIR; do
     # Subshell because we cd
     (
     cd "${DIR}"
@@ -311,6 +311,10 @@ unpushed() {
     then
       if [[ -n "$(git log --branches --not --remotes --simplify-by-decoration --decorate --oneline 2> /dev/null)" ]]; then
         echo "GIT - unpushed changes! ; "
+        pwd
+        echo
+      elif ! git diff-index --quiet HEAD --; then
+        echo "GIT - folder has changes! ; "
         pwd
         echo
       fi
