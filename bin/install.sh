@@ -132,6 +132,7 @@ base() {
                 neovim \
 		net-tools \
 		network-manager \
+                openconnect \
 		openvpn \
 		rxvt-unicode-256color \
 		silversearcher-ag \
