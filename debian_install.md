@@ -204,6 +204,11 @@ If one of the interrupts stands out and has high interrupts, it can be disabled 
 
     echo disable > /sys/firmware/acpi/interrupts/gpeXX
 
+Permanently (as root):
+
+    crontab -e
+    @reboot echo "disable" > /sys/firmware/acpi/interrupts/gpe[XX]
+
 Before and after, check there are no errors using `dmesg`.
 
 
