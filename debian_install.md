@@ -193,6 +193,22 @@ Cleanup
 
 
 
+## High kworker CPU usage
+
+After all setup is done, check CPU usage with `top`. If `kworker` shows high usage,
+typically > 70%, something might be wrong with ACPI interrupts. To check, execute:
+
+    grep . -r /sys/firmware/acpi/interrupts/
+
+If one of the interrupts stands out and has high interrupts, it can be disabled (as root):
+
+    echo disable > /sys/firmware/acpi/interrupts/gpeXX
+
+Before and after, check there are no errors using `dmesg`.
+
+
+
+## Misc stuff
 
 Use `arandr` as graphical interface to `xrandr` to configure the screen resolution. A resolution of 1440x900 works for me (1680x1050 if you like small fonts).
 
@@ -206,5 +222,12 @@ To find keycodes for any key pressed, use the following command (the second prin
     xev | sed -n 's/^.*keycode *\([0-9]\+\).*$/keycode \1 = /p'
     xmodmap -pke
 
+## Some useful key commands
+
+- Switch between terminals:                 ALT+F1/F6
+- Switch between terminals from X:          CTRL+ALT+F1/F6
+- Scroll up/down:                           FN+SHIFT+UP/DOWN
+- Copy/paste from application:              CTRL+C/V
+- Copy/paste from RXVT Terminal:            CTRL+ALT+C/V
 
 
