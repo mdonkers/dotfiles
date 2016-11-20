@@ -217,6 +217,10 @@ Before and after, check there are no errors using `dmesg`.
 
 Use `arandr` as graphical interface to `xrandr` to configure the screen resolution. A resolution of 1440x900 works for me (1680x1050 if you like small fonts).
 
+## Touchpad
+
+For the touchpad to work nicely, both packages "xserver-xorg-input-synaptics" and "xserver-xorg-input-mtrack" are needed.
+
 ## Use of FN-key
 Apple keyboard has special functions for the F1 - F12 keys, which are enabled by default. To use them directly
 as F1 - F12 keys the file `/sys/module/hid_apple/parameters/fnmode` can be switched from `1` to `2`. Setup scripts

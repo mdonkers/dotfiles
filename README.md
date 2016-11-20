@@ -35,3 +35,5 @@ git config --global github.user "$GH_USER"
 Big thanks to Jessie Frazelle of which this repo is largely (or at least started as) a copy.
 The original repo can be found here; [https://github.com/jfrazelle/dotfiles](https://github.com/jfrazelle/dotfiles).
 
+Also many thanks to the great Arch Linux wiki pages which contain many valuable resources.
+
