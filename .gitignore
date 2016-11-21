@@ -15,5 +15,5 @@ Session.vim
 
 .extra
 .gnupg
-!.gnupg/gpg.conf
+!.gnupg/gpg*.conf
 .i3/logfile
