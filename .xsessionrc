@@ -24,6 +24,7 @@ xhost local:root
 #eval $(ssh-agent)
 
 # start gpg-agent
+# comment line /etc/X11/Xsession.options - use-ssh-agent
 eval $(gpg-agent --daemon --enable-ssh-support --write-env-file ~/.gnupg/gpg-agent.env)
 
 # uncomment this if not using a login manager
