@@ -128,6 +128,7 @@ base() {
 		lsof \
                 macfanctld \
 		make \
+                mc \
 		mount \
                 neovim \
 		net-tools \
