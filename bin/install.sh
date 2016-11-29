@@ -482,6 +482,8 @@ install_dev() {
 	apt-get update
 	apt-get install -y \
 		oracle-java8-installer \
+                krb5-user \
+                krb5-config \
 		--no-install-recommends
 
         cleanup
