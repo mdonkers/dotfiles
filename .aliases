@@ -130,3 +130,4 @@ alias prikey="more ~/.ssh/id_ed25519 | xclip -selection clipboard | echo '=> Pri
 
 # Prevent terminal losing focus when running Maven commands
 alias mvn='mvn -Djava.awt.headless=true'
+alias mvnpv='mvn -Djava.awt.headless=false'
