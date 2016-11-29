@@ -217,6 +217,20 @@ Before and after, check there are no errors using `dmesg`.
 
 Use `arandr` as graphical interface to `xrandr` to configure the screen resolution. A resolution of 1440x900 works for me (1680x1050 if you like small fonts).
 
+## Mounting
+
+To mount e.g. USB devices, first connect the device and get the UUID for mounting:
+
+    sudo mkdir -p /media/usb
+    sudo fstab -l
+    ll /dev/disk/by-uuid/
+
+Having the correct UUID, add the following line to `/etc/fstab`
+
+    UUID=<ID...>  /media/usb	vfat defaults,users,noatime,nodiratime,umask=000 0 0
+
+Then simply mount the device with `mount /media/usb`
+
 ## Touchpad
 
 For the touchpad to work nicely, both packages "xserver-xorg-input-synaptics" and "xserver-xorg-input-mtrack" are needed.

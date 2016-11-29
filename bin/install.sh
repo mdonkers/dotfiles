@@ -65,6 +65,12 @@ setup_sources() {
         deb http://dist.keybase.io/linux/deb/repo/ stable main
 	EOF
 
+        # add Java apt repo
+	cat <<-EOF > /etc/apt/sources.list.d/webupd8team-java.list
+        deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
+        deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
+	EOF
+
 	# add docker gpg key
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 
@@ -76,6 +82,9 @@ setup_sources() {
 
 	# add the tlp apt-repo gpg key
 	apt-key adv --keyserver pool.sks-keyservers.net --recv-keys CD4E8809
+
+        # add the Java webupd8team gpg key
+        apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
 
 	# turn off translations, speed up apt-get update
 	mkdir -p /etc/apt/apt.conf.d
@@ -463,6 +472,22 @@ install_vagrant() {
 	vagrant plugin install vagrant-vbguest
 }
 
+install_dev() {
+	mkdir -p /Development
+        chown -R $USERNAME:$USERNAME /Development
+
+        # Automatically accept license agreement
+        echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
+
+	apt-get update
+	apt-get install -y \
+		oracle-java8-installer \
+		--no-install-recommends
+
+        cleanup
+}
+
+
 
 usage() {
 	echo -e "install.sh\n\tThis script installs my basic setup for a debian laptop\n"
@@ -476,6 +501,7 @@ usage() {
         echo "  scripts                     - install scripts (not needed)"
         echo "  syncthing                   - install syncthing (not needed)"
         echo "  vagrant                     - install vagrant and virtualbox (not needed)"
+        echo "  dev                         - install development environment for Java"
         echo "  facetimehd                  - install facetimehd camera for Macbook"
         echo "  keybase                     - install keybase (!! as user !!)"
         echo "  cleanup                     - clean apt etc"
@@ -519,6 +545,10 @@ main() {
 		install_syncthing
 	elif [[ $cmd == "vagrant" ]]; then
 		install_vagrant "$2"
+	elif [[ $cmd == "dev" ]]; then
+		check_is_sudo
+
+                install_dev
 	elif [[ $cmd == "facetimehd" ]]; then
 		check_is_sudo
 
