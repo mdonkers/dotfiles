@@ -32,7 +32,7 @@ fi
 
 BLFILE="$BLDIR/brightness"
 BACKLIGHT=$(cat $BLFILE)
-INCREMENT=15
+INCREMENT=5
 SET_VALUE=0
 MAX=$(cat "$BLDIR/max_brightness")
 
