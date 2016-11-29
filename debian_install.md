@@ -193,7 +193,7 @@ Cleanup
 
 
 
-## High kworker CPU usage
+## High kworker CPU usage & Suspending
 
 After all setup is done, check CPU usage with `top`. If `kworker` shows high usage,
 typically > 70%, something might be wrong with ACPI interrupts. To check, execute:
@@ -211,6 +211,19 @@ Permanently (as root):
 
 Before and after, check there are no errors using `dmesg`.
 
+Also if suspend is not working correctly, this might be due to the bluetooth driver triggering
+a wakeup. First check wich devices may trigger a wakeup:
+
+    cat /proc/acpi/wakeup
+
+If anything else besides `LID0` is `*enabled` this might prevent sleeping. Temporarily disable (as root):
+
+    echo XHC1 > /proc/acpi/wakeup
+
+Permanently (as root):
+
+    crontab -e
+    @reboot echo "XHC1" > /proc/acpi/wakeup
 
 
 ## Misc stuff
