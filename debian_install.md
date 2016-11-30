@@ -240,7 +240,7 @@ To mount e.g. USB devices, first connect the device and get the UUID for mountin
 
 Having the correct UUID, add the following line to `/etc/fstab`
 
-    UUID=<ID...>  /media/usb	vfat defaults,users,noatime,nodiratime,umask=000 0 0
+    UUID=<ID...>  /media/usb	vfat defaults,noauto,users,noatime,nodiratime,umask=000 0 0
 
 Then simply mount the device with `mount /media/usb`
 
