@@ -65,12 +65,6 @@ setup_sources() {
         deb http://dist.keybase.io/linux/deb/repo/ stable main
 	EOF
 
-        # add Java apt repo
-	cat <<-EOF > /etc/apt/sources.list.d/webupd8team-java.list
-        deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
-        deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
-	EOF
-
 	# add docker gpg key
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 
@@ -82,9 +76,6 @@ setup_sources() {
 
 	# add the tlp apt-repo gpg key
 	apt-key adv --keyserver pool.sks-keyservers.net --recv-keys CD4E8809
-
-        # add the Java webupd8team gpg key
-        apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
 
 	# turn off translations, speed up apt-get update
 	mkdir -p /etc/apt/apt.conf.d
@@ -476,12 +467,31 @@ install_dev() {
 	mkdir -p /Development
         chown -R $USERNAME:$USERNAME /Development
 
+        # add Java apt repo
+	cat <<-EOF > /etc/apt/sources.list.d/webupd8team-java.list
+        deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
+        deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
+	EOF
+
+        # add NodeJS apt repo
+	cat <<-EOF > /etc/apt/sources.list.d/nodesource-nodejs.list
+        deb https://deb.nodesource.com/node_7.x jessie main
+        deb-src https://deb.nodesource.com/node_7.x jessie main
+	EOF
+
+        # add the Java webupd8team gpg key
+        apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+
+        # add the NodeSource NodeJS gpg key
+        curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+
         # Automatically accept license agreement
         echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
 
 	apt-get update
 	apt-get install -y \
 		oracle-java8-installer \
+                nodejs \
                 krb5-user \
                 krb5-config \
 		--no-install-recommends
