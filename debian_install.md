@@ -258,6 +258,17 @@ To find keycodes for any key pressed, use the following command (the second prin
     xev | sed -n 's/^.*keycode *\([0-9]\+\).*$/keycode \1 = /p'
     xmodmap -pke
 
+## Special characters
+Special characters can be typed in two ways, with the 'compose' key or by typing the unicode character.
+To set the 'compose' key to Right-Alt / AltGr, first check if it is available, then do the mapping:
+
+    grep "compose:" /usr/share/X11/xkb/rules/base.lst
+    setxkbmap -option compose:ralt
+
+Typing characters with the compose key works e.g. by `compose+", e` which results in ë.
+Unicode characters can also be entered directly using the combination; `ctrl+shift+u` followed by
+the numeric code of the character.
+
 ## Some useful key commands
 
 - Switch between terminals:                 ALT+F1/F6
