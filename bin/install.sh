@@ -187,7 +187,7 @@ setup_sudo() {
 	# set secure path
 	{ \
 		echo -e 'Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"'; \
-		echo -e 'Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy EDITOR"'; \
+		echo -e 'Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME EDITOR"'; \
 		echo -e "${USERNAME} ALL=(ALL) NOPASSWD:ALL"; \
 		echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery"; \
 	} >> /etc/sudoers

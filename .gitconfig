@@ -127,7 +127,8 @@
 	# Detect copies as well as renames
 	renames = copies
         mnemonicprefix = true
-        compactionHeuristic = true
+        #compactionHeuristic = true
+        indentHeuristic = true
 
 [help]
 
