@@ -494,9 +494,14 @@ install_dev() {
                 nodejs \
                 krb5-user \
                 krb5-config \
+                python3-pip \
+                python3-setuptools \
+                python3-wheel \
 		--no-install-recommends
 
         cleanup
+
+        sudo -u $USERNAME pip3 install virtualenv maybe
 }
 
 
