@@ -501,7 +501,7 @@ install_dev() {
 
         cleanup
 
-        sudo -u $USERNAME pip3 install virtualenv maybe
+        pip3 install --system virtualenv maybe
 }
 
 
