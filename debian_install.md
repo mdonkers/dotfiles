@@ -245,8 +245,10 @@ Having the correct UUID, add the following line to `/etc/fstab`
 Then simply mount the device with `mount /media/usb`
 
 ## Touchpad
-
 For the touchpad to work nicely, both packages "xserver-xorg-input-synaptics" and "xserver-xorg-input-mtrack" are needed.
+
+## HP Printer installation
+Follow guidelines here: http://hplipopensource.com/hplip-web/install/manual/distros/debian.html
 
 ## Use of FN-key
 Apple keyboard has special functions for the F1 - F12 keys, which are enabled by default. To use them directly
