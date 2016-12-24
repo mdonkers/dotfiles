@@ -247,6 +247,13 @@ Then simply mount the device with `mount /media/usb`
 ## Touchpad
 For the touchpad to work nicely, both packages "xserver-xorg-input-synaptics" and "xserver-xorg-input-mtrack" are needed.
 
+## S/PDIF always on
+S/PDIF is always on, and not stored by Alsa. We can add the following line to a crontab to always
+turn off after a reboot (as root):
+
+    crontab -e
+    @reboot amixer set IEC958 off
+
 ## HP Printer installation
 Follow guidelines here: http://hplipopensource.com/hplip-web/install/manual/distros/debian.html
 

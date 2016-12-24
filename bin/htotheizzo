@@ -75,6 +75,16 @@ update_docker() {
 	rm "${tmp_tar}"
 	docker -v
 	)
+
+        # Get the Docker Compose files
+        local docker_compose_release=$(curl -L -s -H 'Accept: application/json' https://github.com/docker/compose/releases/latest)
+        local docker_compose_version=$(echo "${docker_compose_release}" | sed -e 's/.*"tag_name":"\([0-9\.]*\)".*/\1/')
+        local docker_compose_binary_uri="https://github.com/docker/compose/releases/download/${docker_compose_version}/docker-compose-Linux-x86_64"
+        (
+        set -x
+        curl -fSL "${docker_compose_binary_uri}" -o "/usr/local/bin/docker-compose"
+        )
+
 	chmod +x /usr/local/bin/docker*
 
 	# start docker

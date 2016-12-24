@@ -1,0 +1,3 @@
+# Google IPv4 DNS server
+nameserver 8.8.8.8
+
