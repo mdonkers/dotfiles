@@ -134,6 +134,7 @@ base() {
 		net-tools \
 		network-manager \
                 openconnect \
+                stoken \
 		openvpn \
 		rxvt-unicode-256color \
 		silversearcher-ag \
