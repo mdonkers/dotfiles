@@ -60,6 +60,11 @@ setup_sources() {
 	deb https://apt.dockerproject.org/repo debian-stretch experimental
 	EOF
 
+        # Google repo, because Chromium cannot play Netflix but Chrome can
+        cat <<-EOF > /etc/apt/sources.list.d/google.list
+        deb https://dl.google.com/linux/chrome/deb/ stable main
+        EOF
+
 	# add keybase apt repo
 	cat <<-EOF > /etc/apt/sources.list.d/keybase.list
         deb http://dist.keybase.io/linux/deb/repo/ stable main
@@ -76,6 +81,10 @@ setup_sources() {
 
 	# add the tlp apt-repo gpg key
 	apt-key adv --keyserver pool.sks-keyservers.net --recv-keys CD4E8809
+
+        # add the Google Chrome apt-repo gpg key
+	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
+	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
 
 	# turn off translations, speed up apt-get update
 	mkdir -p /etc/apt/apt.conf.d
@@ -300,7 +309,7 @@ install_wifi() {
 
 # install stuff for i3 window manager
 install_wmapps() {
-	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome chromium"
+	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome google-chrome-beta"
 
 	apt-get install -y $pkgs --no-install-recommends
 

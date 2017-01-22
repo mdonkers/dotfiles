@@ -249,7 +249,7 @@ For the touchpad to work nicely, both packages "xserver-xorg-input-synaptics" an
 
 ## S/PDIF always on
 S/PDIF is always on, and not stored by Alsa. We can add the following line to a crontab to always
-turn off after a reboot (as root):
+turn off after a reboot (as user):
 
     crontab -e
     @reboot amixer set IEC958 off
@@ -277,6 +277,12 @@ To set the 'compose' key to Right-Alt / AltGr, first check if it is available, t
 Typing characters with the compose key works e.g. by `compose+", e` which results in ë.
 Unicode characters can also be entered directly using the combination; `ctrl+shift+u` followed by
 the numeric code of the character.
+
+## Cleanup unused wifi connections
+Cleanup unused connections in:
+
+    /etc/NetworkManager/system-connections
+
 
 ## Some useful key commands
 

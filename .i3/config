@@ -39,7 +39,7 @@ for_window [class="^Spotify Premium$"] border none
 for_window [class="Code"] floating enable
 for_window [class="Firefox"] floating enable
 for_window [class="Gimp"] floating enable
-for_window [class="google-chrome"] floating enable
+#for_window [class="google-chrome"] floating enable
 for_window [class="Keybase"] floating enable
 for_window [class="Neoman"] floating enable
 for_window [class="NES"] floating enable
@@ -217,6 +217,6 @@ exec --no-startup-id "i3-msg 'workspace 2: www; append_layout ~/.i3/workspace-ww
 exec --no-startup-id "i3-msg 'workspace 3: console; append_layout ~/.i3/workspace-console.json'"
 # then startup programs
 exec --no-startup-id i3-msg 'workspace 1: slack; exec slack;'
-exec --no-startup-id i3-msg 'workspace 2: www; exec chromium;'
+exec --no-startup-id i3-msg 'workspace 2: www; exec google-chrome;'
 exec --no-startup-id i3-msg 'workspace 3: console; exec urxvt; exec urxvt'
 

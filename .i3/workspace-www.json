@@ -5,7 +5,7 @@
     "percent": 1,
     "swallows": [
        {
-        "class": "^chromium$"
+        "class": "(?i)chrome"
        }
     ],
     "type": "con"
