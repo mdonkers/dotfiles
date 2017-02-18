@@ -61,7 +61,7 @@ setup_sources() {
 	EOF
 
         # Google repo, because Chromium cannot play Netflix but Chrome can
-        cat <<-EOF > /etc/apt/sources.list.d/google.list
+        cat <<-EOF > /etc/apt/sources.list.d/google-chrome-beta.list
         deb https://dl.google.com/linux/chrome/deb/ stable main
         EOF
 
