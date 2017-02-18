@@ -483,6 +483,11 @@ install_dev() {
         deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
 	EOF
 
+        # add Sbt apt repo
+        cat <<-EOF > /etc/apt/sources.list.d/sbt.list
+        deb https://dl.bintray.com/sbt/debian /
+        EOF
+
         # add NodeJS apt repo
 	cat <<-EOF > /etc/apt/sources.list.d/nodesource-nodejs.list
         deb https://deb.nodesource.com/node_7.x jessie main
@@ -491,6 +496,9 @@ install_dev() {
 
         # add the Java webupd8team gpg key
         apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+
+        # add the Sbt gpg key
+        apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 2EE0EA64E40A89B84B2DF73499E82A75642AC823
 
         # add the NodeSource NodeJS gpg key
         curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
@@ -501,6 +509,7 @@ install_dev() {
 	apt-get update
 	apt-get install -y \
 		oracle-java8-installer \
+                sbt \
                 nodejs \
                 krb5-user \
                 krb5-config \
