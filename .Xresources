@@ -117,8 +117,9 @@ URxvt.secondaryWheel:   1
 URxvt*termName:         rxvt
 
 !! copy paste
-URxvt*clipboard.copycmd:    xclip -i -selection clipboard
-URxvt*clipboard.pastecmd:   xclip -o -selection clipboard
+URxvt.clipboard.autocopy:   true
+URxvt.clipboard.copycmd:    xclip -i -selection clipboard
+URxvt.clipboard.pastecmd:   xclip -o -selection clipboard
 
 !! clickable urls
 URxvt.perl-ext-common:      default,matcher,selection-to-clipboard
