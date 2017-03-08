@@ -76,3 +76,10 @@ nnoremap <silent> <C-l> :nohlsearch<CR><C-l>
 " Don't create ~/.vim/.netrwhist history file.
 let g:netrw_dirhistmax = 0
 
+" Load Pathogen for easy Vim modules installation
+execute pathogen#infect()
+execute pathogen#helptags()
+
+" Erlang skeleton variables
+let g:erl_author="Miel Donkers"
+let g:erl_company="codecentric"

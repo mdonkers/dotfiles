@@ -256,7 +256,7 @@ install_scripts() {
 	curl -sSL https://asciinema.org/install | sh
 
 	# install speedtest
-	curl -sSL https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest_cli.py > /usr/local/bin/speedtest
+	curl -sSL https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py > /usr/local/bin/speedtest
 	chmod +x /usr/local/bin/speedtest
 
 	# install icdiff
@@ -513,6 +513,7 @@ install_dev() {
                 nodejs \
                 krb5-user \
                 krb5-config \
+                erlang \
                 python3-pip \
                 python3-setuptools \
                 python3-wheel \
@@ -520,7 +521,8 @@ install_dev() {
 
         cleanup
 
-        pip3 install --system virtualenv maybe
+        # Install some Python plugins. Neovim adds a Python extension to NeoVIM
+        pip3 install --system virtualenv maybe neovim
 }
 
 
