@@ -145,6 +145,7 @@ base() {
                 openconnect \
                 stoken \
 		openvpn \
+                pulseaudio-module-bluetooth \
 		rxvt-unicode-256color \
 		silversearcher-ag \
 		ssh \
@@ -514,6 +515,7 @@ install_dev() {
                 krb5-user \
                 krb5-config \
                 erlang \
+                erlang-proper \
                 python3-pip \
                 python3-setuptools \
                 python3-wheel \
