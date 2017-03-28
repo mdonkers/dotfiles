@@ -519,6 +519,7 @@ install_dev() {
                 python3-pip \
                 python3-setuptools \
                 python3-wheel \
+                wireshark-qt \
 		--no-install-recommends
 
         cleanup
