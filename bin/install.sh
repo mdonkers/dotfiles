@@ -516,6 +516,7 @@ install_dev() {
                 krb5-config \
                 erlang \
                 erlang-proper-dev \
+                rebar \
                 python3-pip \
                 python3-setuptools \
                 python3-wheel \
