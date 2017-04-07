@@ -72,6 +72,9 @@ set expandtab
 " Set CTRL+L to redraw the screen and turn off search highlights
 nnoremap <silent> <C-l> :nohlsearch<CR><C-l>
 
+" Set CTRL+C to copy to the system clipboard
+vnoremap <C-c> "+y
+
 " netrw settings.
 " Don't create ~/.vim/.netrwhist history file.
 let g:netrw_dirhistmax = 0
