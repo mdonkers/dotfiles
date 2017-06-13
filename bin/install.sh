@@ -495,6 +495,11 @@ install_dev() {
         deb-src https://deb.nodesource.com/node_7.x jessie main
 	EOF
 
+        # add Erlang / Elixir apt repo
+        cat <<-EOF > /etc/apt/sources.list.d/erlang-solutions.list
+        deb https://packages.erlang-solutions.com/debian wheezy contrib
+        EOF
+
         # add the Java webupd8team gpg key
         apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
 
@@ -503,6 +508,9 @@ install_dev() {
 
         # add the NodeSource NodeJS gpg key
         curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+
+        # add the Erlang Solutions gpg key
+        curl --silent https://packages.erlang-solutions.com/debian/erlang_solutions.asc | apt-key add -
 
         # Automatically accept license agreement
         echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
@@ -517,10 +525,12 @@ install_dev() {
                 erlang \
                 erlang-proper-dev \
                 rebar \
+                elixir \
                 python3-pip \
                 python3-setuptools \
                 python3-wheel \
                 wireshark-qt \
+                awscli \
 		--no-install-recommends
 
         cleanup

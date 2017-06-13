@@ -89,6 +89,7 @@ done
 for file in $HOME/.bash_scripts/*-completion.bash ; do
         source "$file"
 done
+complete -C '/usr/bin/aws_completer' aws
 
 if [[ -f $HOME/.bash_profile ]]; then
 	source $HOME/.bash_profile

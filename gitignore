@@ -163,10 +163,11 @@ _testmain.go
 .venv
 
 ##
-# Java & Maven
+# Java, Maven & Gradle
 ##
 target/
 checkstyle-cachefile
+out/
 
 # IntelliJ files
 .idea

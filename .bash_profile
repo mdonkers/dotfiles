@@ -30,6 +30,9 @@ set -o vi
 # Case-insensitive globbing (used in pathname expansion)
 shopt -s nocaseglob
 
+# Globbing for dot-files
+shopt -s dotglob
+
 # Append to the Bash history file, rather than overwriting it
 shopt -s histappend
 
