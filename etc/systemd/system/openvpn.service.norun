@@ -1,0 +1,16 @@
+[Unit]
+Description=OpenVPN connection to %i
+PartOf=openvpn.service
+ReloadPropagatedFrom=openvpn.service
+
+[Service]
+Environment=HOME=/home/miel
+Environment=DISPLAY=:0
+Type=forking
+# Start OpenVPN
+ExecStart=/usr/sbin/openvpn --daemon ovpn-%i --status /run/openvpn/%i.status 10 --cd /etc/openvpn --writepid /var/run/openvpn.pid --config /etc/openvpn/%i.ovpn
+ExecReload=/bin/kill -HUP $MAINPID
+WorkingDirectory=/etc/openvpn
+
+[Install]
+WantedBy=multi-user.target
