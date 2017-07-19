@@ -283,6 +283,16 @@ Cleanup unused connections in:
 
     /etc/NetworkManager/system-connections
 
+## If Wifi does not work after update
+Probably there is a new kernel installed and the wifi module is not loaded. Do the following to reinstall
+the Wifi module:
+
+     sudo apt-get install linux-headers-$(uname -r)
+     sudo apt-get install --reinstall broadcom-sta-dkms wireless-tools
+     sudo modprobe wl
+
+Now you should see the Wifi being enabled again.
+
 
 ## Some useful key commands
 
