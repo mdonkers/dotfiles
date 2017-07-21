@@ -498,7 +498,7 @@ install_dev() {
         # add Erlang / Elixir apt repo
         cat <<-EOF > /etc/apt/sources.list.d/erlang-solutions.list
         deb https://packages.erlang-solutions.com/debian wheezy contrib
-        EOF
+	EOF
 
         # add the Java webupd8team gpg key
         apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
