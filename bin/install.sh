@@ -146,6 +146,7 @@ base() {
                 stoken \
 		openvpn \
                 pulseaudio-module-bluetooth \
+                pulseaudio-utils \
 		rxvt-unicode-256color \
 		silversearcher-ag \
 		ssh \
