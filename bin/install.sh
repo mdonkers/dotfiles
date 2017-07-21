@@ -17,7 +17,7 @@ check_is_sudo() {
 }
 
 # sets up apt sources
-# assumes you are going to use debian stretch
+# assumes you are going to use debian testing
 setup_sources() {
 	apt-get update
 	apt-get install -y \
@@ -25,14 +25,14 @@ setup_sources() {
 		--no-install-recommends
 
 	cat <<-EOF > /etc/apt/sources.list
-	deb http://httpredir.debian.org/debian stretch main contrib non-free
-	deb-src http://httpredir.debian.org/debian/ stretch main contrib non-free
+	deb http://httpredir.debian.org/debian testing main contrib non-free
+	deb-src http://httpredir.debian.org/debian/ testing main contrib non-free
 
-	deb http://httpredir.debian.org/debian/ stretch-updates main contrib non-free
-	deb-src http://httpredir.debian.org/debian/ stretch-updates main contrib non-free
+	deb http://httpredir.debian.org/debian/ testing-updates main contrib non-free
+	deb-src http://httpredir.debian.org/debian/ testing-updates main contrib non-free
 
-	deb http://security.debian.org/ stretch/updates main contrib non-free
-	deb-src http://security.debian.org/ stretch/updates main contrib non-free
+	deb http://security.debian.org/ testing/updates main contrib non-free
+	deb-src http://security.debian.org/ testing/updates main contrib non-free
 
 	#deb http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
 	#deb-src http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
@@ -41,16 +41,16 @@ setup_sources() {
 	deb-src http://httpredir.debian.org/debian experimental main contrib non-free
 
 	# hack for latest git (don't judge)
-	deb http://ppa.launchpad.net/git-core/ppa/ubuntu wily main
-	deb-src http://ppa.launchpad.net/git-core/ppa/ubuntu wily main
+	deb http://ppa.launchpad.net/git-core/ppa/ubuntu xenial main
+	deb-src http://ppa.launchpad.net/git-core/ppa/ubuntu xenial main
 
 	# neovim
-	deb http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu wily main
-	deb-src http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu wily main
+	deb http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu xenial main
+	deb-src http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu xenial main
 
 	# tlp: Advanced Linux Power Management
 	# http://linrunner.de/en/tlp/docs/tlp-linux-advanced-power-management.html
-	deb http://repo.linrunner.de/debian sid main
+        deb http://ppa.launchpad.net/linrunner/tlp/ubuntu xenial main
 	EOF
 
 	# add docker apt repo
@@ -80,7 +80,7 @@ setup_sources() {
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DBB0BE9366964F134855E2255F96FCF8231B6DD
 
 	# add the tlp apt-repo gpg key
-	apt-key adv --keyserver pool.sks-keyservers.net --recv-keys CD4E8809
+        apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 02D65EFF
 
         # add the Google Chrome apt-repo gpg key
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
@@ -297,7 +297,7 @@ install_wifi() {
 	fi
 
 	if [[ $system == "broadcom" ]]; then
-		local pkg="broadcom-sta-dkms wireless-tools"
+		local pkg="linux-headers-amd64 broadcom-sta-dkms wireless-tools"
 
 		apt-get install -y $pkg
                 # Unload conflicting modules and load the wireless module
