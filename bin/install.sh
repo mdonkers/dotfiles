@@ -421,33 +421,33 @@ install_keybase() {
 }
 
 install_virtualbox() {
-	# check if we need to install libvpx1
-	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' libvpx1 | grep "install ok installed")
-	echo Checking for libvpx1: $PKG_OK
-	if [ "" == "$PKG_OK" ]; then
-		echo "No libvpx1. Installing libvpx1."
-		jessie_sources=/etc/apt/sources.list.d/jessie.list
-		echo "deb http://httpredir.debian.org/debian jessie main contrib non-free" > $jessie_sources
+	# check if we need to install libvpx3
+        #	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' libvpx3 | grep "install ok installed")
+        #	echo Checking for libvpx3: $PKG_OK
+        #	if [ "" == "$PKG_OK" ]; then
+        #		echo "No libvpx3. Installing libvpx3."
+        #		jessie_sources=/etc/apt/sources.list.d/jessie.list
+        #		echo "deb http://httpredir.debian.org/debian jessie main contrib non-free" > $jessie_sources
+        #
+        #		apt-get update
+        #		apt-get install -y -t jessie libvpx3 \
+        #			--no-install-recommends
+        #
+        #		# cleanup the file that we used to install things from jessie
+        #		rm $jessie_sources
+        #	fi
 
-		apt-get update
-		apt-get install -y -t jessie libvpx1 \
-			--no-install-recommends
-
-		# cleanup the file that we used to install things from jessie
-		rm $jessie_sources
-	fi
-
-	echo "deb http://download.virtualbox.org/virtualbox/debian vivid contrib" >> /etc/apt/sources.list.d/virtualbox.list
-	curl -sSL https://www.virtualbox.org/download/oracle_vbox.asc | apt-key add -
+	echo "deb http://download.virtualbox.org/virtualbox/debian stretch contrib" >> /etc/apt/sources.list.d/virtualbox.list
+	curl -sSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | apt-key add -
 
 	apt-get update
 	apt-get install -y \
-		virtualbox-5.0
-	--no-install-recommends
+		virtualbox-5.1 \
+                --no-install-recommends
 }
 
 install_vagrant() {
-	VAGRANT_VERSION=1.8.1
+	VAGRANT_VERSION=1.9.7
 
 	# if we are passing the version
 	if [[ ! -z "$1" ]]; then
@@ -455,7 +455,7 @@ install_vagrant() {
 	fi
 
 	# check if we need to install virtualbox
-	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' virtualbox | grep "install ok installed")
+	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' virtualbox-5.1 | grep "install ok installed") || echo ""
 	echo Checking for virtualbox: $PKG_OK
 	if [ "" == "$PKG_OK" ]; then
 		echo "No virtualbox. Installing virtualbox."
@@ -465,6 +465,7 @@ install_vagrant() {
 	tmpdir=`mktemp -d`
 	(
 	cd $tmpdir
+        echo "Downloading Vagrant to $tmpdir"
 	curl -sSL -o vagrant.deb https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb
 	dpkg -i vagrant.deb
 	)
