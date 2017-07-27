@@ -293,6 +293,25 @@ the Wifi module:
 
 Now you should see the Wifi being enabled again.
 
+## Connect to WiFi via cli
+Using the `nmcli` tool it's also possible to connect instead of using the applet.
+Here are the relevant commands.
+
+See list of all WiFi networks and the currently connected network:
+
+    nmcli dev wifi list
+
+Add new connection:
+
+    nmcli connection add con-name <Name> ifname wlan0 type wifi ssid <SSID_Name> wifi-sec.key-mgmt wpa-psk wifi-sec.psk <Password>
+
+See list of all locally know connections:
+
+    nmcli connection show
+
+Connect to a network:
+
+    nmcli connection up <Name>
 
 ## Some useful key commands
 
