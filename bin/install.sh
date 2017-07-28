@@ -502,6 +502,11 @@ install_dev() {
         deb https://packages.erlang-solutions.com/debian wheezy contrib
 	EOF
 
+        # add Ansible apt repo
+        cat <<-EOF > /etc/apt/sources.list.d/ansible.list
+        deb http://ppa.launchpad.net/ansible/ansible/ubuntu xenial main
+	EOF
+
         # add the Java webupd8team gpg key
         apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
 
@@ -513,6 +518,9 @@ install_dev() {
 
         # add the Erlang Solutions gpg key
         curl --silent https://packages.erlang-solutions.com/debian/erlang_solutions.asc | apt-key add -
+
+        # add the Ansible gpg key
+        apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
 
         # Automatically accept license agreement
         echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
@@ -533,6 +541,7 @@ install_dev() {
                 python3-wheel \
                 wireshark-qt \
                 awscli \
+                ansible \
 		--no-install-recommends
 
         cleanup
