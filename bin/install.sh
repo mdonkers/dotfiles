@@ -473,7 +473,7 @@ install_vagrant() {
 	rm -rf $tmpdir
 
 	# install plugins
-	vagrant plugin install vagrant-vbguest
+	vagrant plugin install vagrant-vbguest vagrant-disksize
 }
 
 install_dev() {
