@@ -542,7 +542,12 @@ install_dev() {
                 wireshark-qt \
                 awscli \
                 ansible \
+                linux-perf \
+                cmake \
 		--no-install-recommends
+
+        # Packages linux-perf and cmake are installed to run Linux performance tests
+        # Get the FlameGraph software here: https://github.com/brendangregg/FlameGraph
 
         cleanup
 
