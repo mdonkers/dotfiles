@@ -499,7 +499,7 @@ install_dev() {
 
         # add Erlang / Elixir apt repo
         cat <<-EOF > /etc/apt/sources.list.d/erlang-solutions.list
-        deb https://packages.erlang-solutions.com/debian wheezy contrib
+        deb https://packages.erlang-solutions.com/ubuntu trusty contrib
 	EOF
 
         # add Ansible apt repo
@@ -517,7 +517,7 @@ install_dev() {
         curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
 
         # add the Erlang Solutions gpg key
-        curl --silent https://packages.erlang-solutions.com/debian/erlang_solutions.asc | apt-key add -
+        curl --silent https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc | apt-key add -
 
         # add the Ansible gpg key
         apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
