@@ -363,7 +363,7 @@ get_dotfiles() {
 	# enable dbus for the user session
 	# systemctl --user enable dbus.socket
 
-	sudo systemctl enable i3lock
+        sudo systemctl enable "i3lock@${TARGET_USER}"
 	sudo systemctl enable suspend-sedation.service
 	sudo systemctl enable powertop.service
 
