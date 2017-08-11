@@ -11,14 +11,12 @@ bin:
 
 dotfiles:
 	# add aliases for dotfiles
-	for file in $(shell find $(CURDIR) -name ".*" -not -name ".gitignore" -not -name ".git" -not -name ".gitmodules" -not -name ".*.swp" -not -name ".travis.yml" -not -name ".gnupg" -not -name ".IntelliJIdea*"); do \
+	for file in $(shell find $(CURDIR) -name ".*" -not -name ".gitignore" -not -name ".git" -not -name ".gitmodules" -not -name ".*.swp" -not -name ".travis.yml" -not -name ".gnupg"); do \
 		f=$$(basename $$file); \
 		ln -sfn $$file $(HOME)/$$f; \
 	done; \
 	ln -sfn $(CURDIR)/.gnupg/gpg.conf $(HOME)/.gnupg/gpg.conf;
 	ln -sfn $(CURDIR)/.gnupg/gpg-agent.conf $(HOME)/.gnupg/gpg-agent.conf;
-	mkdir -p $(HOME)/.IntelliJIdea2017.1
-	ln -sfn $(CURDIR)/.IntelliJIdea2017.1/idea64.vmoptions $(HOME)/.IntelliJIdea2017.1/idea64.vmoptions;
 	ln -fn $(CURDIR)/gitignore $(HOME)/.gitignore;
 
 etc:
