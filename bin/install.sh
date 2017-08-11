@@ -171,7 +171,6 @@ base() {
 
 	install_docker
 	install_scripts
-	#install_syncthing
 }
 
 cleanup() {
@@ -270,18 +269,13 @@ install_scripts() {
 	# install lolcat
 	curl -sSL https://raw.githubusercontent.com/tehmaze/lolcat/master/lolcat > /usr/local/bin/lolcat
 	chmod +x /usr/local/bin/lolcat
-
-	# download syncthing binary
-	#if [[ ! -f /usr/local/bin/syncthing ]]; then
-	#	curl -sSL https://jesss.s3.amazonaws.com/binaries/syncthing > /usr/local/bin/syncthing
-	#	chmod +x /usr/local/bin/syncthing
-	#fi
-
-	#syncthing -upgrade
 }
 
 # install syncthing
 install_syncthing() {
+        sudo apt-get update
+        sudo apt-get install -y syncthing --no-install-recommends
+
 	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/syncthing@.service > /etc/systemd/system/syncthing@.service
 
 	systemctl daemon-reload
@@ -363,7 +357,7 @@ get_dotfiles() {
 	# enable dbus for the user session
 	# systemctl --user enable dbus.socket
 
-        sudo systemctl enable "i3lock@${TARGET_USER}"
+        sudo systemctl enable "i3lock@${USERNAME}"
 	sudo systemctl enable suspend-sedation.service
 	sudo systemctl enable powertop.service
 
@@ -421,22 +415,6 @@ install_keybase() {
 }
 
 install_virtualbox() {
-	# check if we need to install libvpx3
-        #	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' libvpx3 | grep "install ok installed")
-        #	echo Checking for libvpx3: $PKG_OK
-        #	if [ "" == "$PKG_OK" ]; then
-        #		echo "No libvpx3. Installing libvpx3."
-        #		jessie_sources=/etc/apt/sources.list.d/jessie.list
-        #		echo "deb http://httpredir.debian.org/debian jessie main contrib non-free" > $jessie_sources
-        #
-        #		apt-get update
-        #		apt-get install -y -t jessie libvpx3 \
-        #			--no-install-recommends
-        #
-        #		# cleanup the file that we used to install things from jessie
-        #		rm $jessie_sources
-        #	fi
-
 	echo "deb http://download.virtualbox.org/virtualbox/debian stretch contrib" >> /etc/apt/sources.list.d/virtualbox.list
 	curl -sSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | apt-key add -
 
