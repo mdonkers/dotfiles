@@ -1,79 +1,65 @@
-# Install Debian on MacBook #
+# Install Debian on Dell XPS 15 #
 
 This manual assumes (at least) the following versions:
-- rEFInd 0.10.3
-- Debian Jessie 8.4.0 (with upgrade to Stretch / Testing)
+- Dell XPS 15 - 9560 model from 2017
+- Debian Stretch 9.1.0 (with upgrade to Buster / Testing)
 
-## Resize current osx partition ##
+## Resources used ##
+https://www.debian.org/releases/stable/i386/ch04s03.html.en
+https://wiki.archlinux.org/index.php/Dell_XPS_15_9560
+https://github.com/rcasero/doc/wiki/Ubuntu-linux-on-Dell-XPS-15-(9560)
 
-Open diskutil and select the 'partition' option
 
-Decrease the size for the osx partition to make space available for Debian. You will approx need the following free room
-- 20 Gb for Debian
-- 1.5x the size of your RAM for SWAP (16 Gb RAM -> 24 Gb SWAP)
+https://www.meebey.net/posts/debian_on_dell_xps15/
 
-## Install rEFInd boot manager ##
-Download rEFInd boot manager as binary zip file and unzip
+## Preparations ##
+### Download Debian distro and create bootable USB ###
+Download the Debian net-installer ISO. The following steps assume a *nix environment.
 
-Restart your MacBook and hold `cmd+R` to enter recovery mode
+Insert the USB drive and check which device is added. Either via `dmesg` or checking `/dev/...`.
+Under Linux this will presumably be `/dev/sdb`, under MacOS `/dev/disk2`.
 
-Open a Terminal
+The images can be simply copied to the device:
 
-Find the location where rEFInd was unzipped;
+    cp debian-<version>.iso /dev/sdb
+    sync
 
-    cd /Volumes/Macbook\ HD/Users/miel/Downloads/refind/
+Remove the USB stick again (under MacOS using `diskutil eject /dev/disk2`).
 
-Run the rEFInd installer
+### Resize current osx partition ###
+Open the Windows Disk Util to update the partitions.
 
-    ./refind-install
+Decrease the size for the Windows partition to make space available for Debian. You will approx need the following free room
+- 100 Gb for Debian
+- 1x the size of your RAM for SWAP (32 Gb RAM -> 32 Gb SWAP)
 
-By default the timeout during boot is set to 20 seconds, to change this mount the EFI partition. You can use the rEFInd shell script for this.
+### Setup Safe Mode ###
+Login into Windows 10, and set up Safe Mode: "Change advanced Startup Options" -> "Restart Now"
+  -> "Troubleshoot" -> "Advanced options" -> "Startup Settings" -> "Restart"
 
-    ./mountesp
+Now reboot to get into the BIOS menu.
 
-Open the config file under `/Volumes/ESP/EFI/refind/refind.conf` with VI and edit accordingly
+## UEFI Boot Settings ##
+Some UEFI settings and other BIOS parameters need to be configured to work correctly with Linux.
+Change the following settings by pressing F2 repeatedly when booting:
 
-Reboot and you should now see the rEFInd boot manager
+- Change the SATA Mode from the default "RAID" to "AHCI". This will allow Linux to detect the NVME SSD.
+- Change Fastboot to "Thorough" in "POST Behaviour". This prevents intermittent boot failures.
+- Disable secure boot to allow Linux to boot.
 
-## Download Debian distro and create bootable USB ##
-Download the Debian net-installer ISO
+Save and restart. Initially Windows will not boot, but after some time will get into the Recovery Mode again. Navigate to
+"Troubleshoot" -> "Advanced options" -> "Startup Settings" -> "Restart" -- Then after restarting choose "F4 - Safe Mode".
 
-Convert .iso to .img
-
-    hdiutil convert -format UDRW -o debian.img debian-<...>.iso
-
-Rename as osx adds the .dmg extension
-
-    mv debian.img.dmg debian.img
-
-Insert the USB stick and check (double check) the disk number (should be something like `/dev/disk2`)
-
-    diskutil list
-
-Unmount the USB device if necessary
-
-    diskutil unmountDisk /dev/disk2
-
-Create the bootable USB
-
-    sudo dd if=debian.img of=/dev/disk2
-
-Eject the USB via the pop-up or via the following command
-
-    diskutil eject /dev/disk2
+When in Windows, check the "IDE ATA/ATAPI controller" is "Intel(R) 100 Series/C230 Chipset Family SATA AHCI Controller", via "Start" -> "Windows System" -> "Control Panel" -> "Device Manager". Restart.
 
 ## Install Debian ##
-Shutdown the MacBook. Make sure to insert the USB with Debian installer _and_ the Thunderbolt adapter with network cable
+Shutdown the laptop and insert the USB with Debian installer. Startup, repeatedly pressing F12 for the one-time boot menu.
 
-Boot the Debian installer, easiest is to opt for the graphical installer
+Boot the Debian installer, easiest is to opt for the graphical installer.
 
-When arriving at the partitioning step, delete - if needed - the unused HFS+ partition. Make sure _NOT_ to touch the EFI, OSX Recovery and existing OSX install partition (/dev/sda1, /dev/sda2 and /dev/sda3).
 Create at least the SWAP and EXT4 partition.
-
-Continue with the installation until the GRUB boot loader installation step (choose 'back' option). Skip this, we'll set it up later manually.
 Finish the installation.
 
-If you don't have the option to enter into a Terminal window before the installation finishes, reboot and enter the Debian installer from USB again. Choose 'Recovery mode' and boot into the Debian installation, probably /dev/sda5 or /dev/sda6.
 
 ## Manually setup GRUB boot loader ##
 Make sure you are root (you are if you have a 'Recovery mode' Terminal)
@@ -240,7 +226,7 @@ To mount e.g. USB devices, first connect the device and get the UUID for mountin
 
 Having the correct UUID, add the following line to `/etc/fstab`
 
-    UUID=<ID...>  /media/usb	vfat defaults,noauto,users,noatime,nodiratime,umask=000 0 0
+    UUID=<ID...>  /media/usb	vfat defaults,noauto,users,noatime,nodiratime,dmask=0022,fmask=0133 0 0
 
 Then simply mount the device with `mount /media/usb`
 

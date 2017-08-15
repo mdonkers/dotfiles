@@ -135,15 +135,12 @@ base() {
 		libseccomp-dev \
 		locales \
 		lsof \
-                macfanctld \
 		make \
                 mc \
 		mount \
                 neovim \
 		net-tools \
 		network-manager \
-                openconnect \
-                stoken \
 		openvpn \
                 pulseaudio-module-bluetooth \
                 pulseaudio-utils \
@@ -168,6 +165,17 @@ base() {
 	setup_sudo
 
         cleanup
+
+	# update grub with system specific and docker configs and power-saving items
+        # acpi_rev_override=1                 -> necessary for bbswitch / bumblebee to disable discrete NVidia GPU
+        # enable_psr=1 disable_power_well=0   -> powersaving options for i915 kernel module
+        # pcie_aspm=force                     -> force ASPM power management
+	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=1 enable_psr=1 disable_power_well=0 pcie_aspm=force apparmor=1 security=apparmor"/g' /etc/default/grub
+        echo
+        echo ">>>>>>>>>>"
+	echo "To make kernel parameters effective;"
+	echo "run update-grub & reboot"
+        echo "<<<<<<<<<<"
 
 	install_docker
 	install_scripts
@@ -223,14 +231,6 @@ install_docker() {
 
 	systemctl daemon-reload
 	systemctl enable docker
-
-	# update grub with docker configs and power-saving items
-	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 i915.enable_psr=0 pcie_asm=force i915.i915_enable_fbc=1 i915.i915_enable_rc6=7 i915.lvds_downclock=1 apparmor=1 security=apparmor hid_apple.fnmode=2"/g' /etc/default/grub
-        echo
-        echo ">>>>>>>>>>"
-	echo "Docker has been installed. If you want memory management & swap"
-	echo "run update-grub & reboot"
-        echo "<<<<<<<<<<"
 }
 
 # install graphics drivers
@@ -312,13 +312,13 @@ install_wmapps() {
 	# update clickpad settings
 	mkdir -p /etc/X11/xorg.conf.d/
         # Not for MAC
-	# curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/50-synaptics-clickpad.conf > /etc/X11/xorg.conf.d/50-synaptics-clickpad.conf
+	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/50-synaptics-clickpad.conf > /etc/X11/xorg.conf.d/50-synaptics-clickpad.conf
 
 	# add xorg conf
 	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf > /etc/X11/xorg.conf
 
 	# get correct sound cards on boot
-	#curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/modprobe.d/intel.conf > /etc/modprobe.d/intel.conf
+	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/modprobe.d/intel.conf > /etc/modprobe.d/intel.conf
 
 	# pretty fonts
 	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/fonts/local.conf > /etc/fonts/local.conf
@@ -384,21 +384,6 @@ get_dotfiles() {
 	sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
 	sudo update-alternatives --config editor
 	)
-}
-
-install_facetimehd() {
-        git clone https://github.com/patjak/bcwc_pcie.git /tmp/bcwc_pcie
-        # create subshell
-        (
-        cd /tmp/bcwc_pcie/firmware
-        make
-        make install
-        cd ..
-        make
-        make install
-        depmod
-        modprobe facetimehd
-        )
 }
 
 install_keybase() {
@@ -508,8 +493,6 @@ install_dev() {
 		oracle-java8-installer \
                 sbt \
                 nodejs \
-                krb5-user \
-                krb5-config \
                 erlang \
                 erlang-proper-dev \
                 rebar \
@@ -548,10 +531,9 @@ usage() {
 	echo "  wm                          - install window manager/desktop pkgs"
         echo "  dotfiles                    - get dotfiles (!! as user !!)"
         echo "  scripts                     - install scripts (not needed)"
-        echo "  syncthing                   - install syncthing (not needed)"
-        echo "  vagrant                     - install vagrant and virtualbox (not needed)"
+        echo "  syncthing                   - install syncthing"
+        echo "  vagrant                     - install vagrant and virtualbox"
         echo "  dev                         - install development environment for Java"
-        echo "  facetimehd                  - install facetimehd camera for Macbook"
         echo "  keybase                     - install keybase (!! as user !!)"
         echo "  cleanup                     - clean apt etc"
 }
@@ -598,10 +580,6 @@ main() {
 		check_is_sudo
 
                 install_dev
-	elif [[ $cmd == "facetimehd" ]]; then
-		check_is_sudo
-
-		install_facetimehd
 	elif [[ $cmd == "keybase" ]]; then
 		install_keybase
 	elif [[ $cmd == "cleanup" ]]; then
