@@ -22,6 +22,8 @@ setup_sources() {
 	apt-get update
 	apt-get install -y \
 		apt-transport-https \
+                dirmngr \
+                gnupg \
 		--no-install-recommends
 
 	cat <<-EOF > /etc/apt/sources.list
@@ -60,16 +62,6 @@ setup_sources() {
 	deb https://apt.dockerproject.org/repo debian-stretch experimental
 	EOF
 
-        # Google repo, because Chromium cannot play Netflix but Chrome can
-        cat <<-EOF > /etc/apt/sources.list.d/google-chrome-beta.list
-        deb https://dl.google.com/linux/chrome/deb/ stable main
-        EOF
-
-	# add keybase apt repo
-	cat <<-EOF > /etc/apt/sources.list.d/keybase.list
-        deb http://dist.keybase.io/linux/deb/repo/ stable main
-	EOF
-
 	# add docker gpg key
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 
@@ -82,10 +74,6 @@ setup_sources() {
 	# add the tlp apt-repo gpg key
         apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 02D65EFF
 
-        # add the Google Chrome apt-repo gpg key
-	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
-	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
-
 	# turn off translations, speed up apt-get update
 	mkdir -p /etc/apt/apt.conf.d
 	echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
@@ -94,7 +82,7 @@ setup_sources() {
 dist_upgrade() {
 	apt-get update
 	apt-get -y upgrade
-        apt-get dist-upgrade
+        apt-get -y dist-upgrade
 }
 
 # installs base packages
@@ -305,6 +293,15 @@ install_wifi() {
 
 # install stuff for i3 window manager
 install_wmapps() {
+        # Google repo, because Chromium cannot play Netflix but Chrome can
+        cat <<-EOF > /etc/apt/sources.list.d/google-chrome-beta.list
+        deb https://dl.google.com/linux/chrome/deb/ stable main
+        EOF
+
+        # add the Google Chrome apt-repo gpg key
+	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
+	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
+
 	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome google-chrome-beta"
 
 	apt-get install -y $pkgs --no-install-recommends
@@ -387,6 +384,11 @@ get_dotfiles() {
 }
 
 install_keybase() {
+	# add keybase apt repo
+	cat <<-EOF > /etc/apt/sources.list.d/keybase.list
+        deb http://dist.keybase.io/linux/deb/repo/ stable main
+	EOF
+
         curl https://keybase.io/docs/server_security/code_signing_key.asc | gpg --import
         gpg --export 222B85B0F90BE2D24CFEB93F47484E50656D16C7 | sudo apt-key add -
 
