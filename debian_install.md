@@ -5,16 +5,18 @@ This manual assumes (at least) the following versions:
 - Debian Stretch 9.1.0 (with upgrade to Buster / Testing)
 
 ## Resources used ##
+https://cdimage.debian.org/cdimage/unofficial/non-free/cd-including-firmware/
 https://www.debian.org/releases/stable/i386/ch04s03.html.en
 https://wiki.archlinux.org/index.php/Dell_XPS_15_9560
 https://github.com/rcasero/doc/wiki/Ubuntu-linux-on-Dell-XPS-15-(9560)
 
 
-https://www.meebey.net/posts/debian_on_dell_xps15/
-
 ## Preparations ##
+
 ### Download Debian distro and create bootable USB ###
-Download the Debian net-installer ISO. The following steps assume a *nix environment.
+Download the Debian net-installer ISO. Make sure to get the *non-free including firmware* ISO from
+the link above, because we need the non-free drivers for the WiFi. Pick either stable or weekly testing release.
+The following steps assume a *nix environment.
 
 Insert the USB drive and check which device is added. Either via `dmesg` or checking `/dev/...`.
 Under Linux this will presumably be `/dev/sdb`, under MacOS `/dev/disk2`.
@@ -26,18 +28,21 @@ The images can be simply copied to the device:
 
 Remove the USB stick again (under MacOS using `diskutil eject /dev/disk2`).
 
-### Resize current osx partition ###
+
+### Resize current partition ###
 Open the Windows Disk Util to update the partitions.
 
 Decrease the size for the Windows partition to make space available for Debian. You will approx need the following free room
 - 100 Gb for Debian
 - 1x the size of your RAM for SWAP (32 Gb RAM -> 32 Gb SWAP)
 
+
 ### Setup Safe Mode ###
 Login into Windows 10, and set up Safe Mode: "Change advanced Startup Options" -> "Restart Now"
   -> "Troubleshoot" -> "Advanced options" -> "Startup Settings" -> "Restart"
 
 Now reboot to get into the BIOS menu.
+
 
 ## UEFI Boot Settings ##
 Some UEFI settings and other BIOS parameters need to be configured to work correctly with Linux.
@@ -52,54 +57,15 @@ Save and restart. Initially Windows will not boot, but after some time will get 
 
 When in Windows, check the "IDE ATA/ATAPI controller" is "Intel(R) 100 Series/C230 Chipset Family SATA AHCI Controller", via "Start" -> "Windows System" -> "Control Panel" -> "Device Manager". Restart.
 
+
 ## Install Debian ##
 Shutdown the laptop and insert the USB with Debian installer. Startup, repeatedly pressing F12 for the one-time boot menu.
 
-Boot the Debian installer, easiest is to opt for the graphical installer.
+Boot the Debian installer, easiest is to opt for the graphical installer. The installer might ask to search for the WiFi firmware,
+just selecting _No_ should make it fetch from the non-free firmware included.
 
 Create at least the SWAP and EXT4 partition.
 Finish the installation.
-
-
-## Manually setup GRUB boot loader ##
-Make sure you are root (you are if you have a 'Recovery mode' Terminal)
-
-Install GRUB2 EFI (assuming a 64 bit system, the following should install `grub-efi-amd64` as dependency)
-
-    apt-get install grub-efi
-
-Remove `grub-pc` if necessary
-
-Mount the EFI partition
-
-    mkdir /boot/efi
-    mount /dev/sda1 /boot/efi
-
-Check you have rEFInd and APPLE directories inside the mounted EFI partitions
-
-Create a Debian directory and install GRUB into it
-
-    mkdir /boot/efi/EFI/debian
-    grub-install --target=x86_64 --directory=/usr/lib/grub/x86_64-efi /dev/sda1
-
-Verify the debian directory now contains the `grubx64.efi` file. Rename it so that rEFInd can show a nice icon
-
-    cd /boot/efi/EFI/debian
-    mv grubx64.efi e.efi
-
-Set the graphics correct for GRUB and some other config for stability etc
-
-    vi /etc/default/grub
-
-    ...
-    GRUB_CMDLINE_LINUX_DEFAULT="quit libata.force=noncq"
-    GRUB_CMDLINE_LINUX=""
-    ...
-
-Update GRUB and then reboot
-
-    update-grub
-    shutdown -r now
 
 
 ## Setup Debian ##
