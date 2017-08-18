@@ -313,6 +313,7 @@ install_wmapps() {
 
 	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome google-chrome-beta firefox-esr"
 
+        apt-get update
 	apt-get install -y $pkgs --no-install-recommends
 
 	# update clickpad settings
