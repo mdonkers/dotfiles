@@ -1,7 +1,7 @@
 # Install Debian on Dell XPS 15 #
 
 This manual assumes (at least) the following versions:
-- Dell XPS 15 - 9560 model from 2017
+- Dell XPS 15 - 9560 model from 2017 - BIOS version 1.3.4
 - Debian Stretch 9.1.0 (with upgrade to Buster / Testing)
 
 ## Resources used ##
@@ -15,7 +15,8 @@ https://github.com/rcasero/doc/wiki/Ubuntu-linux-on-Dell-XPS-15-(9560)
 
 ### Download Debian distro and create bootable USB ###
 Download the Debian net-installer ISO. Make sure to get the *non-free including firmware* ISO from
-the link above, because we need the non-free drivers for the WiFi. Pick either stable or weekly testing release.
+the link above, because we need the non-free drivers for the WiFi. Pick stable (Stretch) because testing
+often gives issues during install. We'll upgrade later.
 The following steps assume a *nix environment.
 
 Insert the USB drive and check which device is added. Either via `dmesg` or checking `/dev/...`.
@@ -40,6 +41,8 @@ Decrease the size for the Windows partition to make space available for Debian. 
 ### Setup Safe Mode ###
 Login into Windows 10, and set up Safe Mode: "Change advanced Startup Options" -> "Restart Now"
   -> "Troubleshoot" -> "Advanced options" -> "Startup Settings" -> "Restart"
+
+Disable "Fast Boot" in the "Power Options" menu, look for "Turn on fast startup"
 
 Now reboot to get into the BIOS menu.
 
@@ -77,12 +80,6 @@ Get a bigger font-size in the console
 
 Choose font `Terminus` with size `14x28`.
 
-Select the correct keyboard layout.
-
-    dpkg-reconfigure keyboard-configuration
-
-Choose `apple laptop` type keyboard. In some cases this might only have the tilde (~) and paragraph (§) keys exchanged.
-
 Install git to fetch our `dotfiles` repository
 
     apt-get install --no-install-recommends git
@@ -114,8 +111,8 @@ Now we can start installing tools to make the MacBook work as intended. First we
 
     cd /tmp/dotfiles
     bin/install.sh sources
-    bin/install.sh wifi broadcom
-    bin/install.sh graphics mac
+    bin/install.sh wifi other
+    bin/install.sh graphics nvidia
     bin/install.sh wm
 
 As user, **not as root** !
@@ -125,12 +122,6 @@ As user, **not as root** !
 Verify wlan is working
 
     iwconfig
-
-If wlan is not working (no network found), execute the following commands and reboot
-
-    sudo apt-get install linux-headers-$(uname -r)
-    sudo apt-get remove broadcom-sta-dkms
-    sudo bin/install.sh wifi broadcom
 
 To install Slack, first download the Debian package. Then the following commands:
 
@@ -176,6 +167,36 @@ Permanently (as root):
 
     crontab -e
     @reboot echo "XHC1" > /proc/acpi/wakeup
+
+## Repair GRUB
+If GRUB becomes disabled / corrupt because of Windows updates, this can be repaired with the Debian install disk.
+
+- Boot the install disk from USB.
+- Choose "Advanced setup"
+- Repair GRUB -> enter disk `/dev/nvme0n1`
+
+If this fails, the `debian` entry in the EFI boot sector might have become corrupted. Follow these steps:
+
+- Boot into Windows
+- Open a Powershell with Admin rights
+- Run the following commands:
+
+    diskpart
+    sel disk 0
+    list vol
+
+- Pick the EFI partition, probably the only one with FAT32 filesystem:
+
+    sel vol <number of volume>
+    assign letter=z:
+    exit
+
+- Now run `chkdsk` to repair the Debian directory:
+
+    chkdsk z:\EFI\debian /R
+
+- This should confert the directory to a file. Remove the file `del debian`
+- Exit, and follow the steps at the top of this section to reinstall GRUB
 
 
 ## Misc stuff

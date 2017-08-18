@@ -113,6 +113,7 @@ base() {
 		grep \
 		gzip \
 		hostname \
+                i8kutils \
 		indent \
 		iptables \
 		jq \
@@ -121,6 +122,8 @@ base() {
 		libc6-dev \
 		libltdl-dev \
 		libseccomp-dev \
+                linux-headers-amd64 \
+                lm-sensors \
 		locales \
 		lsof \
 		make \
@@ -154,11 +157,16 @@ base() {
 
         cleanup
 
+        # Load the i8k module for controlling the fans
+        modprobe i8k force=1
+
 	# update grub with system specific and docker configs and power-saving items
-        # acpi_rev_override=1                 -> necessary for bbswitch / bumblebee to disable discrete NVidia GPU
+        # acpi_rev_override=5                 -> necessary for bbswitch / bumblebee to disable discrete NVidia GPU
+        # pci=noaer                           -> disable Advanced Error Reporting because sometimes flooding the logs
         # enable_psr=1 disable_power_well=0   -> powersaving options for i915 kernel module
-        # pcie_aspm=force                     -> force ASPM power management
-	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=1 enable_psr=1 disable_power_well=0 pcie_aspm=force apparmor=1 security=apparmor"/g' /etc/default/grub
+        # nmi_watchdog=0                      -> disable NMI Watchdog to reboot / shutdown without problems
+	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=5 pci=noaer enable_psr=1 disable_power_well=0 nmi_watchdog=0 apparmor=1 security=apparmor"/g' /etc/default/grub
+        update-grub
         echo
         echo ">>>>>>>>>>"
 	echo "To make kernel parameters effective;"
@@ -226,24 +234,23 @@ install_graphics() {
 	local system=$1
 
 	if [[ -z "$system" ]]; then
-		echo "You need to specify whether it's dell, mac or lenovo"
+		echo "You need to specify whether it's dell or mac"
 		exit 1
 	fi
 
-	local pkgs="nvidia-kernel-dkms bumblebee-nvidia primus"
-
-	if [[ $system == "mac" ]] || [[ $system == "dell" ]]; then
-		local pkgs="xorg xserver-xorg xserver-xorg-video-intel"
+	if [[ $system == "mac" ]]; then
+		local pkgs=""
+        else
+                local pkgs="nvidia-kernel-dkms nvidia-smi bumblebee-nvidia primus"
 	fi
+
+        local pkgs="xorg xserver-xorg xserver-xorg-video-intel ${pkgs}"
 
 	apt-get install -y $pkgs --no-install-recommends
 }
 
 # install custom scripts/binaries
 install_scripts() {
-	# install acsciinema
-	curl -sSL https://asciinema.org/install | sh
-
 	# install speedtest
 	curl -sSL https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py > /usr/local/bin/speedtest
 	chmod +x /usr/local/bin/speedtest
@@ -275,19 +282,21 @@ install_wifi() {
 	local system=$1
 
 	if [[ -z "$system" ]]; then
-		echo "You need to specify whether it's broadcom or intel"
+		echo "You need to specify whether it's broadcom or other"
 		exit 1
 	fi
 
 	if [[ $system == "broadcom" ]]; then
-		local pkg="linux-headers-amd64 broadcom-sta-dkms wireless-tools"
+		local pkg="broadcom-sta-dkms wireless-tools"
 
 		apt-get install -y $pkg
                 # Unload conflicting modules and load the wireless module
                 modprobe -r b44 b43 b43legacy ssb brcmsmac bcma
                 modprobe wl
 	else
-		update-iwlwifi
+		local pkg="wireless-tools"
+
+		apt-get install -y $pkg
 	fi
 }
 
@@ -296,13 +305,13 @@ install_wmapps() {
         # Google repo, because Chromium cannot play Netflix but Chrome can
         cat <<-EOF > /etc/apt/sources.list.d/google-chrome-beta.list
         deb https://dl.google.com/linux/chrome/deb/ stable main
-        EOF
+	EOF
 
         # add the Google Chrome apt-repo gpg key
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
 
-	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome google-chrome-beta"
+	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome google-chrome-beta firefox-esr"
 
 	apt-get install -y $pkgs --no-install-recommends
 
@@ -528,8 +537,8 @@ usage() {
 	echo "Usage:"
 	echo "  sources                     - setup sources & install base pkgs"
         echo "  dist                        - setup sources & dist upgrade"
-	echo "  wifi {broadcom,intel}       - install wifi drivers"
-	echo "  graphics {dell,mac,lenovo}  - install graphics drivers"
+	echo "  wifi {broadcom,other}       - install wifi drivers"
+	echo "  graphics {dell,mac}         - install graphics drivers"
 	echo "  wm                          - install window manager/desktop pkgs"
         echo "  dotfiles                    - get dotfiles (!! as user !!)"
         echo "  scripts                     - install scripts (not needed)"

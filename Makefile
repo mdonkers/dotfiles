@@ -26,4 +26,4 @@ etc:
 	done
 	systemctl --user daemon-reload
 	sudo systemctl daemon-reload
-	sudo service macfanctld restart
+	sudo service i8kmon restart
