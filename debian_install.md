@@ -231,9 +231,7 @@ turn off after a reboot (as user):
 Follow guidelines here: http://hplipopensource.com/hplip-web/install/manual/distros/debian.html
 
 ## Use of FN-key
-Apple keyboard has special functions for the F1 - F12 keys, which are enabled by default. To use them directly
-as F1 - F12 keys the file `/sys/module/hid_apple/parameters/fnmode` can be switched from `1` to `2`. Setup scripts
-will do this automatically (because I like it that way).
+With the Dell keyboard its easy to switch between FN-key behaviour. Simply press Fn+Esc
 
 To find keycodes for any key pressed, use the following command (the second prints the full keymap):
 

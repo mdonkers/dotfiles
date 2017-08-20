@@ -159,8 +159,8 @@ bindsym XF86AudioMute exec pactl set-sink-mute 0 toggle # mute sound
 bindsym XF86AudioMicMute exec amixer -c 0 set Capture toggle # mute mic
 
 # screen brightness controls
-bindsym XF86MonBrightnessUp exec sudo ~/dotfiles/bin/screen-backlight up # increase screen brightness
-bindsym XF86MonBrightnessDown exec sudo ~/dotfiles/bin/screen-backlight down # decrease screen brightness
+bindsym XF86MonBrightnessUp exec sudo light -A 5 # increase screen brightness
+bindsym XF86MonBrightnessDown exec sudo light -U 5 # decrease screen brightness
 
 # keyboard brightness controls
 bindsym XF86KbdBrightnessUp exec sudo ~/dotfiles/bin/keyboard-backlight up # increase screen brightness

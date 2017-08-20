@@ -23,7 +23,6 @@ setup_sources() {
 	apt-get install -y \
 		apt-transport-https \
                 dirmngr \
-                gnupg \
 		--no-install-recommends
 
 	cat <<-EOF > /etc/apt/sources.list
@@ -110,6 +109,7 @@ base() {
 		gcc \
 		git \
 		gnupg \
+                gnupg2 \
 		grep \
 		gzip \
 		hostname \
@@ -165,7 +165,7 @@ base() {
         # pci=noaer                           -> disable Advanced Error Reporting because sometimes flooding the logs
         # enable_psr=1 disable_power_well=0   -> powersaving options for i915 kernel module
         # nmi_watchdog=0                      -> disable NMI Watchdog to reboot / shutdown without problems
-	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=5 pci=noaer enable_psr=1 disable_power_well=0 nmi_watchdog=0 apparmor=1 security=apparmor"/g' /etc/default/grub
+	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=5 pci=noaer i915.enable_psr=1 i915.disable_power_well=0 nmi_watchdog=0 apparmor=1 security=apparmor"/g' /etc/default/grub
         update-grub
         echo
         echo ">>>>>>>>>>"
@@ -264,6 +264,13 @@ install_scripts() {
 	# install lolcat
 	curl -sSL https://raw.githubusercontent.com/tehmaze/lolcat/master/lolcat > /usr/local/bin/lolcat
 	chmod +x /usr/local/bin/lolcat
+        
+        local scripts=( have light )
+
+	for script in "${scripts[@]}"; do
+		curl -sSL "https://misc.j3ss.co/binaries/$script" > "/usr/local/bin/${script}"
+		chmod +x "/usr/local/bin/${script}"
+	done
 }
 
 # install syncthing
@@ -319,13 +326,14 @@ install_wmapps() {
 	# update clickpad settings
 	mkdir -p /etc/X11/xorg.conf.d/
         # Not for MAC
-	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/50-synaptics-clickpad.conf > /etc/X11/xorg.conf.d/50-synaptics-clickpad.conf
+	# curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/50-clickpad.conf > /etc/X11/xorg.conf.d/50-clickpad.conf
+	# curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/70-keyboard.conf > /etc/X11/xorg.conf.d/70-keyboard.conf
 
 	# add xorg conf
-	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf > /etc/X11/xorg.conf
+	# curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf > /etc/X11/xorg.conf
 
 	# get correct sound cards on boot
-	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/modprobe.d/intel.conf > /etc/modprobe.d/intel.conf
+	# curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/modprobe.d/intel.conf > /etc/modprobe.d/intel.conf
 
 	# pretty fonts
 	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/fonts/local.conf > /etc/fonts/local.conf
