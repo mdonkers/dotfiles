@@ -409,16 +409,15 @@ get_dotfiles() {
 }
 
 install_keybase() {
-        curl -O https://prerelease.keybase.io/keybase_amd64.deb
+        curl -o /tmp/keybase_amd64.deb https://prerelease.keybase.io/keybase_amd64.deb
         # if you see an error about missing `libappindicator1`
         # from the next command, you can ignore it, as the
         # subsequent command corrects it
-        sudo dpkg -i keybase_amd64.deb
+        sudo dpkg -i /tmp/keybase_amd64.deb
         sudo apt-get install -f
-        run_keybase
-        
 	# Login and get private key
         keybase login
+        
         keybase pgp export -q 24046A96 | gpg --import
         keybase pgp export -q 24046A96 --secret | gpg --allow-secret-key-import --import
 }
