@@ -365,10 +365,14 @@ get_dotfiles() {
 	# install dotfiles from repo
         rm -rf "/home/$USERNAME/dotfiles"
 	git clone git://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
-	cd "/home/$USERNAME/dotfiles"
 
 	# installs all the things
+	cd "/home/$USERNAME/dotfiles"
 	make
+
+        # Install also my 'private' dotfiles repo
+        rm -rf "/home/$USERNAME/dotfiles-private"
+	git clone git@gitlab.com:mdonkers/dotfiles-private.git "/home/$USERNAME/dotfiles-private"
 
 	# enable dbus for the user session
 	# systemctl --user enable dbus.socket
@@ -550,12 +554,12 @@ usage() {
 	echo "  wifi {broadcom,other}       - install wifi drivers"
 	echo "  graphics {dell,mac}         - install graphics drivers"
 	echo "  wm                          - install window manager/desktop pkgs"
+        echo "  keybase                     - install keybase (!! as user !!)"
         echo "  dotfiles                    - get dotfiles (!! as user !!)"
         echo "  scripts                     - install scripts (not needed)"
         echo "  syncthing                   - install syncthing"
         echo "  vagrant                     - install vagrant and virtualbox"
         echo "  dev                         - install development environment for Java"
-        echo "  keybase                     - install keybase (!! as user !!)"
         echo "  cleanup                     - clean apt etc"
 }
 
