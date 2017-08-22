@@ -132,6 +132,12 @@ Cleanup
 
     bin/install.sh cleanup
 
+## S.M.A.R.T. monitoring for NVMe drives
+Smartmon tools / smartd might be failing because the Dell XPS is using a NVMe drive which is still in experimentel support.
+
+Check with `systemctl status smartd.service`.
+If failing, update `/etc/smartd.conf` and add the parameter `-d nvme` to the `DEVICESCAN` line.
+Restart with `sudo systemctl restart smartd.service` and check again.
 
 
 
