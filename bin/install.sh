@@ -108,6 +108,7 @@ base() {
 		dnsutils \
 		file \
 		findutils \
+                fuse \
 		gcc \
 		git \
 		gnupg \
@@ -552,8 +553,8 @@ usage() {
 	echo "  wifi {broadcom,other}       - install wifi drivers"
 	echo "  graphics {dell,mac}         - install graphics drivers"
 	echo "  wm                          - install window manager/desktop pkgs"
-        echo "  keybase                     - install keybase (!! as user !!)"
         echo "  dotfiles                    - get dotfiles (!! as user !!)"
+        echo "  keybase                     - install keybase (!! as user !!)"
         echo "  scripts                     - install scripts (not needed)"
         echo "  syncthing                   - install syncthing"
         echo "  vagrant                     - install vagrant and virtualbox"
