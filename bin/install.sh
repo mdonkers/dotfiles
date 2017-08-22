@@ -23,6 +23,8 @@ setup_sources() {
 	apt-get install -y \
 		apt-transport-https \
                 dirmngr \
+                gnupg \
+                gnupg2 \
 		--no-install-recommends
 
 	cat <<-EOF > /etc/apt/sources.list
