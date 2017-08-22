@@ -63,11 +63,6 @@ setup_sources() {
 	deb https://apt.dockerproject.org/repo debian-stretch experimental
 	EOF
 
-	# add keybase apt repo
-	cat <<-EOF > /etc/apt/sources.list.d/keybase.list
-        deb http://dist.keybase.io/linux/deb/repo/ stable main
-	EOF
-
 	# add docker gpg key
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 
@@ -79,10 +74,6 @@ setup_sources() {
 
 	# add the tlp apt-repo gpg key
         apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 02D65EFF
-
-        # add the Keybase gpg key
-        curl https://keybase.io/docs/server_security/code_signing_key.asc | gpg --import
-        gpg --export 222B85B0F90BE2D24CFEB93F47484E50656D16C7 | sudo apt-key add -
 
 	# turn off translations, speed up apt-get update
 	mkdir -p /etc/apt/apt.conf.d
@@ -418,8 +409,13 @@ get_dotfiles() {
 }
 
 install_keybase() {
-        sudo apt-get update
-        sudo apt-get install keybase
+        curl -O https://prerelease.keybase.io/keybase_amd64.deb
+        # if you see an error about missing `libappindicator1`
+        # from the next command, you can ignore it, as the
+        # subsequent command corrects it
+        sudo dpkg -i keybase_amd64.deb
+        sudo apt-get install -f
+        run_keybase
         
 	# Login and get private key
         keybase login
