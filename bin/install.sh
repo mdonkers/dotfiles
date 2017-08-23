@@ -373,10 +373,6 @@ get_dotfiles() {
 	cd "/home/$USERNAME/dotfiles"
 	make
 
-        # Install also my 'private' dotfiles repo
-        rm -rf "/home/$USERNAME/dotfiles-private"
-	git clone git@gitlab.com:mdonkers/dotfiles-private.git "/home/$USERNAME/dotfiles-private"
-
 	# enable dbus for the user session
 	# systemctl --user enable dbus.socket
 
@@ -418,9 +414,14 @@ install_keybase() {
         sudo apt-get install -f
 	# Login and get private key
         keybase login
-        
         keybase pgp export -q 24046A96 | gpg --import
         keybase pgp export -q 24046A96 --secret | gpg --allow-secret-key-import --import
+
+        # Install also my 'private' dotfiles repo
+        rm -rf "/home/$USERNAME/dotfiles-private"
+	git clone git@gitlab.com:mdonkers/dotfiles-private.git "/home/$USERNAME/dotfiles-private"
+
+        sudo ln -snf "/home/$USERNAME/dotfiles-private/bin/vpn-home" /usr/local/bin/vpn-home
 }
 
 install_virtualbox() {
@@ -554,9 +555,9 @@ usage() {
 	echo "  graphics {dell,mac}         - install graphics drivers"
 	echo "  wm                          - install window manager/desktop pkgs"
         echo "  dotfiles                    - get dotfiles (!! as user !!)"
-        echo "  keybase                     - install keybase (!! as user !!)"
         echo "  scripts                     - install scripts (not needed)"
         echo "  syncthing                   - install syncthing"
+        echo "  keybase                     - install keybase and private repo (!! as user !!)"
         echo "  vagrant                     - install vagrant and virtualbox"
         echo "  dev                         - install development environment for Java"
         echo "  cleanup                     - clean apt etc"
