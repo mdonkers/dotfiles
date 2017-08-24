@@ -167,7 +167,7 @@ base() {
         # acpi_rev_override=5                 -> necessary for bbswitch / bumblebee to disable discrete NVidia GPU
         # acpi_osi=Linux                      -> tell ACPI we're running Linux
         # pci=noaer                           -> disable Advanced Error Reporting because sometimes flooding the logs
-        # enable_psr=1 disable_power_well=0   -> powersaving options for i915 kernel module
+        # enable_psr=1 disable_power_well=0   -> powersaving options for i915 kernel module (if screen flickers, remove these)
         # nmi_watchdog=0                      -> disable NMI Watchdog to reboot / shutdown without problems
 	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=5 acpi_osi=Linux pci=noaer i915.enable_psr=1 i915.disable_power_well=0 nmi_watchdog=0 apparmor=1 security=apparmor"/g' /etc/default/grub
         update-grub
@@ -477,7 +477,7 @@ install_dev() {
         # add Sbt apt repo
         cat <<-EOF > /etc/apt/sources.list.d/sbt.list
         deb https://dl.bintray.com/sbt/debian /
-        EOF
+	EOF
 
         # add NodeJS apt repo
 	cat <<-EOF > /etc/apt/sources.list.d/nodesource-nodejs.list
@@ -538,6 +538,7 @@ install_dev() {
         cleanup
 
         # Add user to group Wireshark for capturing permissions
+        dpkg-reconfigure wireshark-common
 	sudo gpasswd -a "$USERNAME" wireshark
 
         # Install some Python plugins. Neovim adds a Python extension to NeoVIM

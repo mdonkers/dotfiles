@@ -118,6 +118,10 @@ Now we can start installing tools to make the MacBook work as intended. First we
 As user, **not as root** !
 
     bin/install.sh dotfiles
+    bin/install.sh syncthing
+    bin/install.sh keybase
+
+After Syncthing is installed, enable / start the syncthing service and set it up.
 
 Verify wlan is working
 
@@ -223,18 +227,10 @@ Having the correct UUID, add the following line to `/etc/fstab`
 
 Then simply mount the device with `mount /media/usb`
 
-## Touchpad
-For the touchpad to work nicely, both packages "xserver-xorg-input-synaptics" and "xserver-xorg-input-mtrack" are needed.
-
-## S/PDIF always on
-S/PDIF is always on, and not stored by Alsa. We can add the following line to a crontab to always
-turn off after a reboot (as user):
-
-    crontab -e
-    @reboot amixer set IEC958 off
 
 ## HP Printer installation
 Follow guidelines here: http://hplipopensource.com/hplip-web/install/manual/distros/debian.html
+
 
 ## Use of FN-key
 With the Dell keyboard its easy to switch between FN-key behaviour. Simply press Fn+Esc
@@ -243,6 +239,7 @@ To find keycodes for any key pressed, use the following command (the second prin
 
     xev | sed -n 's/^.*keycode *\([0-9]\+\).*$/keycode \1 = /p'
     xmodmap -pke
+
 
 ## Special characters
 Special characters can be typed in two ways, with the 'compose' key or by typing the unicode character.
@@ -255,20 +252,12 @@ Typing characters with the compose key works e.g. by `compose+", e` which result
 Unicode characters can also be entered directly using the combination; `ctrl+shift+u` followed by
 the numeric code of the character.
 
+
 ## Cleanup unused wifi connections
 Cleanup unused connections in:
 
     /etc/NetworkManager/system-connections
 
-## If Wifi does not work after update
-Probably there is a new kernel installed and the wifi module is not loaded. Do the following to reinstall
-the Wifi module:
-
-     sudo apt-get install linux-headers-$(uname -r)
-     sudo apt-get install --reinstall broadcom-sta-dkms wireless-tools
-     sudo modprobe wl
-
-Now you should see the Wifi being enabled again.
 
 ## Connect to WiFi via cli
 Using the `nmcli` tool it's also possible to connect instead of using the applet.
@@ -289,6 +278,7 @@ See list of all locally know connections:
 Connect to a network:
 
     nmcli connection up <Name>
+
 
 ## Some useful key commands
 
