@@ -129,8 +129,18 @@ Verify wlan is working
 
 To install Slack, first download the Debian package. Then the following commands:
 
+    sudo apt-get update
     sudo dpkg -i path/to/deb/file
     sudo apt-get install -f
+
+To install IntelliJ, download the package and extract. Move to the following location:
+
+    /usr/local/share/idea-IU-<version>
+
+Install the desktop shortcut by starting IntelliJ and from the _Configure_ menu select _Create Desktop Entry_.
+Install global deskop shortcuts to the following location:
+
+    /usr/share/applications/
 
 Cleanup
 
