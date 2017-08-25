@@ -601,6 +601,8 @@ main() {
 	elif [[ $cmd == "syncthing" ]]; then
 		install_syncthing
 	elif [[ $cmd == "vagrant" ]]; then
+		check_is_sudo
+
 		install_vagrant "$2"
 	elif [[ $cmd == "dev" ]]; then
 		check_is_sudo
