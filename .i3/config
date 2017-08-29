@@ -168,11 +168,11 @@ bindsym XF86KbdBrightnessDown exec sudo ~/dotfiles/bin/keyboard-backlight down #
 
 # Screenshots
 # Screenshot fullscreen
-bindsym Print exec "scrot -q 100 '/home/jessie/Pictures/Screenshots/%Y-%m-%d-%H-%M-%S_$wx$h.png' -e 's3cmd put -P $f s3://s3.j3ss.co/screenshots/ && echo https://s3.j3ss.co/screenshots/$n | xclip -i -selection clipboard'"
+bindsym Print exec "scrot -q 100 '/home/miel/Downloads/%Y-%m-%d-%H-%M-%S_$wx$h.png'"
 # Screenshot with selection
-bindsym $mod+Print exec "sleep 0.2; scrot -q 100 -s '/home/jessie/Pictures/Screenshots/%Y-%m-%d-%H-%M-%S_$wx$h.png' -e 's3cmd put -P $f s3://s3.j3ss.co/screenshots/ && echo https://s3.j3ss.co/screenshots/$n | xclip -i -selection clipboard'"
+bindsym $mod+Print exec "sleep 0.2; scrot -q 100 -s '/home/miel/Downloads/%Y-%m-%d-%H-%M-%S_$wx$h.png'"
 # Screenshot current focused window
-bindsym Shift+Print exec "scrot -q 100 -u '/home/jessie/Pictures/Screenshots/%Y-%m-%d-%H-%M-%S_$wx$h.png' -e 's3cmd put -P $f s3://s3.j3ss.co/screenshots/ && echo https://s3.j3ss.co/screenshots/$n | xclip -i -selection clipboard'"
+bindsym Shift+Print exec "scrot -q 100 -u '/home/miel/Downloads/%Y-%m-%d-%H-%M-%S_$wx$h.png'"
 
 # reload the configuration file
 bindsym $mod+Shift+c reload
