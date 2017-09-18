@@ -530,6 +530,7 @@ install_dev() {
                 ansible \
                 linux-perf \
                 cmake \
+                build-essential \
 		--no-install-recommends
 
         # Packages linux-perf and cmake are installed to run Linux performance tests
