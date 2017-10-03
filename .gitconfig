@@ -183,10 +183,6 @@
 
         user = mdonkers
 
-[credential]
-
-        helper = osxkeychain
-
 [http]
 
 	cookiefile = ~/.gitcookies
