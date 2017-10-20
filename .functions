@@ -365,9 +365,12 @@ xname(){
 monitor() {
   # This first mode works, but is too blurry with IntelliJ. Second mode has larger fonts and is better readable
   #xrandr --output eDP-1 --auto --primary --output HDMI-3 --mode 1920x1200 --rate 60 --panning 3840x2400+2880+0 --scale 2x2 --right-of eDP-1
-  xrandr --output eDP-1 --auto --primary --output HDMI-3 --mode 1920x1200 --rate 60 --panning 3360x2100+2880+0 --scale 1.75x1.75 --right-of eDP-1
+  #xrandr --output eDP-1 --auto --primary --output HDMI-3 --mode 1920x1200 --rate 60 --panning 3360x2100+2880+0 --scale 1.75x1.75 --right-of eDP-1
+
+  # Without HDPI screen no panning necessary. Can add scaling (e.g. 1.2x1.2) but this makes fonts blurry)
+  xrandr --output eDP-1 --auto --primary --output HDMI-1 --mode 1920x1200 --rate 60 --right-of eDP-1
 }
 
 monitor_off() {
-  xrandr --output HDMI-3 --off
+  xrandr --output HDMI-1 --off
 }

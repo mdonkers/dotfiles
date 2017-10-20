@@ -56,7 +56,7 @@ for_window [class="Wine"] floating enable
 
 # Bind certain workspaces to specific monitors
 set $monL eDP-1
-set $monR HDMI-3
+set $monR HDMI-1
 
 workspace "1: slack"   output $monL
 workspace "2: www"     output $monR
