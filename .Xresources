@@ -39,7 +39,9 @@
 
 !! The fading settings make URxvt greyed out when inactive
 *background:            S_base04
-URxvt*background:       [90]S_base04
+!! Disable transparency with [90] -prefix because gives strange 'leaking' effects
+URxvt*background:       S_base04
+!!URxvt*background:       [90]S_base04
 *foreground:            S_base00
 *depth:                 32
 *fading:                40
