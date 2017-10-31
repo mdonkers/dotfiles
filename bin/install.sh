@@ -160,6 +160,7 @@ get_dotfiles() {
 
 	# installs all the things
 	cd "/home/$USERNAME/dotfiles"
+        git checkout windows
 	make
 
 	cd "/home/$USERNAME"
