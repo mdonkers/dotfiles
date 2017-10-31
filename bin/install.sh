@@ -27,22 +27,7 @@ setup_sources() {
                 gnupg2 \
 		--no-install-recommends
 
-	cat <<-EOF > /etc/apt/sources.list
-	deb http://httpredir.debian.org/debian testing main contrib non-free
-	deb-src http://httpredir.debian.org/debian/ testing main contrib non-free
-
-	deb http://httpredir.debian.org/debian/ testing-updates main contrib non-free
-	deb-src http://httpredir.debian.org/debian/ testing-updates main contrib non-free
-
-	deb http://security.debian.org/ testing/updates main contrib non-free
-	deb-src http://security.debian.org/ testing/updates main contrib non-free
-
-	#deb http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
-	#deb-src http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
-
-	deb http://httpredir.debian.org/debian experimental main contrib non-free
-	deb-src http://httpredir.debian.org/debian experimental main contrib non-free
-
+	cat <<-EOF > /etc/apt/sources.list.d/base.list
 	# hack for latest git (don't judge)
 	deb http://ppa.launchpad.net/git-core/ppa/ubuntu xenial main
 	deb-src http://ppa.launchpad.net/git-core/ppa/ubuntu xenial main
@@ -50,30 +35,13 @@ setup_sources() {
 	# neovim
 	deb http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu xenial main
 	deb-src http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu xenial main
-
-	# tlp: Advanced Linux Power Management
-	# http://linrunner.de/en/tlp/docs/tlp-linux-advanced-power-management.html
-        deb http://ppa.launchpad.net/linrunner/tlp/ubuntu xenial main
 	EOF
-
-	# add docker apt repo
-	cat <<-EOF > /etc/apt/sources.list.d/docker.list
-	deb https://apt.dockerproject.org/repo debian-stretch main
-	deb https://apt.dockerproject.org/repo debian-stretch testing
-	deb https://apt.dockerproject.org/repo debian-stretch experimental
-	EOF
-
-	# add docker gpg key
-	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 
 	# add the git-core ppa gpg key
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys E1DD270288B4E6030699E45FA1715D88E1DF1F24
 
 	# add the neovim ppa gpg key
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DBB0BE9366964F134855E2255F96FCF8231B6DD
-
-	# add the tlp apt-repo gpg key
-        apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 02D65EFF
 
 	# turn off translations, speed up apt-get update
 	mkdir -p /etc/apt/apt.conf.d
@@ -94,15 +62,12 @@ base() {
 
 	apt-get install -y \
 		adduser \
-		alsa-utils \
-		apparmor \
 		automake \
 		bash-completion \
 		bc \
 		bridge-utils \
 		bzip2 \
 		ca-certificates \
-		cgroupfs-mount \
 		coreutils \
 		curl \
 		dnsutils \
@@ -116,17 +81,13 @@ base() {
 		grep \
 		gzip \
 		hostname \
-                i8kutils \
 		indent \
 		iptables \
 		jq \
 		less \
-		libapparmor-dev \
 		libc6-dev \
 		libltdl-dev \
 		libseccomp-dev \
-                linux-headers-amd64 \
-                lm-sensors \
 		locales \
 		lsof \
 		make \
@@ -136,8 +97,6 @@ base() {
 		net-tools \
 		network-manager \
 		openvpn \
-                pulseaudio-module-bluetooth \
-                pulseaudio-utils \
 		rxvt-unicode-256color \
 		silversearcher-ag \
 		ssh \
@@ -148,36 +107,12 @@ base() {
 		tzdata \
 		unzip \
 		xclip \
-		xcompmgr \
 		xz-utils \
 		zip \
 		--no-install-recommends
 
-	# install tlp with recommends
-	apt-get install -y tlp tlp-rdw
-
-	setup_sudo
-
         cleanup
 
-        # Load the i8k module for controlling the fans
-        modprobe i8k force=1
-
-	# update grub with system specific and docker configs and power-saving items
-        # acpi_rev_override=5                 -> necessary for bbswitch / bumblebee to disable discrete NVidia GPU
-        # acpi_osi=Linux                      -> tell ACPI we're running Linux
-        # pci=noaer                           -> disable Advanced Error Reporting because sometimes flooding the logs
-        # enable_psr=1 disable_power_well=0   -> powersaving options for i915 kernel module (if screen flickers, remove these)
-        # nmi_watchdog=0                      -> disable NMI Watchdog to reboot / shutdown without problems
-	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=5 acpi_osi=Linux pci=noaer i915.enable_psr=1 i915.disable_power_well=0 nmi_watchdog=0 apparmor=1 security=apparmor"/g' /etc/default/grub
-        update-grub
-        echo
-        echo ">>>>>>>>>>"
-	echo "To make kernel parameters effective;"
-	echo "run update-grub & reboot"
-        echo "<<<<<<<<<<"
-
-	install_docker
 	install_scripts
 }
 
@@ -187,71 +122,6 @@ cleanup() {
 	apt-get clean
 }
 
-# setup sudo for a user
-# because fuck typing that shit all the time
-# just have a decent password
-# and lock your computer when you aren't using it
-# if they have your password they can sudo anyways
-# so its pointless
-# i know what the fuck im doing ;)
-setup_sudo() {
-	# add user to sudoers
-	adduser "$USERNAME" sudo
-
-	# add user to systemd groups
-	# then you wont need sudo to view logs and shit
-	gpasswd -a "$USERNAME" systemd-journal
-	gpasswd -a "$USERNAME" systemd-network
-
-	# set secure path
-	{ \
-		echo -e 'Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"'; \
-		echo -e 'Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME EDITOR"'; \
-		echo -e "${USERNAME} ALL=(ALL) NOPASSWD:ALL"; \
-		echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery"; \
-	} >> /etc/sudoers
-
-}
-
-# installs docker master
-# and adds necessary items to boot params
-install_docker() {
-
-	# create docker group
-	sudo groupadd docker
-	sudo gpasswd -a "$USERNAME" docker
-
-
-	curl -sSL https://get.docker.com/builds/Linux/x86_64/docker-latest.tgz | tar -xvz \
-		-C /usr/local/bin --strip-components 1
-	chmod +x /usr/local/bin/docker*
-
-	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/docker.service > /etc/systemd/system/docker.service
-	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/docker.socket > /etc/systemd/system/docker.socket
-
-	systemctl daemon-reload
-	systemctl enable docker
-}
-
-# install graphics drivers
-install_graphics() {
-	local system=$1
-
-	if [[ -z "$system" ]]; then
-		echo "You need to specify whether it's dell or mac"
-		exit 1
-	fi
-
-	if [[ $system == "mac" ]]; then
-		local pkgs=""
-        else
-                local pkgs="nvidia-kernel-dkms nvidia-smi bumblebee-nvidia primus"
-	fi
-
-        local pkgs="xorg xserver-xorg xserver-xorg-video-intel ${pkgs}"
-
-	apt-get install -y $pkgs --no-install-recommends
-}
 
 # install custom scripts/binaries
 install_scripts() {
@@ -277,93 +147,12 @@ install_scripts() {
 	done
 }
 
-# install syncthing
-install_syncthing() {
-        sudo apt-get update
-        sudo apt-get install -y syncthing --no-install-recommends
-
-	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/syncthing@.service > /etc/systemd/system/syncthing@.service
-
-	systemctl daemon-reload
-	systemctl enable "syncthing@${USERNAME}"
-}
-
-# install wifi drivers
-install_wifi() {
-	local system=$1
-
-	if [[ -z "$system" ]]; then
-		echo "You need to specify whether it's broadcom or other"
-		exit 1
-	fi
-
-	if [[ $system == "broadcom" ]]; then
-		local pkg="broadcom-sta-dkms wireless-tools"
-
-		apt-get install -y $pkg
-                # Unload conflicting modules and load the wireless module
-                modprobe -r b44 b43 b43legacy ssb brcmsmac bcma
-                modprobe wl
-	else
-		local pkg="wireless-tools"
-
-		apt-get install -y $pkg
-	fi
-}
-
-# install stuff for i3 window manager
-install_wmapps() {
-        # Google repo, because Chromium cannot play Netflix but Chrome can
-        cat <<-EOF > /etc/apt/sources.list.d/google-chrome-beta.list
-        deb https://dl.google.com/linux/chrome/deb/ stable main
-	EOF
-
-        # add the Google Chrome apt-repo gpg key
-	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
-	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
-
-	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome google-chrome-beta firefox-esr"
-
-        apt-get update
-	apt-get install -y $pkgs --no-install-recommends
-
-	# update clickpad settings
-	mkdir -p /etc/X11/xorg.conf.d/
-        # Not for MAC
-	# curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/50-clickpad.conf > /etc/X11/xorg.conf.d/50-clickpad.conf
-	# curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/70-keyboard.conf > /etc/X11/xorg.conf.d/70-keyboard.conf
-
-	# add xorg conf
-	# curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf > /etc/X11/xorg.conf
-
-	# get correct sound cards on boot
-	# curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/modprobe.d/intel.conf > /etc/modprobe.d/intel.conf
-
-	# pretty fonts
-	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/fonts/local.conf > /etc/fonts/local.conf
-
-        echo
-        echo ">>>>>>>>>>"
-	echo "Fonts file setup successfully now run:"
-	echo "	dpkg-reconfigure fontconfig-config"
-	echo "with settings: "
-	echo "	Autohinter, Automatic, No."
-	echo "Run: "
-	echo "	dpkg-reconfigure fontconfig"
-        echo "<<<<<<<<<<"
-}
 
 get_dotfiles() {
 	# create subshell
 	(
 	cd "/home/$USERNAME"
         mkdir "/home/$USERNAME/.gnupg"
-
-	# setup downloads folder as tmpfs
-	# that way things are removed on reboot
-	# i like things clean but you may not want this
-	mkdir -p "/home/$USERNAME/Downloads"
-	# echo -e "\n# tmpfs for downloads\ntmpfs\t/home/${USERNAME}/Downloads\ttmpfs\tnodev,nosuid,size=2G\t0\t0" >> /etc/fstab
 
 	# install dotfiles from repo
         rm -rf "/home/$USERNAME/dotfiles"
@@ -372,13 +161,6 @@ get_dotfiles() {
 	# installs all the things
 	cd "/home/$USERNAME/dotfiles"
 	make
-
-	# enable dbus for the user session
-	# systemctl --user enable dbus.socket
-
-        sudo systemctl enable "i3lock@${USERNAME}"
-	sudo systemctl enable suspend-sedation.service
-	sudo systemctl enable powertop.service
 
 	cd "/home/$USERNAME"
 
@@ -403,65 +185,6 @@ get_dotfiles() {
 	sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 60
 	sudo update-alternatives --config editor
 	)
-}
-
-install_keybase() {
-        curl -o /tmp/keybase_amd64.deb https://prerelease.keybase.io/keybase_amd64.deb
-        # if you see an error about missing `libappindicator1`
-        # from the next command, you can ignore it, as the
-        # subsequent command corrects it
-        sudo dpkg -i /tmp/keybase_amd64.deb
-        sudo apt-get install -f
-	# Login and get private key
-        keybase login
-        keybase pgp export -q 24046A96 | gpg --import
-        keybase pgp export -q 24046A96 --secret | gpg --allow-secret-key-import --import
-
-        # Install also my 'private' dotfiles repo
-        rm -rf "/home/$USERNAME/dotfiles-private"
-	git clone git@gitlab.com:mdonkers/dotfiles-private.git "/home/$USERNAME/dotfiles-private"
-
-        sudo ln -snf "/home/$USERNAME/dotfiles-private/bin/vpn-home" /usr/local/bin/vpn-home
-}
-
-install_virtualbox() {
-	echo "deb http://download.virtualbox.org/virtualbox/debian stretch contrib" >> /etc/apt/sources.list.d/virtualbox.list
-	curl -sSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | apt-key add -
-
-	apt-get update
-	apt-get install -y \
-		virtualbox-5.1 \
-                --no-install-recommends
-}
-
-install_vagrant() {
-	VAGRANT_VERSION=1.9.7
-
-	# if we are passing the version
-	if [[ ! -z "$1" ]]; then
-		export VAGRANT_VERSION=$1
-	fi
-
-	# check if we need to install virtualbox
-	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' virtualbox-5.1 | grep "install ok installed") || echo ""
-	echo Checking for virtualbox: $PKG_OK
-	if [ "" == "$PKG_OK" ]; then
-		echo "No virtualbox. Installing virtualbox."
-		install_virtualbox
-	fi
-
-	tmpdir=`mktemp -d`
-	(
-	cd $tmpdir
-        echo "Downloading Vagrant to $tmpdir"
-	curl -sSL -o vagrant.deb https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb
-	dpkg -i vagrant.deb
-	)
-
-	rm -rf $tmpdir
-
-	# install plugins
-	vagrant plugin install vagrant-vbguest vagrant-disksize
 }
 
 install_dev() {
@@ -525,8 +248,6 @@ install_dev() {
                 python3-pip \
                 python3-setuptools \
                 python3-wheel \
-                wireshark-qt \
-                awscli \
                 ansible \
                 linux-perf \
                 cmake \
@@ -537,10 +258,6 @@ install_dev() {
         # Get the FlameGraph software here: https://github.com/brendangregg/FlameGraph
 
         cleanup
-
-        # Add user to group Wireshark for capturing permissions
-        dpkg-reconfigure wireshark-common
-	sudo gpasswd -a "$USERNAME" wireshark
 
         # Install some Python plugins. Neovim adds a Python extension to NeoVIM
         pip3 install --system virtualenv maybe neovim
@@ -553,14 +270,8 @@ usage() {
 	echo "Usage:"
 	echo "  sources                     - setup sources & install base pkgs"
         echo "  dist                        - setup sources & dist upgrade"
-	echo "  wifi {broadcom,other}       - install wifi drivers"
-	echo "  graphics {dell,mac}         - install graphics drivers"
-	echo "  wm                          - install window manager/desktop pkgs"
         echo "  dotfiles                    - get dotfiles (!! as user !!)"
         echo "  scripts                     - install scripts (not needed)"
-        echo "  syncthing                   - install syncthing"
-        echo "  keybase                     - install keybase and private repo (!! as user !!)"
-        echo "  vagrant                     - install vagrant and virtualbox"
         echo "  dev                         - install development environment for Java"
         echo "  cleanup                     - clean apt etc"
 }
@@ -585,32 +296,14 @@ main() {
 		# setup /etc/apt/sources.list
 		setup_sources
                 dist_upgrade
-	elif [[ $cmd == "wifi" ]]; then
-		install_wifi "$2"
-	elif [[ $cmd == "graphics" ]]; then
-		check_is_sudo
-
-		install_graphics "$2"
-	elif [[ $cmd == "wm" ]]; then
-		check_is_sudo
-
-		install_wmapps
 	elif [[ $cmd == "dotfiles" ]]; then
 		get_dotfiles
 	elif [[ $cmd == "scripts" ]]; then
 		install_scripts
-	elif [[ $cmd == "syncthing" ]]; then
-		install_syncthing
-	elif [[ $cmd == "vagrant" ]]; then
-		check_is_sudo
-
-		install_vagrant "$2"
 	elif [[ $cmd == "dev" ]]; then
 		check_is_sudo
 
                 install_dev
-	elif [[ $cmd == "keybase" ]]; then
-		install_keybase
 	elif [[ $cmd == "cleanup" ]]; then
 	        cleanup
 	else

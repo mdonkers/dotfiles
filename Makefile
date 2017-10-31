@@ -24,6 +24,3 @@ etc:
 		f=$$(echo $$file | sed -e 's|$(CURDIR)||'); \
 		sudo ln -f $$file $$f; \
 	done
-	systemctl --user daemon-reload
-	sudo systemctl daemon-reload
-	sudo service i8kmon restart
