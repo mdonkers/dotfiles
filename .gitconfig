@@ -186,3 +186,5 @@
 [http]
 
 	cookiefile = ~/.gitcookies
+[credential]
+	helper = store
