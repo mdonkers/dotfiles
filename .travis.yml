@@ -1,11 +1,13 @@
 ---
-  language: haskell
+  language: bash
   sudo: false
   notifications:
     email: false
-  ghc:
-    - 7.10
-  install:
-    - cabal install shellcheck
+  addons:
+    apt:
+      sources:
+      - debian-sid    # Grab ShellCheck from the Debian repo
+      packages:
+      - shellcheck
   script:
     - ./test.sh
