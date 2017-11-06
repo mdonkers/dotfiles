@@ -189,9 +189,6 @@ get_dotfiles() {
 }
 
 install_dev() {
-	mkdir -p /Development
-        chown -R $USERNAME:$USERNAME /Development
-
         # add Java apt repo
 	cat <<-EOF > /etc/apt/sources.list.d/webupd8team-java.list
         deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
@@ -232,7 +229,7 @@ install_dev() {
         curl --silent https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc | apt-key add -
 
         # add the Ansible gpg key
-        apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
+        apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 93C4A3FD7BB9C367
 
         # Automatically accept license agreement
         echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
@@ -250,7 +247,6 @@ install_dev() {
                 python3-setuptools \
                 python3-wheel \
                 ansible \
-                linux-perf \
                 cmake \
                 build-essential \
 		--no-install-recommends
