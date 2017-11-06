@@ -202,8 +202,8 @@ install_dev() {
 
         # add NodeJS apt repo
 	cat <<-EOF > /etc/apt/sources.list.d/nodesource-nodejs.list
-        deb https://deb.nodesource.com/node_7.x jessie main
-        deb-src https://deb.nodesource.com/node_7.x jessie main
+        deb https://deb.nodesource.com/node_7.x trusty main
+        deb-src https://deb.nodesource.com/node_7.x trusty main
 	EOF
 
         # add Erlang / Elixir apt repo
