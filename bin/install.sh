@@ -222,9 +222,27 @@ install_docker() {
 	sudo gpasswd -a "$USERNAME" docker
 
 
-	curl -sSL https://get.docker.com/builds/Linux/x86_64/docker-latest.tgz | tar -xvz \
-		-C /usr/local/bin --strip-components 1
+        ### --- Section is basically a copy of htotheizzo --- ###
+
+        # get the binary
+	local tmp_tar=/tmp/docker.tgz
+	local binary_uri="https://download.docker.com/linux/static/edge/x86_64"
+	local docker_version
+	docker_version=$(curl -sSL "https://api.github.com/repos/docker/docker-ce/releases/latest" | jq --raw-output .tag_name)
+	docker_version=${docker_version#v}
+	# local docker_sha256
+	# docker_sha256=$(curl -sSL "${binary_uri}/docker-${docker_version}.tgz.sha256" | awk '{print $1}')
+	(
+	set -x
+	curl -fSL "${binary_uri}/docker-${docker_version}.tgz" -o "${tmp_tar}"
+	# echo "${docker_sha256} ${tmp_tar}" | sha256sum -c -
+	tar -C /usr/local/bin --strip-components 1 -xzvf "${tmp_tar}"
+	rm "${tmp_tar}"
+	docker -v
+	)
 	chmod +x /usr/local/bin/docker*
+
+        ### --- end of copy --- ###
 
 	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/docker.service > /etc/systemd/system/docker.service
 	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/docker.socket > /etc/systemd/system/docker.socket
@@ -322,7 +340,7 @@ install_wmapps() {
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
 
-	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome google-chrome-beta firefox-esr"
+	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome xinput google-chrome-beta firefox-esr"
 
         apt-get update
 	apt-get install -y $pkgs --no-install-recommends
