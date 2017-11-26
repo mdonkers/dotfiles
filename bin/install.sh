@@ -135,6 +135,7 @@ base() {
                 neovim \
 		net-tools \
 		network-manager \
+                openresolv \
 		openvpn \
                 pulseaudio-module-bluetooth \
                 pulseaudio-utils \
