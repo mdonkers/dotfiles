@@ -137,8 +137,7 @@ base() {
 		network-manager \
                 openresolv \
 		openvpn \
-                pulseaudio-module-bluetooth \
-                pulseaudio-utils \
+                pulseaudio \
 		rxvt-unicode-256color \
 		silversearcher-ag \
 		ssh \
@@ -341,10 +340,16 @@ install_wmapps() {
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
 
-	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome xinput google-chrome-beta firefox-esr"
-
         apt-get update
+
+	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome xinput google-chrome-beta firefox-esr"
 	apt-get install -y $pkgs --no-install-recommends
+
+        local sound_pkgs="pulseaudio-module-bluetooth pulseaudio-utils pavucontrol bluez-firmware blueman"
+        apt-get install -y ${sound_pkgs} --no-install-recommends
+
+        # update Pulse audio settings (replaces entire line)
+        sed -i.bak '/flat-volumes/c\flat-volumes = no' /etc/pulse/daemon.conf
 
 	# update clickpad settings
 	mkdir -p /etc/X11/xorg.conf.d/
@@ -500,8 +505,8 @@ install_dev() {
 
         # add NodeJS apt repo
 	cat <<-EOF > /etc/apt/sources.list.d/nodesource-nodejs.list
-        deb https://deb.nodesource.com/node_7.x jessie main
-        deb-src https://deb.nodesource.com/node_7.x jessie main
+        deb https://deb.nodesource.com/node_9.x jessie main
+        deb-src https://deb.nodesource.com/node_9.x jessie main
 	EOF
 
         # add Erlang / Elixir apt repo
@@ -536,7 +541,6 @@ install_dev() {
 	apt-get install -y \
 		oracle-java8-installer \
                 sbt \
-                nodejs \
                 erlang \
                 erlang-proper-dev \
                 rebar \
@@ -550,6 +554,7 @@ install_dev() {
                 linux-perf \
                 cmake \
                 build-essential \
+                postgresql-client \
 		--no-install-recommends
 
         # Packages linux-perf and cmake are installed to run Linux performance tests
@@ -562,7 +567,7 @@ install_dev() {
 	sudo gpasswd -a "$USERNAME" wireshark
 
         # Install some Python plugins. Neovim adds a Python extension to NeoVIM
-        pip3 install --system virtualenv maybe neovim
+        pip3 install --system virtualenv maybe neovim j2cli
 }
 
 

@@ -25,6 +25,9 @@ export DOCKER_CONTENT_TRUST=0
 
 export MAVEN_OPTS="-Xms1024m -Xmx2048m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -DdependencyLocationsEnabled=false"
 
+export NVM_DIR="/Development/tools/nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm
+
 # Stuff for AWS CLI
 export AWS_HOME=/home/miel/.aws
 export AWS_DEFAULT_PROFILE=rfh-control

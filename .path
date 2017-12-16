@@ -7,4 +7,6 @@ export GRADLE_HOME=/Development/java/gradle-2.10
 export SCALA_HOME=/Development/java/scala-2.11.7
 export NODE_HOME=/Development/java/node-v5.7.0-darwin-x64
 
-export PATH=/usr/local/bin:${JAVA_HOME}/bin:${M2}:${GRADLE_HOME}/bin:${SCALA_HOME}/bin:${NODE_HOME}/bin:${PATH}
+export FLYWAY_HOME=/Development/tools/flyway-4.2.0
+
+export PATH=/usr/local/bin:${JAVA_HOME}/bin:${M2}:${GRADLE_HOME}/bin:${SCALA_HOME}/bin:${NODE_HOME}/bin:${FLYWAY_HOME}:${PATH}

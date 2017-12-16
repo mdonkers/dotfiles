@@ -138,7 +138,7 @@ To install IntelliJ, download the package and extract. Move to the following loc
     /usr/local/share/idea-IU-<version>
 
 Install the desktop shortcut by starting IntelliJ and from the _Configure_ menu select _Create Desktop Entry_.
-Install global deskop shortcuts to the following location:
+This will put a `.desktop` entry in `~/.local/share/spplications/`. Install global deskop shortcuts to the following location:
 
     /usr/share/applications/
 
