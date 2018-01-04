@@ -307,6 +307,7 @@ wifi-add() {
         else
           echo
           echo "wifi-add needs two parameters; (SSID) and (passwd)"
+          echo "place password between single quotes (') for correct escaping"
           echo
           nmcli dev wifi list
         fi
