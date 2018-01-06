@@ -21,6 +21,11 @@ export QT_AUTO_SCREEN_SCALE_FACTOR=1
 
 export DOCKER_CONTENT_TRUST=0
 
+# if it's an ssh session export GPG_TTY
+if [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; then
+	GPG_TTY=$(tty)
+	export GPG_TTY
+fi
 
 
 export MAVEN_OPTS="-Xms1024m -Xmx2048m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -DdependencyLocationsEnabled=false"

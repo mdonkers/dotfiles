@@ -5,11 +5,7 @@ After=network.target docker.socket firewall.service
 Requires=docker.socket
 
 [Service]
-Environment=GOMAXPROCS=2
-ExecStartPre=-/sbin/iptables -F DOCKER
-ExecStartPre=-/sbin/iptables -X DOCKER
-ExecStartPre=-/sbin/iptables -N DOCKER
-ExecStartPre=-/sbin/iptables -I DOCKER -i ext_if ! -s 127.0.0.1 -j DROP
+Type=notify
 ExecStart=/usr/local/bin/dockerd -D \
 		  -s overlay2 \
 		  -H fd:// \
@@ -17,8 +13,7 @@ ExecStart=/usr/local/bin/dockerd -D \
 		  --userland-proxy=true \
 		  --live-restore \
 		  --iptables=true
-
-MountFlags=slave
+ExecReload=/bin/kill -s HUP $MAINPID
 LimitNOFILE=1048576
 # Having non-zero Limit*s causes performance problems due to accounting overhead
 # in the kernel. We recommend using cgroups to do container-local accounting.

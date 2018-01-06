@@ -2,17 +2,41 @@
 set -e
 
 help() {
-	echo "htotheizzo - a simple script that makes updating/upgrading homebrew or apt-get, gems, pip packages, and node packages so much easier"
+	echo "htotheizzo - a simple script that makes updating/upgrading homebrew or apt, gems, pip packages, and node packages so much easier"
+}
+
+# Choose a user account to use
+get_user() {
+  if [ -z "${TARGET_USER-}" ]; then
+    mapfile -t options < <(find /home/* -maxdepth 0 -printf "%f\\n" -type d)
+    # if there is only one option just use that user
+    if [ "${#options[@]}" -eq "1" ]; then
+      readonly TARGET_USER="${options[0]}"
+      echo "Using user account: ${TARGET_USER}"
+      return
+    fi
+
+    # iterate through the user options and print them
+    PS3='Which user account should be used? '
+
+    select opt in "${options[@]}"; do
+      readonly TARGET_USER=$opt
+      break
+    done
+  fi
 }
 
 dcleanup(){
-	docker rm $(docker ps --filter status=exited -q 2>/dev/null) 2>/dev/null
-	docker rmi $(docker images --filter dangling=true -q 2>/dev/null) 2>/dev/null
+  local containers
+  mapfile -t containers < <(docker ps --filter status=exited -q 2>/dev/null)
+  docker rm "${containers[@]}" 2>/dev/null
+  local images
+  mapfile -t images < <(docker images --filter dangling=true -q 2>/dev/null)
+  docker rmi "${images[@]}" 2>/dev/null
 }
 
 update_docker() {
-	local username=$(find /home/* -maxdepth 0 -printf "%f" -type d)
-	local user_home="/home/${username}"
+	local user_home="/home/${TARGET_USER}"
 	local docker_dir="${user_home}/docker"
 
         # set init
@@ -64,8 +88,9 @@ update_docker() {
 		if [[ ! -d "${user_home}/.vim/bundle/Dockerfile" ]]; then
 			mkdir -p "${user_home}/.vim/bundle/Dockerfile"
 		fi
+                # shellcheck disable=SC2216
 		yes | cp -r contrib/syntax/vim/* "${user_home}/.vim/bundle/Dockerfile/"
-		chown -R "${username}" "${user_home}/.vim/bundle/Dockerfile"
+                chown -R "${TARGET_USER}" "${user_home}/.vim/bundle/Dockerfile"
 		)
 	fi
 
@@ -106,15 +131,22 @@ update_docker() {
 }
 
 update_linux() {
-	apt-get -y update
-	apt-get -y upgrade
-	apt-get -y autoremove
-	apt-get -y autoclean
-	apt-get -y clean
+	apt -y update
+	apt -y upgrade
+	apt -y autoremove
+	apt -y autoclean
+	apt -y clean
 	rm -rf /var/lib/apt/lists/*
 
         # Make sure Neovim with Python keeps working after updates
         sudo pip3 install --system neovim
+}
+
+update_kubectl() {
+  KUBERNETES_VERSION=$(curl -sSL https://storage.googleapis.com/kubernetes-release/release/stable.txt)
+  curl -fSL "https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/linux/amd64/kubectl" > /Development/tools/kubectl
+  chown -R "${TARGET_USER}" "/Development/tools/kubectl"
+  chmod +x /usr/local/bin/kubectl
 }
 
 update() {
@@ -131,8 +163,10 @@ update() {
 		fi
 
 		# update
+                get_user;
 		update_linux;
 		update_docker;
+                update_kubectl;
 	else
 		echo "We don't have update functions for OS: ${OSTYPE}"
 		echo "Moving on..."

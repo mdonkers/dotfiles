@@ -19,8 +19,8 @@ check_is_sudo() {
 # sets up apt sources
 # assumes you are going to use debian testing
 setup_sources() {
-	apt-get update
-	apt-get install -y \
+	apt update
+	apt install -y \
 		apt-transport-https \
                 dirmngr \
                 gnupg \
@@ -75,24 +75,24 @@ setup_sources() {
 	# add the tlp apt-repo gpg key
         apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 02D65EFF
 
-	# turn off translations, speed up apt-get update
+	# turn off translations, speed up apt update
 	mkdir -p /etc/apt/apt.conf.d
 	echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
 }
 
 dist_upgrade() {
-	apt-get update
-	apt-get -y upgrade
-        apt-get -y dist-upgrade
+	apt update
+	apt -y upgrade
+        apt -y dist-upgrade
 }
 
 # installs base packages
 # the utter bare minimal shit
 base() {
-	apt-get update
-	apt-get -y upgrade
+	apt update
+	apt -y upgrade
 
-	apt-get install -y \
+	apt install -y \
 		adduser \
 		alsa-utils \
 		apparmor \
@@ -154,7 +154,7 @@ base() {
 		--no-install-recommends
 
 	# install tlp with recommends
-	apt-get install -y tlp tlp-rdw
+	apt install -y tlp tlp-rdw
 
 	setup_sudo
 
@@ -182,9 +182,9 @@ base() {
 }
 
 cleanup() {
-	apt-get autoremove
-	apt-get autoclean
-	apt-get clean
+	apt autoremove
+	apt autoclean
+	apt clean
 }
 
 # setup sudo for a user
@@ -268,7 +268,7 @@ install_graphics() {
 
         local pkgs="xorg xserver-xorg xserver-xorg-video-intel ${pkgs}"
 
-	apt-get install -y $pkgs --no-install-recommends
+	apt install -y $pkgs --no-install-recommends
 }
 
 # install custom scripts/binaries
@@ -297,8 +297,8 @@ install_scripts() {
 
 # install syncthing
 install_syncthing() {
-        sudo apt-get update
-        sudo apt-get install -y syncthing --no-install-recommends
+        sudo apt update
+        sudo apt install -y syncthing --no-install-recommends
 
 	curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/syncthing@.service > /etc/systemd/system/syncthing@.service
 
@@ -318,14 +318,14 @@ install_wifi() {
 	if [[ $system == "broadcom" ]]; then
 		local pkg="broadcom-sta-dkms wireless-tools"
 
-		apt-get install -y $pkg
+		apt install -y $pkg
                 # Unload conflicting modules and load the wireless module
                 modprobe -r b44 b43 b43legacy ssb brcmsmac bcma
                 modprobe wl
 	else
 		local pkg="wireless-tools"
 
-		apt-get install -y $pkg
+		apt install -y $pkg
 	fi
 }
 
@@ -340,13 +340,13 @@ install_wmapps() {
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
 	apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
 
-        apt-get update
+        apt update
 
 	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome xinput google-chrome-beta firefox-esr"
-	apt-get install -y $pkgs --no-install-recommends
+	apt install -y $pkgs --no-install-recommends
 
         local sound_pkgs="pulseaudio-module-bluetooth pulseaudio-utils pavucontrol bluez-firmware blueman"
-        apt-get install -y ${sound_pkgs} --no-install-recommends
+        apt install -y ${sound_pkgs} --no-install-recommends
 
         # update Pulse audio settings (replaces entire line)
         sed -i.bak '/flat-volumes/c\flat-volumes = no' /etc/pulse/daemon.conf
@@ -435,7 +435,7 @@ install_keybase() {
         # from the next command, you can ignore it, as the
         # subsequent command corrects it
         sudo dpkg -i /tmp/keybase_amd64.deb
-        sudo apt-get install -f
+        sudo apt install -f
 	# Login and get private key
         keybase login
         keybase pgp export -q 24046A96 | gpg --import
@@ -452,8 +452,8 @@ install_virtualbox() {
 	echo "deb http://download.virtualbox.org/virtualbox/debian stretch contrib" >> /etc/apt/sources.list.d/virtualbox.list
 	curl -sSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | apt-key add -
 
-	apt-get update
-	apt-get install -y \
+	apt update
+	apt install -y \
 		virtualbox-5.1 \
                 --no-install-recommends
 }
@@ -537,8 +537,8 @@ install_dev() {
         # Automatically accept license agreement
         echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
 
-	apt-get update
-	apt-get install -y \
+	apt update
+	apt install -y \
 		oracle-java8-installer \
                 sbt \
                 erlang \
