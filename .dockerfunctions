@@ -75,6 +75,35 @@ EOF
 # Container Aliases
 #
 
+gimp(){
+  del_stopped gimp
+
+  docker run -d \
+    -v /etc/localtime:/etc/localtime:ro \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -e "DISPLAY=unix${DISPLAY}" \
+    -v "${HOME}/Pictures:/root/Pictures" \
+    -v "${HOME}/.gtkrc:/root/.gtkrc" \
+    -e GDK_SCALE \
+    -e GDK_DPI_SCALE \
+    --name gimp \
+    jess/gimp
+}
+
+hollywood(){
+  docker run --rm -it \
+    --name hollywood \
+    jess/hollywood
+}
+
+htop(){
+  docker run --rm -it \
+    --pid host \
+    --net none \
+    --name htop \
+    jess/htop
+}
+
 # nginx(){
 # 	del_stopped nginx
 # 
