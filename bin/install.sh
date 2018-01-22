@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 
 # install.sh
 #	This script installs my basic setup for a debian laptop
@@ -205,8 +206,8 @@ setup_sudo() {
 
 	# set secure path
 	{ \
-		echo -e 'Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"'; \
-		echo -e 'Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME EDITOR"'; \
+		echo -e "Defaults	secure_path=\"/usr/local/go/bin:/home/${USERNAME}/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\""; \
+		echo -e 'Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR"'; \
 		echo -e "${USERNAME} ALL=(ALL) NOPASSWD:ALL"; \
 		echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery"; \
 	} >> /etc/sudoers
@@ -488,6 +489,47 @@ install_vagrant() {
 	vagrant plugin install vagrant-vbguest vagrant-disksize
 }
 
+# install/update golang from source
+install_golang() {
+	export GO_VERSION
+	GO_VERSION=$(curl -sSL "https://golang.org/VERSION?m=text")
+	export GO_SRC=/usr/local/go
+
+	# if we are passing the version
+	if [[ ! -z "$1" ]]; then
+		GO_VERSION=$1
+	fi
+
+	# purge old src
+	if [[ -d "$GO_SRC" ]]; then
+		sudo rm -rf "$GO_SRC"
+		sudo rm -rf "$GOPATH"
+	fi
+
+	GO_VERSION=${GO_VERSION#go}
+
+	# subshell
+	(
+	curl -sSL "https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz" | sudo tar -v -C /usr/local -xz
+	local user="$USER"
+	# rebuild stdlib for faster builds
+	sudo chown -R "${user}" /usr/local/go/pkg
+	CGO_ENABLED=0 go install -a -installsuffix cgo std
+	)
+
+	# get commandline tools
+	(
+	set -x
+	set +e
+	go get github.com/golang/lint/golint
+	go get golang.org/x/tools/cmd/cover
+	go get golang.org/x/review/git-codereview
+	go get golang.org/x/tools/cmd/goimports
+	go get golang.org/x/tools/cmd/gorename
+	go get golang.org/x/tools/cmd/guru
+	)
+}
+
 install_dev() {
 	mkdir -p /Development
         chown -R $USERNAME:$USERNAME /Development
@@ -633,6 +675,8 @@ main() {
 		check_is_sudo
 
                 install_dev
+	elif [[ $cmd == "golang" ]]; then
+		install_golang "$2"
 	elif [[ $cmd == "keybase" ]]; then
 		install_keybase
 	elif [[ $cmd == "cleanup" ]]; then
