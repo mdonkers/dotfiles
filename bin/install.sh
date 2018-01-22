@@ -169,7 +169,7 @@ base() {
         # pci=noaer                           -> disable Advanced Error Reporting because sometimes flooding the logs
         # enable_psr=1 disable_power_well=0   -> powersaving options for i915 kernel module (if screen flickers, remove these)
         # nmi_watchdog=0                      -> disable NMI Watchdog to reboot / shutdown without problems
-	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=5 acpi_osi=Linux pci=noaer i915.enable_psr=1 i915.disable_power_well=0 nmi_watchdog=0 apparmor=1 security=apparmor"/g' /etc/default/grub
+	sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=5 acpi_osi=Linux pci=noaer nmi_watchdog=0 apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
         update-grub
         echo
         echo ">>>>>>>>>>"
