@@ -189,6 +189,30 @@ Permanently (as root):
     @reboot echo "XHC1" > /proc/acpi/wakeup
 
 ## Repair GRUB
+
+### Grub Rescue Mode
+When you enter Grub Rescue Mode after (or during) Windows updates, it might be that partitions changed. Use the following
+steps to get a working bootloader again.
+
+See which partition is currently being used to boot from (look for the `prefix=(hd0,...)/boot/grub`)
+
+    set
+
+See which partitions there are and use this to find the 'new' boot partition:
+
+    ls
+    ls (hd0,gpt5)/boot/
+
+Set the new boot partition:
+
+    set prefix=(hd0,...)/boot/grub
+    insmod normal
+    normal
+
+Now you should be able to boot into Windows to continue updates, or boot to Debian again. From Debian, do
+a `sudo grub-install` to install Grub again into the correct partition.
+
+### Grub disabled / corrupted
 If GRUB becomes disabled / corrupt because of Windows updates, this can be repaired with the Debian install disk.
 
 - Boot the install disk from USB.
