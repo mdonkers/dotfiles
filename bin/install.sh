@@ -32,11 +32,11 @@ setup_sources() {
 	cat <<-EOF > /etc/apt/preferences
 	Package: *
 	Pin: release a=testing
-	Pin-Priority: 1000
+	Pin-Priority: 900
 
 	Package: *
-	Pin: release a=unstable
-	Pin-Priority: 2
+	Pin: release o=Debian
+	Pin-Priority: -10
 	EOF
 
 	cat <<-EOF > /etc/apt/sources.list
