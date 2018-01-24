@@ -28,6 +28,17 @@ setup_sources() {
                 gnupg2 \
 		--no-install-recommends
 
+        # Pin packages to "testing" distribution
+	cat <<-EOF > /etc/apt/preferences
+	Package: *
+	Pin: release a=testing
+	Pin-Priority: 1000
+
+	Package: *
+	Pin: release a=unstable
+	Pin-Priority: 2
+	EOF
+
 	cat <<-EOF > /etc/apt/sources.list
 	deb http://httpredir.debian.org/debian testing main contrib non-free
 	deb-src http://httpredir.debian.org/debian/ testing main contrib non-free
@@ -332,6 +343,11 @@ install_wifi() {
 
 # install stuff for i3 window manager
 install_wmapps() {
+        # Get Firefox from unstable to use the latest version
+        cat <<-EOF > /etc/apt/sources.list.d/firefox.list
+        deb http://http.debian.net/debian unstable main
+	EOF
+
         # Google repo, because Chromium cannot play Netflix but Chrome can
         cat <<-EOF > /etc/apt/sources.list.d/google-chrome-beta.list
         deb https://dl.google.com/linux/chrome/deb/ stable main
@@ -343,8 +359,9 @@ install_wmapps() {
 
         apt update
 
-	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome xinput google-chrome-beta firefox-esr"
-	apt install -y $pkgs --no-install-recommends
+	local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome xinput google-chrome-beta"
+	apt install -y ${pkgs} --no-install-recommends
+	apt install -y -t unstable firefox --no-install-recommends
 
         local sound_pkgs="pulseaudio-module-bluetooth pulseaudio-utils pavucontrol bluez-firmware blueman"
         apt install -y ${sound_pkgs} --no-install-recommends
@@ -527,6 +544,8 @@ install_golang() {
 	go get golang.org/x/tools/cmd/goimports
 	go get golang.org/x/tools/cmd/gorename
 	go get golang.org/x/tools/cmd/guru
+
+        go get github.com/cbednarski/hostess/cmd/hostess
 	)
 }
 

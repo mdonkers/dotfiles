@@ -64,7 +64,7 @@ EOF
   docker restart nginx
 
   # add host to /etc/hosts
-  # hostess add "$server" 127.0.0.1
+  hostess add "$server" 127.0.0.1
 
   # open browser
   browser-exec "http://${server}"
@@ -114,3 +114,20 @@ htop(){
 # 		--name nginx \
 # 		nginx
 # }
+
+transmission(){
+  del_stopped transmission
+
+  docker run -d \
+    -v /etc/localtime:/etc/localtime:ro \
+    -v "${HOME}/Torrents:/transmission/download" \
+    -v "${HOME}/.transmission:/transmission/config" \
+    -p 9091:9091 \
+    -p 51413:51413 \
+    -p 51413:51413/udp \
+    --name transmission \
+    ${DOCKER_REPO_PREFIX}/transmission
+
+  hostess add transmission "$(docker inspect --format '{{.NetworkSettings.Networks.bridge.IPAddress}}' transmission)"
+  browser-exec "http://transmission:9091"
+}
