@@ -628,7 +628,7 @@ install_dev() {
 	sudo gpasswd -a "$USERNAME" wireshark
 
         # Install some Python plugins. Neovim adds a Python extension to NeoVIM
-        pip3 install --system virtualenv maybe neovim j2cli
+        pip3 install --system virtualenv maybe neovim j2cli pygments
 }
 
 

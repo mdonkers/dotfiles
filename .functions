@@ -128,6 +128,12 @@ json() {
 	fi
 }
 
+# Syntax-highlighted Markdown files
+# Usage: `markdown <file>`
+markdown() {
+  pygmentize -l md $1 | less -R
+}
+
 # Run `dig` and display the most useful info
 digga() {
 	dig +nocmd "$1" any +multiline +noall +answer
