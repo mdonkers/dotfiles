@@ -294,6 +294,14 @@ dbs() {
 		/org/freedesktop/DBus org.freedesktop.DBus.ListNames
 }
 
+restart_gpgagent() {
+  # Restart the gpg agent.
+  kill -9 $(pidof scdaemon) >/dev/null 2>&1
+  kill -9 $(pidof gpg-agent) >/dev/null 2>&1
+  gpg-connect-agent /bye >/dev/null 2>&1
+  gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1
+}
+
 # check if uri is up
 isup() {
 	local uri=$1
