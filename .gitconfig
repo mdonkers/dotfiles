@@ -63,6 +63,9 @@
 	# a.k.a. ‘delete merged’
 	dm = "!git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d"
 
+        # List remote branches with their latest commit timestamp and author (to find outdated branches)
+        stale = "!f() { for branch in $(git branch -r | grep -v HEAD); do echo \"$(git show --format=\"%ci %cr %an\" $branch | head -n 1) \t$branch\"; done | sort -r; }; f"
+
 	# List contributors with number of commits
 	contributors = shortlog --summary --numbered
 	lg = log --color --decorate --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an (%G?)>%Creset' --abbrev-commit
