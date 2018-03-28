@@ -353,6 +353,42 @@ unpushed() {
   echo
 }
 
+# Pull / update all repositories in the current folder
+rebase() {
+  RED='\033[0;31m'
+  BLUE='\033[0;34m'
+  NC='\033[0m' # No Color
+
+  find . -maxdepth 2 -mindepth 1 -type d -print0 | while IFS= read -r -d '' DIR; do
+    # Subshell because we cd
+    (
+    cd "${DIR}"
+    if [[ -d ".git" ]]
+    then
+      echo
+
+      if [[ -n "$(git log --branches --not --remotes --simplify-by-decoration --decorate --oneline | grep "$(git rev-parse --abbrev-ref HEAD)" 2> /dev/null)" ]]; then
+        #if [[ -n "$(git log --branches --not --remotes --simplify-by-decoration --decorate --oneline 2> /dev/null)" ]]; then
+        echo -e "${RED}GIT - current branch has unpushed changes, don't update! ; "
+        pwd
+        echo -e "${NC}"
+      elif ! git diff-index --quiet HEAD -- ; then
+        echo -e "${RED}GIT - folder has changes, don't update! ; "
+        pwd
+        echo -e "${NC}"
+      else
+        echo -e "${BLUE}GIT - updating following directory; "
+        pwd
+        echo -e "${NC}"
+        git pull --prune
+      fi
+    fi
+    )
+  done
+
+  echo
+}
+
 # get the name of a x window
 xname(){
 	local window_id=$1
