@@ -48,16 +48,16 @@
 	reb = "!r() { git rebase -i HEAD~$1; }; r"
 
 	# Find branches containing commit
-	fb = "!f() { git branch -a --contains $1; }; f"
+	fb = "!f() { git branch -a --contains \"$1\"; }; f"
 
 	# Find tags containing commit
-	ft = "!f() { git describe --always --contains $1; }; f"
+	ft = "!f() { git describe --always --contains \"$1\"; }; f"
 
 	# Find commits by source code
-	fc = "!f() { git log --pretty=format:'%C(yellow)%h	%Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S$1; }; f"
+	fc = "!f() { git log --pretty=format:'%C(yellow)%h	%Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S\"$1\"; }; f"
 
 	# Find commits by commit message
-	fm = "!f() { git log --pretty=format:'%C(yellow)%h	%Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
+	fm = "!f() { git log --pretty=format:'%C(yellow)%h	%Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=\"$1\"; }; f"
 
 	# Remove branches that have already been merged with master
 	# a.k.a. ‘delete merged’
