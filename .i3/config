@@ -237,5 +237,5 @@ exec --no-startup-id "i3-msg 'workspace 3: console; append_layout ~/.i3/workspac
 # then startup programs
 exec --no-startup-id i3-msg 'workspace 1: slack; exec slack;'
 exec --no-startup-id i3-msg 'workspace 2: www; exec google-chrome;'
-exec --no-startup-id i3-msg 'workspace 3: console; exec urxvt; exec urxvt'
+exec --no-startup-id i3-msg 'workspace 3: console; exec urxvt; exec urxvt; exec urxvt'
 

@@ -14,18 +14,38 @@
         }
       ]
     },
-
     {
       "border": "normal",
-      "current_border_width": 4,
       "floating": "auto_off",
+      "layout": "splith",
       "percent": 0.30,
-      "swallows": [
+      "type": "con",
+      "nodes": [
         {
-          "class": "^URxvt$"
+          "border": "normal",
+          "current_border_width": 4,
+          "floating": "auto_off",
+          "percent": 0.50,
+          "swallows": [
+            {
+              "class": "^URxvt$"
+            }
+          ],
+          "type": "con"
+        },
+        {
+          "border": "normal",
+          "current_border_width": 4,
+          "floating": "auto_off",
+          "percent": 0.50,
+          "swallows": [
+            {
+              "class": "^URxvt$"
+            }
+          ],
+          "type": "con"
         }
-      ],
-      "type": "con"
+      ]
     }
   ]
 }
