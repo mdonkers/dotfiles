@@ -130,6 +130,7 @@ base() {
 		hostname \
                 i8kutils \
 		indent \
+                inotify-tools \
 		iptables \
 		jq \
 		less \
