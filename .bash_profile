@@ -46,5 +46,7 @@ for option in autocd globstar; do
 	shopt -s "$option" 2> /dev/null
 done
 
-# print a fortune when the terminal opens
-#fortune -a -s | lolcat
+# source kubectl bash completion
+if hash kubectl 2>/dev/null; then
+  source <(kubectl completion bash)
+fi

@@ -147,6 +147,7 @@ update_kubectl() {
   curl -fSL "https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/linux/amd64/kubectl" > /Development/tools/kubectl
   chown -R "${TARGET_USER}" "/Development/tools/kubectl"
   chmod +x /usr/local/bin/kubectl
+  echo "kuebctl $(kubectl version --client --short)"
 }
 
 update() {
