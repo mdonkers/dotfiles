@@ -25,3 +25,4 @@ Session.vim
 .irssi/scripts/autorun/blocker.pl
 .irssi/startup
 .nginx/conf.d/*
+.fonts/**/.uuid
