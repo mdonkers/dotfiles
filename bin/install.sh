@@ -552,6 +552,7 @@ install_golang() {
 
 install_dev() {
 	mkdir -p /Development
+	mkdir -p /Development/{misc,projects,tools,workspaces}
         chown -R $USERNAME:$USERNAME /Development
 
         # add Java apt repo
@@ -563,12 +564,6 @@ install_dev() {
         # add Sbt apt repo
         cat <<-EOF > /etc/apt/sources.list.d/sbt.list
         deb https://dl.bintray.com/sbt/debian /
-	EOF
-
-        # add NodeJS apt repo
-	cat <<-EOF > /etc/apt/sources.list.d/nodesource-nodejs.list
-        deb https://deb.nodesource.com/node_9.x jessie main
-        deb-src https://deb.nodesource.com/node_9.x jessie main
 	EOF
 
         # add Erlang / Elixir apt repo
@@ -587,9 +582,6 @@ install_dev() {
         # add the Sbt gpg key
         apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 2EE0EA64E40A89B84B2DF73499E82A75642AC823
 
-        # add the NodeSource NodeJS gpg key
-        curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
-
         # add the Erlang Solutions gpg key
         curl --silent https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc | apt-key add -
 
@@ -601,7 +593,8 @@ install_dev() {
 
 	apt update
 	apt install -y \
-		oracle-java8-installer \
+                openjdk-8-jdk \
+                openjdk-8-dbg \
                 sbt \
                 erlang \
                 erlang-proper-dev \
@@ -616,6 +609,7 @@ install_dev() {
                 linux-perf \
                 cmake \
                 build-essential \
+                gdb \
                 postgresql-client \
 		--no-install-recommends
 
@@ -630,6 +624,18 @@ install_dev() {
 
         # Install some Python plugins. Neovim adds a Python extension to NeoVIM
         pip3 install --system virtualenv maybe neovim j2cli pygments
+
+        # Install NVM -> Node Version Manager
+	cat <<-EOF > /Development/tools/nvm-install.sh
+        export NVM_DIR="/Development/tools/nvm" && (
+  git clone https://github.com/creationix/nvm.git "$NVM_DIR"
+  cd "$NVM_DIR"
+  git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" origin`
+  ) && . "$NVM_DIR/nvm.sh"
+	EOF
+        chown $USERNAME:$USERNAME /Development/tools/nvm-install.sh
+        chmod +x /Development/tools/nvm-install.sh
+        sudo -u $USERNAME nvm-install.sh
 }
 
 
