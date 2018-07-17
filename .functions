@@ -313,6 +313,13 @@ isup() {
 	fi
 }
 
+# Check which process uses the given port
+whoseport() {
+  local port=$1
+  lsof -i ":$port" | grep LISTEN
+}
+
+
 # Add new wifi network with (SSID) and (passwd) as parameters
 wifi-add() {
 	if [ $# -eq 2 ]; then
