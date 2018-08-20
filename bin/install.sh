@@ -123,6 +123,7 @@ base() {
                 fuse \
 		gcc \
 		git \
+                git-lfs \
 		gnupg \
                 gnupg2 \
 		grep \
