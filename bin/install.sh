@@ -160,6 +160,7 @@ base() {
 		tree \
 		tzdata \
 		unzip \
+                uswsusp \
 		xclip \
 		xcompmgr \
 		xz-utils \
