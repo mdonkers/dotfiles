@@ -116,6 +116,7 @@ update_docker() {
 update_linux() {
 	apt -y update
 	apt -y upgrade
+        apt install -t unstable firefox --no-install-recommends
 	apt -y autoremove
 	apt -y autoclean
 	apt -y clean
