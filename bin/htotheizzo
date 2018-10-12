@@ -122,8 +122,8 @@ update_linux() {
 	apt -y clean
 	rm -rf /var/lib/apt/lists/*
 
-        # Make sure Neovim with Python keeps working after updates
-        sudo pip3 install --system neovim
+        # Make sure Neovim and other packages are installed and up-to-date
+        sudo pip3 install --upgrade --system virtualenv maybe neovim j2cli pygments
 }
 
 update_kubectl() {
