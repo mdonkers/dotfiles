@@ -28,16 +28,16 @@ setup_sources() {
                 gnupg2 \
 		--no-install-recommends
 
-        # Pin packages to "testing" distribution
-	cat <<-EOF > /etc/apt/preferences
-	Package: *
-	Pin: release a=testing
-	Pin-Priority: 900
-
-	Package: *
-	Pin: release o=Debian
-	Pin-Priority: -10
-	EOF
+        # Pin packages to "testing" distribution - Not needed for Firefox it seems
+#	cat <<-EOF > /etc/apt/preferences
+#	Package: *
+#	Pin: release a=testing
+#	Pin-Priority: 900
+#
+#	Package: *
+#	Pin: release o=Debian
+#	Pin-Priority: -10
+#	EOF
 
 	cat <<-EOF > /etc/apt/sources.list
 	deb http://httpredir.debian.org/debian testing main contrib non-free
@@ -301,7 +301,7 @@ install_scripts() {
 	# install lolcat
 	curl -sSL https://raw.githubusercontent.com/tehmaze/lolcat/master/lolcat > /usr/local/bin/lolcat
 	chmod +x /usr/local/bin/lolcat
-        
+
         local scripts=( have light )
 
 	for script in "${scripts[@]}"; do
