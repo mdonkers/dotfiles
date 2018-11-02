@@ -186,11 +186,21 @@ autocmd FileType qf wincmd J
 ":cn      next error
 ":cp      previous error
 ":clist   list all errors
-map <C-n> :cn<CR>
-map <C-m> :cp<CR>
+map <leader>n :cn<CR>
+map <leader>m :cp<CR>
+" Mapping to navigate to current / first result
+map <leader>cc :cc<CR>
 
 " Close quickfix easily
-nnoremap <leader>a :cclose<CR>
+nnoremap <leader>c :cclose<CR>
+
+" And location counterparts
+map <leader>. :lnext<CR>
+map <leader>, :lprevious<CR>
+" Mapping to navigate to current / first result
+map <leader>ll :ll<CR>
+
+nnoremap <leader>l :lclose<CR>
 
 
 nnoremap <silent> <leader>q :Sayonara<CR>
@@ -299,7 +309,7 @@ autocmd BufNewFile,BufReadPost *.md setl ts=4 sw=4 sts=4 expandtab
 " Dockerfile settings
 autocmd FileType dockerfile set noexpandtab
 
-" shell/config/systemd settings
+" shell/config/systemd settings (don't expand tab in shell scripts due to here-doc)
 autocmd FileType fstab,systemd set noexpandtab
 autocmd FileType gitconfig,sh set noexpandtab
 
@@ -437,10 +447,19 @@ function! Multiple_cursors_after()
 endfunction
 
 
+"==================== NeoMake =====================
+
+call neomake#configure#automake('nw', 1000)
+" Open the location-list when issues are found
+let g:neomake_open_list = 2
+" Enabled makers for different languages
+let g:neomake_elixir_enabled_makers = ['mix', 'credo']
+
+
 "==================== NerdTree ====================
 " For toggling
 nmap <C-n> :NERDTreeToggle<CR>
-noremap <Leader>n :NERDTreeToggle<cr>
+"noremap <Leader>n :NERDTreeToggle<cr> " Clashes with quickfix shortcuts
 noremap <Leader>f :NERDTreeFind<cr>
 
 let NERDTreeShowHidden=1

@@ -76,3 +76,6 @@
 [submodule ".vim/bundle/vim-buftabline"]
 	path = .vim/bundle/vim-buftabline
 	url = https://github.com/ap/vim-buftabline.git
+[submodule ".vim/bundle/neomake"]
+	path = .vim/bundle/neomake
+	url = https://github.com/neomake/neomake.git
