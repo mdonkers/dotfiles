@@ -28,16 +28,20 @@ setup_sources() {
                 gnupg2 \
 		--no-install-recommends
 
-        # Pin packages to "testing" distribution - Not needed for Firefox it seems
-#	cat <<-EOF > /etc/apt/preferences
-#	Package: *
-#	Pin: release a=testing
-#	Pin-Priority: 900
-#
-#	Package: *
-#	Pin: release o=Debian
-#	Pin-Priority: -10
-#	EOF
+	# Pin packages to "testing" distribution
+	cat <<-EOF > /etc/apt/preferences
+	Package: *
+	Pin: release o=Debian,a=testing
+	Pin-Priority: 900
+
+	Package: *
+	Pin: release o=Debian,a=unstable
+	Pin-Priority: 300
+
+	Package: *
+	Pin: release o=Debian
+	Pin-Priority: -1
+	EOF
 
 	cat <<-EOF > /etc/apt/sources.list
 	deb http://httpredir.debian.org/debian testing main contrib non-free
@@ -65,7 +69,7 @@ setup_sources() {
 
 	# tlp: Advanced Linux Power Management
 	# http://linrunner.de/en/tlp/docs/tlp-linux-advanced-power-management.html
-        deb http://ppa.launchpad.net/linrunner/tlp/ubuntu xenial main
+	deb http://ppa.launchpad.net/linrunner/tlp/ubuntu xenial main
 	EOF
 
 	# add docker apt repo
