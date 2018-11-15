@@ -323,3 +323,15 @@ Connect to a network:
 - Copy/paste from RXVT Terminal:            CTRL+ALT+C/V
 
 
+## Disabled Speedstep
+
+For some reason the XPS might jump into some kind of "safe" mode where all cores are locked to 800 MHz.
+The machine feels a bit slow and the CPU temp never gets above 50 C (no fans spinning). To double check use
+this command:
+
+    watch grep \"cpu MHz\" /proc/cpuinfo
+
+Speedstep can be enabled again by disconnecting the battery. For more information, see here;
+https://www.reddit.com/r/Dell/comments/5uh6wo/fixing_your_dell_xps_cpu_stuck_at_minimum/
+
+

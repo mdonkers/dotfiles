@@ -129,5 +129,5 @@ alias pubkey="more ~/.ssh/id_ed25519.pub | xclip -selection clipboard | echo '=>
 alias prikey="more ~/.ssh/id_ed25519 | xclip -selection clipboard | echo '=> Private key copied to pasteboard.'"
 
 # Prevent terminal losing focus when running Maven commands
-alias mvn='mvn -T=1C -Djava.awt.headless=true -Ddocker.useColor=false'
+alias mvn='mvn -T=2C -Djava.awt.headless=true'
 

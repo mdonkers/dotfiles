@@ -28,6 +28,11 @@ setup_sources() {
                 gnupg2 \
 		--no-install-recommends
 
+	# Set "testing" distribution as default
+	cat <<-EOF > /etc/apt/apt.conf
+	APT::Default-Release "testing";
+	EOF
+
 	# Pin packages to "testing" distribution
 	cat <<-EOF > /etc/apt/preferences
 	Package: *
@@ -629,7 +634,7 @@ install_dev() {
 	sudo gpasswd -a "$USERNAME" wireshark
 
         # Install some Python plugins. Neovim adds a Python extension to NeoVIM
-        pip3 install --system virtualenv maybe neovim j2cli pygments
+        pip3 install --system virtualenv maybe neovim j2cli-3 pygments
 
         # Install NVM -> Node Version Manager
 	cat <<-EOF > /Development/tools/nvm-install.sh
