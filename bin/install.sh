@@ -572,11 +572,6 @@ install_dev() {
         deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
 	EOF
 
-        # add Sbt apt repo
-        cat <<-EOF > /etc/apt/sources.list.d/sbt.list
-        deb https://dl.bintray.com/sbt/debian /
-	EOF
-
         # add Erlang / Elixir apt repo
         cat <<-EOF > /etc/apt/sources.list.d/erlang-solutions.list
         deb https://packages.erlang-solutions.com/ubuntu trusty contrib
@@ -606,7 +601,6 @@ install_dev() {
 	apt install -y \
                 openjdk-8-jdk \
                 openjdk-8-dbg \
-                sbt \
                 erlang \
                 erlang-proper-dev \
                 rebar \

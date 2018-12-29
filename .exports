@@ -33,12 +33,6 @@ export MAVEN_OPTS="-Xms1024m -Xmx2048m -XX:+TieredCompilation -XX:TieredStopAtLe
 export NVM_DIR="/Development/tools/nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm
 
-# Stuff for AWS CLI
-export AWS_HOME=/home/miel/.aws
-export AWS_DEFAULT_PROFILE=rfh-control
-export AWS_SECURITY_TOKEN=arn:aws:iam::751693495402:mfa/mieldonkers
-export AWS_CBOR_DISABLE=1
-
 # pip (Python installer) should only run if there is a virtualenv currently activated
 export PIP_REQUIRE_VIRTUALENV=true
 # use syspip (= pip) to update global packages without a virtualenv environment
