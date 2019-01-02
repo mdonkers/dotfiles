@@ -130,6 +130,8 @@ base() {
 	file \
 	findutils \
 	fuse \
+	fwupd \
+	fwupdate \
 	gcc \
 	git \
 	git-lfs \
