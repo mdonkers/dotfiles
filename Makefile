@@ -4,7 +4,7 @@ all: bin dotfiles etc
 
 bin:
 	# add aliases for things in bin
-	for file in $(shell find $(CURDIR)/bin -type f -not -name "*-backlight" -not -name ".*.swp"); do \
+	for file in $(shell find $(CURDIR)/bin -type f -not -name "install.sh" -not -name "*-backlight" -not -name ".*.swp"); do \
 		f=$$(basename $$file); \
 		sudo ln -sf $$file /usr/local/bin/$$f; \
 	done
