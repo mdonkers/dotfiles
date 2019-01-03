@@ -487,12 +487,13 @@ install_virtualbox() {
 
   apt update
   apt install -y \
-	virtualbox-5.1 \
+	virtualbox \
+	virtualbox-guest-additions-iso \
 	--no-install-recommends
 }
 
 install_vagrant() {
-  VAGRANT_VERSION=1.9.7
+  VAGRANT_VERSION=2.2.2
 
   # if we are passing the version
   if [[ ! -z "$1" ]]; then
@@ -500,7 +501,7 @@ install_vagrant() {
   fi
 
   # check if we need to install virtualbox
-  PKG_OK=$(dpkg-query -W --showformat='${Status}\n' virtualbox-5.1 | grep "install ok installed") || echo ""
+  PKG_OK=$(dpkg-query -W --showformat='${Status}\n' virtualbox | grep "install ok installed") || echo ""
   echo Checking for virtualbox: $PKG_OK
   if [ "" == "$PKG_OK" ]; then
 	echo "No virtualbox. Installing virtualbox."
