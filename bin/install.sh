@@ -576,6 +576,11 @@ install_dev() {
 	deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
 	EOF
 
+  # add Azul Zulu Java apt repo
+  cat <<-EOF > /etc/apt/sources.list.d/azul-java.list
+	deb http://repos.azulsystems.com/debian stable main
+	EOF
+
   # add Erlang / Elixir apt repo
   cat <<-EOF > /etc/apt/sources.list.d/erlang-solutions.list
 	deb https://packages.erlang-solutions.com/ubuntu trusty contrib
@@ -589,8 +594,8 @@ install_dev() {
   # add the Java webupd8team gpg key
   apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
 
-  # add the Sbt gpg key
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 2EE0EA64E40A89B84B2DF73499E82A75642AC823
+  # add the Azul Zulu Java gpg key
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9
 
   # add the Erlang Solutions gpg key
   curl --silent https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc | apt-key add -
@@ -613,7 +618,6 @@ install_dev() {
 	python3-setuptools \
 	python3-wheel \
 	wireshark-qt \
-	awscli \
 	ansible \
 	linux-perf \
 	cmake \
