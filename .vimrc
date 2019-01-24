@@ -120,6 +120,10 @@ set expandtab
 set complete-=i                 " Same effect as  complete=.,w,b,u,t
 set completeopt=longest,menuone
 
+" Set concealing sections (shown when cursor is on line)
+set conceallevel=2
+set concealcursor-=n
+
 
 " open help vertically
 command! -nargs=* -complete=help Help vertical belowright help <args>
@@ -423,6 +427,16 @@ let g:erl_company="Instana"
 " ==================== Fugitive ====================
 nnoremap <leader>ga :Git add %:p<CR><CR>
 nnoremap <leader>gs :Gstatus<CR>
+
+
+" ==================== indentLine ====================
+" Let indentLine use current conceal options
+let g:indentLine_conceallevel  = &conceallevel
+let g:indentLine_concealcursor = &concealcursor
+
+
+" ==================== vim-markdown ====================
+let g:vim_markdown_folding_disabled = 1
 
 
 " ==================== vim-multiple-cursors ====================

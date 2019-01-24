@@ -79,3 +79,6 @@
 [submodule ".vim/bundle/neomake"]
 	path = .vim/bundle/neomake
 	url = https://github.com/neomake/neomake.git
+[submodule ".vim/bundle/vim-markdown"]
+	path = .vim/bundle/vim-markdown
+	url = https://github.com/plasticboy/vim-markdown.git
