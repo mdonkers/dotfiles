@@ -48,6 +48,9 @@ alias sudo='sudo '
 # Redo previous command but as sudo
 alias redo='sudo $(history -p !!)'
 
+# AG (SilverSearcher) search hidden files by default as well (respecting ignored in .agignore)
+alias ag='ag --hidden'
+
 # Get week number
 alias week='date +%V'
 

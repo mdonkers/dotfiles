@@ -42,7 +42,7 @@ Temporary Items
 .directory
 
 # Linux trash folder which might appear on any partition or disk
-.Trash-*<Paste>
+.Trash-*
 
 ##
 # Vim

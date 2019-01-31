@@ -1,0 +1,12 @@
+
+# Basically ignore all hidden directories (so --hidden only includes hidden files)
+.*/
+
+.git/
+.gitignore
+.gitmodules
+
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
+
+.netrwhist
