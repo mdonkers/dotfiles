@@ -15,7 +15,6 @@ alias -- -="cd -"
 
 # Shortcuts
 alias dl="cd ~/Downloads"
-alias g="git"
 alias h="history"
 alias gc=". /usr/local/bin/gitdate && git commit -v "
 
@@ -71,24 +70,11 @@ alias flush="dscacheutil -flushcache && killall -HUP mDNSResponder"
 alias sniff="sudo ngrep -d 'en1' -t '^(GET|POST) ' 'tcp and port 80'"
 alias httpdump="sudo tcpdump -i en1 -n -s 0 -w - | grep -a -o -E \"Host\: .*|GET \/.*\""
 
-# Canonical hex dump; some systems have this symlinked
-command -v hd > /dev/null || alias hd="hexdump -C"
-
-# OS X has no `md5sum`, so use `md5` as a fallback
-command -v md5sum > /dev/null || alias md5sum="md5"
-
-# OS X has no `sha1sum`, so use `shasum` as a fallback
-command -v sha1sum > /dev/null || alias sha1sum="shasum"
-
 # Trim new lines and copy to clipboard
 alias c="tr -d '\n' | xclip -selection clipboard"
 
 # URL-encode strings
 alias urlencode='python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1]);"'
-
-# Merge PDF files
-# Usage: `mergepdf -o output.pdf input{1,2,3}.pdf`
-alias mergepdf='/System/Library/Automator/Combine\ PDF\ Pages.action/Contents/Resources/join.py'
 
 # Intuitive map function
 # For example, to list all directories that contain a certain file:
@@ -122,12 +108,6 @@ alias mv='mv -i'
 # untar
 alias untar='tar xzvf'
 
-# Pipe my public key to my clipboard.
-alias pubkey="more ~/.ssh/id_ed25519.pub | xclip -selection clipboard | echo '=> Public key copied to pasteboard.'"
-
-# Pipe my private key to my clipboard.
-alias prikey="more ~/.ssh/id_ed25519 | xclip -selection clipboard | echo '=> Private key copied to pasteboard.'"
-
 # Prevent terminal losing focus when running Maven commands
-alias mvn='mvn -T=2C -Djava.awt.headless=true'
+alias mvn='mvn -T=1C -Djava.awt.headless=true'
 
