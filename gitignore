@@ -127,11 +127,6 @@ tags
 *.a
 *.lib
 
-# Executables
-*.exe
-*.out
-*.app
-
 ##
 # Go
 ##
@@ -156,7 +151,6 @@ _cgo_export.*
 
 _testmain.go
 
-*.exe
 *.test
 *.prof
 
@@ -168,6 +162,7 @@ _testmain.go
 target/
 checkstyle-cachefile
 out/
+.attach_pid*
 
 # IntelliJ files
 .idea
@@ -178,5 +173,4 @@ out/
 ##
 # Misc
 ##
-*.log
 *.sqlite
