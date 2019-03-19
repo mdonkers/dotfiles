@@ -84,7 +84,7 @@
 	whitespace = fix
 
 [branch]
-          
+
         autosetupmerge = true
 
 [core]
@@ -149,6 +149,8 @@
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
         stat = true
+	tool = vimdiff
+	conflictStyle = diff3
 
 [push]
 
@@ -183,7 +185,7 @@
 	insteadOf = "gist:"
 
 [user]
-        
+
         name = Miel Donkers
         email = miel.donkers@instana.com
         signingkey = 24046A96
@@ -195,8 +197,14 @@
 [http]
 
 	cookiefile = ~/.gitcookies
+
 [filter "lfs"]
-	clean = git-lfs clean -- %f
+
+    clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+
+[mergetool]
+
+  prompt = false
