@@ -244,6 +244,21 @@ cmap w!! w !sudo tee > /dev/null %
 " Set CTRL+C to copy to the system clipboard
 vnoremap <C-c> "+y
 
+
+" Create function to easily convert Unix timestamps to readable format
+function! ReplaceUnixTimestamps()
+  " Save cursor position
+  let l:save = winsaveview()
+  " Replace timestamps with readable ones
+  %s/\zs\(\d\{10}\)\d\{3}/\=strftime('"%F %T%z"', str2nr(submatch(1)))/g
+  " Move cursor to original position
+  call winrestview(l:save)
+  echo "Replaced UNIX timestamps"
+endfunction
+" Bind the function to a shortcut
+nnoremap <leader>t :call ReplaceUnixTimestamps()<CR>
+
+
 " Replace the current buffer with the given new file. That means a new file
 " will be open in a buffer while the old one will be deleted
 com! -nargs=1 -complete=file Breplace edit <args>| bdelete #
