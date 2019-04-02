@@ -249,8 +249,8 @@ vnoremap <C-c> "+y
 function! ReplaceUnixTimestamps()
   " Save cursor position
   let l:save = winsaveview()
-  " Replace timestamps with readable ones
-  %s/\zs\(\d\{10}\)\d\{3}/\=strftime('"%F %T%z"', str2nr(submatch(1)))/g
+  " Replace timestamps with readable ones ("\zs" and "\ze" sets boundaries for which part of string is replaced)
+  %s/\(\D\|^\)\zs\(\d\{10}\)\d\{3}\ze\(\D\|$\)/\=strftime('"%F %T%z"', str2nr(submatch(2)))/g
   " Move cursor to original position
   call winrestview(l:save)
   echo "Replaced UNIX timestamps"
