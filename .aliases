@@ -4,6 +4,8 @@
 alias open='browser-exec "$@"'
 alias pbcopy='xclip -selection clipboard'
 alias pbpaste='xclip -selection clipboard -o'
+# easily copy image to clipboard (for pasting in browsers)
+alias imgcopy='xclip -selection clipboard -t image/png -i '
 
 # Easier navigation: .., ..., ...., ....., ~ and -
 alias ..="cd .."
@@ -47,6 +49,9 @@ alias sudo='sudo '
 
 # Redo previous command but as sudo
 alias redo='sudo $(history -p !!)'
+
+# Restart bluetooth to resolve connection issues
+alias restart_bluetooth='sudo modprobe -r btusb && sleep 20 && sudo modprobe btusb'
 
 # AG (SilverSearcher) search hidden files by default as well (respecting ignored in .agignore)
 alias ag='ag --hidden'
