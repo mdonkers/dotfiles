@@ -157,7 +157,8 @@ bindsym $mod+Shift+0 move container to workspace 10
 bindsym XF86AudioRaiseVolume exec pactl set-sink-volume 0 +5% #increase sound volume
 bindsym XF86AudioLowerVolume exec pactl set-sink-volume 0 -5% #decrease sound volume
 bindsym XF86AudioMute exec pactl set-sink-mute 0 toggle # mute sound
-bindsym XF86AudioMicMute exec amixer -c 0 set Capture toggle # mute mic
+#bindsym XF86AudioMicMute exec amixer -c 0 set Capture toggle # mute mic
+bindsym XF86AudioStop exec pactl set-source-mute 1 toggle # mute mic
 # Abuse the play contols for bluetooth audio volume
 bindsym XF86AudioNext exec pactl set-sink-volume "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" +5% #increase sound volume
 bindsym XF86AudioPrev exec pactl set-sink-volume "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" -5% #decrease sound volume
