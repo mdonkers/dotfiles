@@ -66,6 +66,11 @@
 	# a.k.a. ‘delete merged’
   dm = "!git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d"
 
+	# Remove squashed / rebased branches, merged with the 'current' active branch
+	# Need to explicitly spawn a Bash shell because of the [[ ]] which only exist in Bash (not sh)
+	# a.k.a. 'delete squashed'
+  ds = "!bash -c 'git for-each-ref refs/heads/ \"--format=%(refname:short)\" | while read branch; do mergeBase=$(git merge-base $(git rev-parse --abbrev-ref HEAD) $branch) && [[ $(git cherry $(git rev-parse --abbrev-ref HEAD) $(git commit-tree $(git rev-parse $branch^{tree}) -p $mergeBase -m _)) == \"-\"* ]] && git branch -D $branch; done;' --"
+
 		# List remote branches with their latest commit timestamp and author (to find outdated branches)
   stale = "!f() { for branch in $(git branch -r | grep -v HEAD); do echo \"$(git show --format=\"%ci %cr %an\" $branch | head -n 1) \t$branch\"; done | sort -r; }; f"
 

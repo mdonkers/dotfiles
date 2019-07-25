@@ -44,6 +44,9 @@ export LS_COLORS='no=00:fi=00:di=01;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40
 # Always enable colored `grep` output
 alias grep='grep --color=auto '
 
+# Also output colors via less (especially when piping)
+alias less='less -R'
+
 # Enable aliases to be sudo’ed
 alias sudo='sudo '
 
@@ -53,8 +56,11 @@ alias redo='sudo $(history -p !!)'
 # Restart bluetooth to resolve connection issues
 alias restart_bluetooth='sudo modprobe -r btusb && sleep 20 && sudo modprobe btusb'
 
+# Do a full virus scan with optimized parameters
+alias virusscan='sudo freshclam --show-progress && sudo clamscan --max-filesize=512M --max-scansize=4000M --recursive=yes --infected -l clamav.log --exclude=/dev --exclude=/proc --exclude=/sys /'
+
 # AG (SilverSearcher) search hidden files by default as well (respecting ignored in .agignore)
-alias ag='ag --hidden'
+alias ag='ag --hidden --pager="less -R"'
 
 # Get week number
 alias week='date +%V'
