@@ -55,8 +55,8 @@ setup_sources() {
 	deb http://httpredir.debian.org/debian/ testing-updates main contrib non-free
 	deb-src http://httpredir.debian.org/debian/ testing-updates main contrib non-free
 
-	deb http://security.debian.org/ testing/updates main contrib non-free
-	deb-src http://security.debian.org/ testing/updates main contrib non-free
+	deb http://security.debian.org/ testing-security main contrib non-free
+	deb-src http://security.debian.org/ testing-security main contrib non-free
 
 	#deb http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
 	#deb-src http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
