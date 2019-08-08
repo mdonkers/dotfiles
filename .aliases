@@ -54,7 +54,9 @@ alias sudo='sudo '
 alias redo='sudo $(history -p !!)'
 
 # Restart bluetooth to resolve connection issues
-alias restart_bluetooth='sudo modprobe -r btusb && sleep 20 && sudo modprobe btusb'
+alias fix_bluetooth='sudo modprobe -r btusb && sleep 20 && sudo modprobe btusb'
+# Similar for Wifi
+alias fix_wifi='sudo modprobe -r ath10k_pci && sleep 2 && sudo modprobe -r ath10k_core && sleep 10 && sudo modprobe ath10k_core && sleep 2 && sudo modprobe ath10k_pci'
 
 # Do a full virus scan with optimized parameters
 alias virusscan='sudo freshclam --show-progress && sudo clamscan --max-filesize=512M --max-scansize=4000M --recursive=yes --infected -l clamav.log --exclude=/dev --exclude=/proc --exclude=/sys /'
