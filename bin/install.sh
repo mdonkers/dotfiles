@@ -374,7 +374,7 @@ install_wmapps() {
 
   apt update
 
-  local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot slim arandr network-manager-gnome xinput google-chrome-beta"
+  local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot arandr network-manager-gnome xinput google-chrome-beta"
   apt install -y ${pkgs} --no-install-recommends
   apt install -y -t unstable firefox --no-install-recommends
 
