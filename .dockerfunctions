@@ -13,7 +13,7 @@ dcleanup(){
   docker rm -v $(docker ps --filter status=exited -q 2>/dev/null) 2>/dev/null
   docker rmi $(docker images --filter dangling=true -q 2>/dev/null) 2>/dev/null
   docker volume rm $(docker volume ls -qf dangling=true 2>/dev/null) 2>/dev/null
-  docker network prune 2>/dev/null
+  docker network prune -f 2>/dev/null
   docker image prune -a -f --filter "until=4320h" 2>/dev/null
 }
 
@@ -104,6 +104,18 @@ htop(){
     --net none \
     --name htop \
     jess/htop
+}
+
+virtualbox(){
+  del_stopped virtualbox
+
+  docker run -d \
+	-v /etc/localtime:/etc/localtime:ro \
+	-v /tmp/.X11-unix:/tmp/.X11-unix \
+	-e "DISPLAY=unix${DISPLAY}" \
+	--privileged \
+	--name virtualbox \
+	jess/virtualbox
 }
 
 # nginx(){
