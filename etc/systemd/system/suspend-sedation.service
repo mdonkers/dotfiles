@@ -12,7 +12,8 @@ StopWhenUnneeded=true
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-Environment="ALARM_SEC=300"
+# Go from sleep to hibernate after 30 min
+Environment="ALARM_SEC=1800"
 Environment="WAKEALARM=/sys/class/rtc/rtc0/wakealarm"
 
 ExecStart=/usr/sbin/rtcwake --seconds $ALARM_SEC --auto --mode no
