@@ -118,6 +118,19 @@ virtualbox(){
 	jess/virtualbox
 }
 
+eclipse-mat(){
+  del_stopped eclipse-mat
+
+  docker run -d \
+	--cpus=4 \
+	-v /etc/localtime:/etc/localtime:ro \
+	-v /tmp/.X11-unix:/tmp/.X11-unix \
+	-e "DISPLAY=unix${DISPLAY}" \
+	-v "${HOME}/Downloads:/root/Downloads" \
+	--name eclipse-mat \
+	miel/eclipse-mat
+}
+
 # nginx(){
 # 	del_stopped nginx
 #
