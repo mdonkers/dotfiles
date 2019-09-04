@@ -77,6 +77,17 @@ EOF
 # Container Aliases
 #
 
+# nginx(){
+# 	del_stopped nginx
+#
+# 	docker run -d \
+# 		--restart always \
+# 		-v "${HOME}/.nginx:/etc/nginx" \
+# 		--net host \
+# 		--name nginx \
+# 		nginx
+# }
+
 gimp(){
   del_stopped gimp
 
@@ -131,6 +142,25 @@ eclipse-mat(){
 	${DOCKER_REPO_PREFIX}/eclipse-mat
 }
 
+vlc() {
+  del_stopped vlc
+
+  docker run -d \
+	-v /etc/localtime:/etc/localtime:ro \
+	-v $XDG_RUNTIME_DIR/pulse:$XDG_RUNTIME_DIR/pulse \
+	-v /dev/shm:/dev/shm \
+	-v /tmp/.X11-unix:/tmp/.X11-unix \
+	-e "DISPLAY=unix${DISPLAY}" \
+	-e GDK_SCALE \
+	-e GDK_DPI_SCALE \
+	-e QT_DEVICE_PIXEL_RATIO \
+	-e PULSE_SERVER=unix:$XDG_RUNTIME_DIR/pulse/native \
+	-v "${HOME}/Downloads:/home/vlc/Torrents" \
+	--device /dev/dri \
+	--name vlc \
+	jess/vlc
+}
+
 transmission-ui(){
   del_stopped transmission-ui
 
@@ -141,17 +171,6 @@ transmission-ui(){
 	--name transmission-ui \
 	jess/transmission-ui
 }
-
-# nginx(){
-# 	del_stopped nginx
-#
-# 	docker run -d \
-# 		--restart always \
-# 		-v "${HOME}/.nginx:/etc/nginx" \
-# 		--net host \
-# 		--name nginx \
-# 		nginx
-# }
 
 transmission(){
   del_stopped transmission
