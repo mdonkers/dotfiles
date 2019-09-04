@@ -66,7 +66,7 @@ EOF
   docker restart nginx
 
   # add host to /etc/hosts
-  hostess add "$server" 127.0.0.1
+  sudo hostess add "$server" 127.0.0.1
 
   # open browser
   browser-exec "http://${server}"
@@ -128,7 +128,18 @@ eclipse-mat(){
 	-e "DISPLAY=unix${DISPLAY}" \
 	-v "${HOME}/Downloads:/root/Downloads" \
 	--name eclipse-mat \
-	miel/eclipse-mat
+	${DOCKER_REPO_PREFIX}/eclipse-mat
+}
+
+transmission-ui(){
+  del_stopped transmission-ui
+
+  docker run -d \
+	-v /tmp/.X11-unix:/tmp/.X11-unix \
+	-e "DISPLAY=unix${DISPLAY}" \
+	-v "${HOME}/Downloads:/root/Downloads" \
+	--name transmission-ui \
+	jess/transmission-ui
 }
 
 # nginx(){
@@ -147,14 +158,14 @@ transmission(){
 
   docker run -d \
     -v /etc/localtime:/etc/localtime:ro \
-    -v "${HOME}/Torrents:/transmission/download" \
+    -v "${HOME}/Downloads:/transmission/download" \
     -v "${HOME}/.transmission:/transmission/config" \
     -p 9091:9091 \
     -p 51413:51413 \
     -p 51413:51413/udp \
     --name transmission \
-    ${DOCKER_REPO_PREFIX}/transmission
+    jess/transmission
 
-  hostess add transmission "$(docker inspect --format '{{.NetworkSettings.Networks.bridge.IPAddress}}' transmission)"
+  sudo hostess add transmission "$(docker inspect --format '{{.NetworkSettings.Networks.bridge.IPAddress}}' transmission)"
   browser-exec "http://transmission:9091"
 }
