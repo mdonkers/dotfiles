@@ -54,7 +54,7 @@ alias sudo='sudo '
 alias redo='sudo $(history -p !!)'
 
 # Restart bluetooth to resolve connection issues
-alias fix_bluetooth='sudo modprobe -r btusb && sleep 20 && sudo modprobe btusb'
+alias fix_bluetooth='sudo hciconfig hci0 reset && sudo modprobe -r btusb && sleep 20 && sudo modprobe btusb'
 # Similar for Wifi
 alias fix_wifi='sudo modprobe -r ath10k_pci && sleep 2 && sudo modprobe -r ath10k_core && sleep 10 && sudo modprobe ath10k_core && sleep 2 && sudo modprobe ath10k_pci'
 
