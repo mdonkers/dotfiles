@@ -386,15 +386,6 @@ install_wmapps() {
 
   # update clickpad settings
   mkdir -p /etc/X11/xorg.conf.d/
-  # Not for MAC
-  # curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/50-clickpad.conf > /etc/X11/xorg.conf.d/50-clickpad.conf
-  # curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf.d/70-keyboard.conf > /etc/X11/xorg.conf.d/70-keyboard.conf
-
-  # add xorg conf
-  # curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/X11/xorg.conf > /etc/X11/xorg.conf
-
-  # get correct sound cards on boot
-  # curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/modprobe.d/intel.conf > /etc/modprobe.d/intel.conf
 
   # pretty fonts
   curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/fonts/local.conf > /etc/fonts/local.conf
@@ -623,7 +614,6 @@ install_dev() {
 	cmake \
 	build-essential \
 	gdb \
-	postgresql-client \
 	--no-install-recommends
 
   # Packages linux-perf and cmake are installed to run Linux performance tests
