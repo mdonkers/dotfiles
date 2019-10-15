@@ -473,13 +473,12 @@ install_keybase() {
 }
 
 install_virtualbox() {
-  echo "deb http://download.virtualbox.org/virtualbox/debian stretch contrib" >> /etc/apt/sources.list.d/virtualbox.list
+  echo "deb http://download.virtualbox.org/virtualbox/debian buster contrib" >> /etc/apt/sources.list.d/virtualbox.list
   curl -sSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | apt-key add -
 
   apt update
   apt install -y \
-	virtualbox \
-	virtualbox-guest-additions-iso \
+	virtualbox-6.0 \
 	--no-install-recommends
 }
 
