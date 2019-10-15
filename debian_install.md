@@ -138,9 +138,12 @@ To install IntelliJ, download the package and extract. Move to the following loc
     /usr/local/share/idea-IU-<version>
 
 Install the desktop shortcut by starting IntelliJ and from the _Configure_ menu select _Create Desktop Entry_.
-This will put a `.desktop` entry in `~/.local/share/spplications/`. Install global deskop shortcuts to the following location:
+This will put a `.desktop` entry in `~/.local/share/applications/jetbrains-idea.desktop`.
+Install global desktop shortcuts to the following location (optional):
 
     /usr/share/applications/
+
+To fix keyboard input problems caused by IBus, update the `Exec` command and prefix with: `env XMODIFIERS= `.
 
 Cleanup
 
