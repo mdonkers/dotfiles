@@ -127,3 +127,6 @@ alias untar='tar xzvf'
 # Prevent terminal losing focus when running Maven commands
 alias mvn='mvn -T=1C -Djava.awt.headless=true'
 
+# Cleanup the Maven repository with all files older than 14 days
+alias clean_mvn='find ~/.m2/repository \( -iname "agent-*" -o -iname "javaagent-*" \) -prune -o -atime +14 -iname "*.pom" -print0 | while read -d "" -r pom; do parent=`dirname "$pom"`; rm -rf "$parent"; done'
+
