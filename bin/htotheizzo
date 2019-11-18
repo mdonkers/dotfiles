@@ -118,7 +118,7 @@ update_linux() {
 	# List all upgradable packages, just for convenience so we know what will be updated.
 	apt list --upgradable
 	apt -y upgrade
-	apt install -t unstable firefox --no-install-recommends
+	apt -y install -t unstable firefox --no-install-recommends
 	apt -y autoremove
 	apt -y autoclean
 	apt -y clean

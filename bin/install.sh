@@ -453,17 +453,17 @@ get_dotfiles() {
   )
 }
 
-install_keybase() {
-  curl -o /tmp/keybase_amd64.deb https://prerelease.keybase.io/keybase_amd64.deb
-  # if you see an error about missing `libappindicator1`
-  # from the next command, you can ignore it, as the
-  # subsequent command corrects it
-  sudo dpkg -i /tmp/keybase_amd64.deb
-  sudo apt install -f
-  # Login and get private key
-  keybase login
-  keybase pgp export -q 24046A96 | gpg --import
-  keybase pgp export -q 24046A96 --secret | gpg --allow-secret-key-import --import
+install_private() {
+  #curl -o /tmp/keybase_amd64.deb https://prerelease.keybase.io/keybase_amd64.deb
+  ## if you see an error about missing `libappindicator1`
+  ## from the next command, you can ignore it, as the
+  ## subsequent command corrects it
+  #sudo dpkg -i /tmp/keybase_amd64.deb
+  #sudo apt install -f
+  ## Login and get private key
+  #keybase login
+  #keybase pgp export -q 24046A96 | gpg --import
+  #keybase pgp export -q 24046A96 --secret | gpg --allow-secret-key-import --import
 
   # Install also my 'private' dotfiles repo
   rm -rf "/home/$USERNAME/dotfiles-private"
@@ -652,7 +652,7 @@ usage() {
   echo "  dotfiles                    - get dotfiles (!! as user !!)"
   echo "  scripts                     - install scripts (not needed)"
   echo "  syncthing                   - install syncthing"
-  echo "  keybase                     - install keybase and private repo (!! as user !!)"
+  echo "  private                     - install private repo and other personal stuff (!! as user !!)"
   echo "  vagrant                     - install vagrant and virtualbox"
   echo "  dev                         - install development environment for Java"
   echo "  cleanup                     - clean apt etc"
@@ -704,8 +704,8 @@ main() {
 	install_dev
   elif [[ $cmd == "golang" ]]; then
 	install_golang "$2"
-  elif [[ $cmd == "keybase" ]]; then
-	install_keybase
+  elif [[ $cmd == "private" ]]; then
+	install_private
   elif [[ $cmd == "cleanup" ]]; then
 	cleanup
   else
