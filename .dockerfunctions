@@ -107,7 +107,7 @@ hollywood(){
   # Exit using "F6" which disconnects from Byobu session
   docker run --rm -it \
     --name hollywood \
-    jess/hollywood
+    miel/hollywood
 }
 
 htop(){

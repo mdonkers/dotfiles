@@ -143,6 +143,8 @@
   mnemonicprefix = true
 		#compactionHeuristic = true
   indentHeuristic = true
+  # Show 'normal' filenames without the a/ b/ prefixes
+  noprefix = true
 
 [help]
 

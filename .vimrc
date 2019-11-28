@@ -261,7 +261,7 @@ nnoremap <leader>t :call ReplaceUnixTimestamps()<CR>
 
 " Replace the current buffer with the given new file. That means a new file
 " will be open in a buffer while the old one will be deleted
-com! -nargs=1 -complete=file Breplace edit <args>| bdelete #
+command! -nargs=1 -complete=file Breplace edit <args>| bdelete #
 
 function! DeleteInactiveBufs()
   "From tabpagebuflist() help, get a list of all buffers in all tabs
@@ -304,9 +304,9 @@ endif
 " File Type settings 			    		"
 " ----------------------------------------- "
 
-au BufNewFile,BufRead *.vim setlocal noet ts=4 sw=4 sts=4
-au BufNewFile,BufRead *.txt setlocal noet ts=4 sw=4
-au BufNewFile,BufRead *.md setlocal spell noet ts=4 sw=4
+au BufNewFile,BufRead *.vim setlocal expandtab ts=4 sw=4 sts=4
+au BufNewFile,BufRead *.txt setlocal spell noexpandtab ts=4 sw=4
+au BufNewFile,BufRead *.md setlocal spell expandtab ts=4 sw=4 sts=4
 au BufNewFile,BufRead *.yml,*.yaml setlocal expandtab ts=2 sw=2
 au BufNewFile,BufRead *.cpp setlocal expandtab ts=2 sw=2
 au BufNewFile,BufRead *.hpp setlocal expandtab ts=2 sw=2
@@ -319,14 +319,8 @@ augroup END
 
 au FileType nginx setlocal noet ts=4 sw=4 sts=4
 
-" Go settings
-au BufNewFile,BufRead *.go setlocal noet ts=4 sw=4 sts=4
-
-" Markdown Settings
-autocmd BufNewFile,BufReadPost *.md setl ts=4 sw=4 sts=4 expandtab
-
 " Dockerfile settings
-autocmd FileType dockerfile set noexpandtab
+autocmd FileType dockerfile set expandtab
 
 " shell/config/systemd settings (don't expand tab in shell scripts due to here-doc)
 autocmd FileType fstab,systemd set noexpandtab
@@ -357,7 +351,7 @@ set wildignore+=*.orig                           " Merge resolution files
 
 
 " ----------------------------------------- "
-" Plugin configs 			    "
+" Plugin configs                            "
 " ----------------------------------------- "
 
 " ================= Ack / Ag =================
