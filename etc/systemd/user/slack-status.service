@@ -1,0 +1,7 @@
+[Unit]
+Description=Slack status update, run by timer
+Documentation=https://wiki.archlinux.org/index.php/Systemd/Timers
+
+[Service]
+ExecStart=/usr/local/bin/slackStatus.sh
+

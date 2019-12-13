@@ -3,7 +3,7 @@
 Description=i3lock
 Documentation=https://bbs.archlinux.org/viewtopic.php?pid=1170536#p1170536
 Documentation=https://wiki.debian.org/ScreenLockingOnSleep
-Before=suspend.target
+Before=sleep.target
 
 [Service]
 User=%I
@@ -12,4 +12,4 @@ Environment=DISPLAY=:0
 ExecStart=/usr/bin/i3lock -c 111111
 
 [Install]
-WantedBy=suspend.target
+WantedBy=sleep.target

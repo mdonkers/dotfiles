@@ -427,6 +427,7 @@ get_dotfiles() {
   sudo systemctl enable "i3lock@${USERNAME}"
   sudo systemctl enable suspend-sedation.service
   sudo systemctl enable powertop.service
+  systemctl --user enable slack-status.timer
 
   cd "/home/$USERNAME"
 

@@ -102,7 +102,7 @@ EOF
 
 CURRENT_STATUS_ICON=$(get_slack_status | jq -r '.profile.status_emoji' )
 # pgrep output is (1) if no results found
-SCREEN_LOCKED=$(pgrep "${LOCK_SCREEN_PROCESS}"; echo $?)
+SCREEN_LOCKED=$(pgrep "${LOCK_SCREEN_PROCESS}" > /dev/null 2>&1; echo $?)
 
 
 # Still set to AFK, but screen no longer locked. Reset status
