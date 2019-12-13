@@ -1,0 +1,121 @@
+#!/bin/bash
+
+SLACK_API_TOKEN_FILE="${HOME}/.passwd_files/slack"
+
+#
+# Verify necessary tools are present, otherwise exit immediately
+#
+command -v curl >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+command -v jq >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+#
+# File is present with Slack API token
+#
+[[ ! -f "${SLACK_API_TOKEN_FILE}" ]] && exit 2
+
+
+#
+# Variables for script usage
+#
+SLACK_API_TOKEN=$(cat ${SLACK_API_TOKEN_FILE})
+
+LOCK_SCREEN_PROCESS="i3lock"
+
+STATUS_TEXT_AFK="Away from Keyboard"
+STATUS_ICON_AFK=":warning:"
+STATUS_TEXT_CLEAR=""
+STATUS_ICON_CLEAR=""
+
+# TIMESTAMP="$(date +%s)000"
+
+
+#
+# Utility functions to get and post status updates via cURL
+#
+
+format_to_json() {
+  # Utility function for possibly formatting (escaping) some text for JSON.
+  # Use as: $(echo "$MY_TEXT" | format_to_json)
+  python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+}
+
+get_slack_status() {
+  # Silence all output other than the actual result to not show up somewhere
+  curl -XPOST "https://slack.com/api/users.profile.get" \
+	-H "Authorization: Bearer ${SLACK_API_TOKEN}" \
+	-H "Content-type: application/json; charset=utf-8" \
+    --silent \
+	--connect-timeout 5 \
+	--max-time 30 \
+	2>&1
+}
+
+post_slack_status() {
+  # Function expects parameters:
+  # (1): JSON profile data with new msg / avatar
+
+  # Silence all output so it doesn't show up somewhere
+  curl -XPOST "https://slack.com/api/users.profile.set" \
+	-H "Authorization: Bearer ${SLACK_API_TOKEN}" \
+	-H "Content-type: application/json; charset=utf-8" \
+    --silent \
+	--connect-timeout 5 \
+	--max-time 30 \
+	--data "$1" \
+    --output /dev/null 2>&1
+}
+
+generate_profile_json() {
+  # Function expects parameters:
+  # (1): Status message as String
+  # (2): Status emoji as String
+
+  # JSON escape the status text, which means we don't need to wrap in quotes below
+  local STATUS_TEXT="$(echo -n "$1" | format_to_json)"
+
+  cat <<-EOF
+{
+  "profile": {
+		"status_text": ${STATUS_TEXT},
+		"status_emoji": "$2",
+		"status_expiration": 0
+	  }
+  }
+EOF
+}
+
+
+#
+# Actual logic, consisting of following steps:
+# 1) Check current status
+# 2) Check i3lock running
+#
+# 3) If i3lock is running and status is not set -> update status to AFK
+# 3) If i3lock is not running and status is AFK -> update status to empty
+#
+
+CURRENT_STATUS_ICON=$(get_slack_status | jq -r '.profile.status_emoji' )
+# pgrep output is (1) if no results found
+SCREEN_LOCKED=$(pgrep "${LOCK_SCREEN_PROCESS}"; echo $?)
+
+
+# Still set to AFK, but screen no longer locked. Reset status
+if [[ "${CURRENT_STATUS_ICON}" = "${STATUS_ICON_AFK}" ]] && [[ ${SCREEN_LOCKED} -ne 0 ]]; then
+  PROFILE_STATUS=$(generate_profile_json "${STATUS_TEXT_CLEAR}" "${STATUS_ICON_CLEAR}")
+  post_slack_status "${PROFILE_STATUS}"
+fi
+
+# Status empty, but screen locked. Set AFK
+if [[ "${CURRENT_STATUS_ICON}" = "${STATUS_ICON_CLEAR}" ]] && [[ ${SCREEN_LOCKED} -eq 0 ]]; then
+  PROFILE_STATUS=$(generate_profile_json "${STATUS_TEXT_AFK}" "${STATUS_ICON_AFK}")
+  post_slack_status "${PROFILE_STATUS}"
+fi
+
+exit 0
+
