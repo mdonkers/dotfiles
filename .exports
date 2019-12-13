@@ -4,13 +4,11 @@
 export EDITOR=/usr/bin/nvim;
 export TERMINAL="urxvt";
 
-# Highlight section titles in manual pages
-export LESS_TERMCAP_md="${yellow}";
-
 # Don’t clear the screen after quitting a manual page
 export MANPAGER="less -X";
 
-export DBUS_SESSION_BUS_ADDRESS=unix:path=/var/run/user/$(id -u)/bus;
+export DBUS_SESSION_BUS_ADDRESS
+DBUS_SESSION_BUS_ADDRESS=unix:path=/var/run/user/$(id -u)/bus;
 
 export TODOTXT_DEFAULT_ACTION=ls
 
@@ -31,6 +29,7 @@ fi
 export MAVEN_OPTS="-Xms1024m -Xmx2048m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -DdependencyLocationsEnabled=false"
 
 export NVM_DIR="/Development/tools/nvm"
+# shellcheck source=/dev/null
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm
 
 # pip (Python installer) should only run if there is a virtualenv currently activated

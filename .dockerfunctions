@@ -9,33 +9,42 @@ export DOCKER_REPO_PREFIX=miel
 alias dstopall='docker stop $(docker ps -q)'
 
 dcleanup(){
-  docker rm $(docker ps -aq 2>/dev/null) 2>/dev/null
-  docker rm -v $(docker ps --filter status=exited -q 2>/dev/null) 2>/dev/null
-  docker rmi $(docker images --filter dangling=true -q 2>/dev/null) 2>/dev/null
-  docker volume rm $(docker volume ls -qf dangling=true 2>/dev/null) 2>/dev/null
+  local containers
+  mapfile -t containers < <(docker ps -aq 2>/dev/null)
+  docker rm "${containers[@]}" 2>/dev/null
+  local volumes
+  mapfile -t volumes < <(docker ps --filter status=exited -q 2>/dev/null)
+  docker rm -v "${volumes[@]}" 2>/dev/null
+  local images
+  mapfile -t images < <(docker images --filter dangling=true -q 2>/dev/null)
+  docker rmi "${images[@]}" 2>/dev/null
+  local dangling_volumes
+  mapfile -t dangling_volumes < <(docker volume ls -qf dangling=true 2>/dev/null)
+  docker volume rm "${dangling_volumes[@]}" 2>/dev/null
+
   docker network prune -f 2>/dev/null
   docker image prune -a -f --filter "until=4320h" 2>/dev/null
 }
 
 del_stopped(){
   local name=$1
-  local state=$(docker inspect --format "{{.State.Running}}" $name 2>/dev/null)
+  local state
+  state=$(docker inspect --format "{{.State.Running}}" "$name" 2>/dev/null)
 
   if [[ "$state" == "false" ]]; then
-    docker rm $name
+	docker rm "$name"
   fi
 }
 
 relies_on(){
-  local containers=$@
+  for container in "$@"; do
+	local state
+	state=$(docker inspect --format "{{.State.Running}}" "$container" 2>/dev/null)
 
-  for container in $containers; do
-    local state=$(docker inspect --format "{{.State.Running}}" $container 2>/dev/null)
-
-    if [[ "$state" == "false" ]] || [[ "$state" == "" ]]; then
-      echo "$container is not running, starting it for you."
-      $container
-    fi
+	if [[ "$state" == "false" ]] || [[ "$state" == "" ]]; then
+	  echo "$container is not running, starting it for you."
+	  $container
+	fi
   done
 }
 
@@ -150,14 +159,14 @@ vlc() {
 
   docker run -d \
 	-v /etc/localtime:/etc/localtime:ro \
-	-v $XDG_RUNTIME_DIR/pulse:$XDG_RUNTIME_DIR/pulse \
+	-v "$XDG_RUNTIME_DIR/pulse:$XDG_RUNTIME_DIR/pulse" \
 	-v /dev/shm:/dev/shm \
 	-v /tmp/.X11-unix:/tmp/.X11-unix \
 	-e "DISPLAY=unix${DISPLAY}" \
 	-e GDK_SCALE \
 	-e GDK_DPI_SCALE \
 	-e QT_DEVICE_PIXEL_RATIO \
-	-e PULSE_SERVER=unix:$XDG_RUNTIME_DIR/pulse/native \
+	-e "PULSE_SERVER=unix:$XDG_RUNTIME_DIR/pulse/native" \
 	-v "${HOME}/Downloads:/home/vlc/Torrents" \
 	--device /dev/dri \
 	--name vlc \
