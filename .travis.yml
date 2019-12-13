@@ -1,13 +1,8 @@
 ---
-  language: bash
-  sudo: false
+  sudo: required
   notifications:
-    email: false
-  addons:
-    apt:
-      sources:
-      - debian-sid    # Grab ShellCheck from the Debian repo
-      packages:
-      - shellcheck
+    email: true
+  services:
+    - docker
   script:
-    - ./test.sh
+    - make test
