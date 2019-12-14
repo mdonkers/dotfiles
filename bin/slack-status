@@ -5,12 +5,10 @@ SLACK_API_TOKEN_FILE="${HOME}/.passwd_files/slack"
 #
 # Verify necessary tools are present, otherwise exit immediately
 #
-command -v curl >/dev/null 2>&1
-if [ $? -ne 0 ]; then
+if ! command -v curl >/dev/null 2>&1; then
   exit 1
 fi
-command -v jq >/dev/null 2>&1
-if [ $? -ne 0 ]; then
+if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
@@ -23,7 +21,7 @@ fi
 #
 # Variables for script usage
 #
-SLACK_API_TOKEN=$(cat ${SLACK_API_TOKEN_FILE})
+SLACK_API_TOKEN=$(cat "${SLACK_API_TOKEN_FILE}")
 
 LOCK_SCREEN_PROCESS="i3lock"
 
@@ -77,12 +75,13 @@ generate_profile_json() {
   # (2): Status emoji as String
 
   # JSON escape the status text, which means we don't need to wrap in quotes below
-  local STATUS_TEXT="$(echo -n "$1" | format_to_json)"
+  local status_text
+  status_text="$(echo -n "$1" | format_to_json)"
 
   cat <<-EOF
 {
   "profile": {
-		"status_text": ${STATUS_TEXT},
+		"status_text": ${status_text},
 		"status_emoji": "$2",
 		"status_expiration": 0
 	  }

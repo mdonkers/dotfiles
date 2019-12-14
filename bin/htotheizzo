@@ -59,11 +59,13 @@ update_docker() {
 		# Include contributed man pages
 		man/md2man-all.sh -q
 		local manRoot="/usr/share/man"
+		local manBase
+		local manName
 		mkdir -p "$manRoot"
 		for manDir in man/man?; do
-			local manBase="$(basename "$manDir")" # "man1"
+			manBase="$(basename "$manDir")" # "man1"
 			for manFile in "$manDir"/*; do
-				local manName="$(basename "$manFile")" # "docker-build.1"
+				manName="$(basename "$manFile")" # "docker-build.1"
 				mkdir -p "$manRoot/$manBase"
 				gzip -c "$manFile" > "$manRoot/$manBase/$manName.gz"
 			done
@@ -97,9 +99,13 @@ update_docker() {
 	)
 
 	# Get the Docker Compose files
-	local docker_compose_release=$(curl -L -s -H 'Accept: application/json' https://github.com/docker/compose/releases/latest)
-	local docker_compose_version=$(echo "${docker_compose_release}" | sed -e 's/.*"tag_name":"\([0-9\.]*\)".*/\1/')
-	local docker_compose_binary_uri="https://github.com/docker/compose/releases/download/${docker_compose_version}/docker-compose-Linux-x86_64"
+	local docker_compose_release
+	docker_compose_release=$(curl -L -s -H 'Accept: application/json' https://github.com/docker/compose/releases/latest)
+	local docker_compose_version
+	# shellcheck disable=SC2001
+	docker_compose_version=$(echo "${docker_compose_release}" | sed -e 's/.*"tag_name":"\([0-9\.]*\)".*/\1/')
+	local docker_compose_binary_uri
+	docker_compose_binary_uri="https://github.com/docker/compose/releases/download/${docker_compose_version}/docker-compose-Linux-x86_64"
 	(
 	set -x
 	curl -fSL "${docker_compose_binary_uri}" -o "/usr/local/bin/docker-compose"
@@ -182,11 +188,11 @@ update() {
 
 main() {
 	local arg=$1
-	if [[ ! -z "$arg" ]]; then
+	if [[ -n "$arg" ]]; then
 		help
 	else
 		update
 	fi
 }
 
-main $@
+main "$@"

@@ -15,7 +15,7 @@
 function check_sourced {
 
   local last_elem=${#FUNCNAME[@]}-1
-  if [[ "main" == ${FUNCNAME[$last_elem]} ]] ; then
+  if [[ "main" == "${FUNCNAME[$last_elem]}" ]] ; then
     echo "Being executed from a sub-shell, which won't set the environment correctly"
     echo "Execute as 'source activate_environment <env>' or '. activate_environment <env>'"
     exit
@@ -26,8 +26,9 @@ function check_sourced {
 
 check_sourced
 
-if [[ ! -z $1 && -d $1 && -f "$1/bin/activate" ]] ; then
+if [[ -n $1 && -d $1 && -f "$1/bin/activate" ]] ; then
   echo "Activating virtualenv $1"
+  # shellcheck source=/dev/null
   source "$1/bin/activate"
   VENV_NAME=${1%/}
 
@@ -36,16 +37,16 @@ if [[ ! -z $1 && -d $1 && -f "$1/bin/activate" ]] ; then
   fi
 
   function set_venv_prompt {
-    if [[ ! -z $VIRTUAL_ENV ]] ; then
+    if [[ -n $VIRTUAL_ENV ]] ; then
       __git_ps1 "\h:\W (env:$VENV_NAME) \[\033[00;34m\]" "\[\033[00m\] \u\\\$ "
     else
       PROMPT_COMMAND=$PREV_PROMPT_COMMAND
       unset PREV_PROMPT_COMMAND
-      eval $PROMPT_COMMAND
+      eval "$PROMPT_COMMAND"
     fi
   }
 
-  PROMPT_COMMAND="set_venv_prompt" 
+  PROMPT_COMMAND="set_venv_prompt"
 
 
   echo "Deactivate the virtualenv environment by typing 'deactivate' or exiting the shell"

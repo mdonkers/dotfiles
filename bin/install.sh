@@ -283,19 +283,32 @@ install_graphics() {
   local system=$1
 
   if [[ -z "$system" ]]; then
-	echo "You need to specify whether it's dell or mac"
+	echo "You need to specify whether it's intel, geforce or optimus"
 	exit 1
   fi
 
-  if [[ $system == "mac" ]]; then
-	local pkgs=""
-  else
-	local pkgs="nvidia-kernel-dkms nvidia-smi bumblebee-nvidia primus"
-  fi
+  local pkgs=( xorg xserver-xorg xserver-xorg-input-libinput )
 
-  local pkgs="xorg xserver-xorg xserver-xorg-video-intel ${pkgs}"
+  case $system in
+	"intel")
+	  pkgs+=( xserver-xorg-video-intel )
+	  ;;
+	"geforce")
+	  pkgs+=( nvidia-driver )
+	  ;;
+	"optimus")
+	  pkgs+=( nvidia-kernel-dkms bumblebee-nvidia primus )
+	  ;;
+	*)
+	  echo "You need to specify whether it's intel, geforce or optimus"
+	  exit 1
+	  ;;
+  esac
 
-  apt install -y $pkgs --no-install-recommends
+  apt update || true
+  apt -y upgrade
+
+  apt install -y "${pkgs[@]}" --no-install-recommends
 }
 
 # install custom scripts/binaries
@@ -345,14 +358,14 @@ install_wifi() {
   if [[ $system == "broadcom" ]]; then
 	local pkg="broadcom-sta-dkms wireless-tools"
 
-	apt install -y $pkg
+	apt install -y "$pkg"
 	# Unload conflicting modules and load the wireless module
 	modprobe -r b44 b43 b43legacy ssb brcmsmac bcma
 	modprobe wl
   else
 	local pkg="wireless-tools"
 
-	apt install -y $pkg
+	apt install -y "$pkg"
   fi
 }
 
@@ -373,13 +386,24 @@ install_wmapps() {
   apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
 
   apt update
+  apt install -y \
+	feh \
+	i3 \
+	i3lock \
+	i3status \
+	suckless-tools \
+	libanyevent-i3-perl \
+	scrot \
+	arandr \
+	network-manager-gnome \
+	xinput \
+	google-chrome-beta \
+	--no-install-recommends
 
-  local pkgs="feh i3 i3lock i3status suckless-tools libanyevent-i3-perl scrot arandr network-manager-gnome xinput google-chrome-beta"
-  apt install -y ${pkgs} --no-install-recommends
   apt install -y -t unstable firefox --no-install-recommends
 
   local sound_pkgs="pulseaudio-module-bluetooth pulseaudio-utils pavucontrol bluez-firmware blueman"
-  apt install -y ${sound_pkgs} --no-install-recommends
+  apt install -y "${sound_pkgs}" --no-install-recommends
 
   # update Pulse audio settings (replaces entire line)
   sed -i.bak '/flat-volumes/c\flat-volumes = no' /etc/pulse/daemon.conf
@@ -436,9 +460,9 @@ get_dotfiles() {
   sudo ln -snf "/home/$USERNAME/.vimrc" /root/.vimrc
 
   # alias vim dotfiles to neovim
-  mkdir -p ${XDG_CONFIG_HOME:=$HOME/.config}
-  ln -snf "/home/$USERNAME/.vim" $XDG_CONFIG_HOME/nvim
-  ln -snf "/home/$USERNAME/.vimrc" $XDG_CONFIG_HOME/nvim/init.vim
+  mkdir -p "${XDG_CONFIG_HOME:=$HOME/.config}"
+  ln -snf "/home/$USERNAME/.vim" "$XDG_CONFIG_HOME/nvim"
+  ln -snf "/home/$USERNAME/.vimrc" "$XDG_CONFIG_HOME/nvim/init.vim"
   # do the same for root
   sudo mkdir -p /root/.config
   sudo ln -snf "/home/$USERNAME/.vim" /root/.config/nvim
@@ -455,17 +479,6 @@ get_dotfiles() {
 }
 
 install_private() {
-  #curl -o /tmp/keybase_amd64.deb https://prerelease.keybase.io/keybase_amd64.deb
-  ## if you see an error about missing `libappindicator1`
-  ## from the next command, you can ignore it, as the
-  ## subsequent command corrects it
-  #sudo dpkg -i /tmp/keybase_amd64.deb
-  #sudo apt install -f
-  ## Login and get private key
-  #keybase login
-  #keybase pgp export -q 24046A96 | gpg --import
-  #keybase pgp export -q 24046A96 --secret | gpg --allow-secret-key-import --import
-
   # Install also my 'private' dotfiles repo
   rm -rf "/home/$USERNAME/dotfiles-private"
   git clone git@gitlab.com:mdonkers/dotfiles-private.git "/home/$USERNAME/dotfiles-private"
@@ -487,27 +500,27 @@ install_vagrant() {
   VAGRANT_VERSION=2.2.2
 
   # if we are passing the version
-  if [[ ! -z "$1" ]]; then
+  if [[ -n "$1" ]]; then
 	export VAGRANT_VERSION=$1
   fi
 
   # check if we need to install virtualbox
   PKG_OK=$(dpkg-query -W --showformat='${Status}\n' virtualbox | grep "install ok installed") || echo ""
-  echo Checking for virtualbox: $PKG_OK
+  echo "Checking for virtualbox: $PKG_OK"
   if [ "" == "$PKG_OK" ]; then
 	echo "No virtualbox. Installing virtualbox."
 	install_virtualbox
   fi
 
-  tmpdir=`mktemp -d`
+  tmpdir=$(mktemp -d)
   (
-  cd $tmpdir
+  cd "$tmpdir"
   echo "Downloading Vagrant to $tmpdir"
-  curl -sSL -o vagrant.deb https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb
+  curl -sSL -o vagrant.deb "https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb"
   dpkg -i vagrant.deb
   )
 
-  rm -rf $tmpdir
+  rm -rf "$tmpdir"
 
   # install plugins
   vagrant plugin install vagrant-vbguest vagrant-disksize
@@ -520,7 +533,7 @@ install_golang() {
   export GO_SRC=/usr/local/go
 
   # if we are passing the version
-  if [[ ! -z "$1" ]]; then
+  if [[ -n "$1" ]]; then
 	GO_VERSION=$1
   fi
 
@@ -559,7 +572,7 @@ install_golang() {
 install_dev() {
   mkdir -p /Development
   mkdir -p /Development/{misc,projects,tools,workspaces}
-  chown -R $USERNAME:$USERNAME /Development
+  chown -R "$USERNAME:$USERNAME" /Development
 
   # add Java apt repo
   cat <<-EOF > /etc/apt/sources.list.d/webupd8team-java.list
@@ -633,30 +646,30 @@ install_dev() {
 	export NVM_DIR="/Development/tools/nvm" && (
 	git clone https://github.com/creationix/nvm.git "$NVM_DIR"
 	cd "$NVM_DIR"
-	git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" origin`
+	git checkout "$(git describe --abbrev=0 --tags --match "v[0-9]*" origin)"
 	) && . "$NVM_DIR/nvm.sh"
 	EOF
-  chown $USERNAME:$USERNAME /Development/tools/nvm-install.sh
+  chown "$USERNAME:$USERNAME" /Development/tools/nvm-install.sh
   chmod +x /Development/tools/nvm-install.sh
-  sudo -u $USERNAME nvm-install.sh
+  sudo -u "$USERNAME" nvm-install.sh
 }
 
 
 usage() {
   echo -e "install.sh\n\tThis script installs my basic setup for a debian laptop\n"
   echo "Usage:"
-  echo "  sources                     - setup sources & install base pkgs"
-  echo "  dist                        - setup sources & dist upgrade"
-  echo "  wifi {broadcom,other}       - install wifi drivers"
-  echo "  graphics {dell,mac}         - install graphics drivers"
-  echo "  wm                          - install window manager/desktop pkgs"
-  echo "  dotfiles                    - get dotfiles (!! as user !!)"
-  echo "  scripts                     - install scripts (not needed)"
-  echo "  syncthing                   - install syncthing"
-  echo "  private                     - install private repo and other personal stuff (!! as user !!)"
-  echo "  vagrant                     - install vagrant and virtualbox"
-  echo "  dev                         - install development environment for Java"
-  echo "  cleanup                     - clean apt etc"
+  echo "  sources                            - setup sources & install base pkgs"
+  echo "  dist                               - setup sources & dist upgrade"
+  echo "  wifi {broadcom,other}              - install wifi drivers"
+  echo "  graphics {intel,geforce,optimus}   - install graphics drivers"
+  echo "  wm                                 - install window manager/desktop pkgs"
+  echo "  dotfiles                           - get dotfiles (!! as user !!)"
+  echo "  scripts                            - install scripts (not needed)"
+  echo "  syncthing                          - install syncthing"
+  echo "  private                            - install private repo and other personal stuff (!! as user !!)"
+  echo "  vagrant                            - install vagrant and virtualbox"
+  echo "  dev                                - install development environment for Java"
+  echo "  cleanup                            - clean apt etc"
 }
 
 main() {
