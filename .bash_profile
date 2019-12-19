@@ -5,6 +5,8 @@ if systemctl -q is-active graphical.target && [[ ! $DISPLAY && $XDG_VTNR -eq 1 ]
   echo
   echo "... Environment not loaded. Use other terminal (ALT-F[2-6]) or 'startx' to load graphical environment ..."
   echo
+  # Source just .exports to make e.g. history available
+  [[ -r "~/.exports" ]] && [[ -f "~/.exports" ]] && source "~/.exports"
 else
   # Load bashrc
   if [[ -f $HOME/.bashrc ]]; then
