@@ -89,27 +89,67 @@ done
 for file in $HOME/.bash_scripts/*-completion.bash ; do
         source "$file"
 done
-complete -C '/usr/bin/aws_completer' aws
-
-if [[ -f $HOME/.bash_profile ]]; then
-	source $HOME/.bash_profile
+# source kubectl bash completion
+if hash kubectl 2>/dev/null; then
+  source <(kubectl completion bash)
 fi
 
-# use a tty for gpg
-# solves error: "gpg: signing failed: Inappropriate ioctl for device"
-export GPG_TTY
-GPG_TTY=$(tty)
 
 # Start the gpg-agent if not already running
 if ! pgrep -x -u "${USER}" gpg-agent >/dev/null 2>&1; then
   gpg-connect-agent /bye >/dev/null 2>&1
-  gpg-connect-agent updatestartuptty /bye >/dev/null
 fi
-
+gpg-connect-agent updatestartuptty /bye >/dev/null
+# use a tty for gpg
+# solves error: "gpg: signing failed: Inappropriate ioctl for device"
+GPG_TTY=$(tty)
+export GPG_TTY
 # Set SSH to use gpg-agent
 unset SSH_AGENT_PID
 if [ "${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
-  export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
+  if [[ -z "$SSH_AUTH_SOCK" ]] || [[ "$SSH_AUTH_SOCK" == *"apple.launchd"* ]]; then
+	SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+	export SSH_AUTH_SOCK
+  fi
 fi
 # add alias for ssh to update the tty
 alias ssh="gpg-connect-agent updatestartuptty /bye >/dev/null; ssh"
+
+
+# set the number of open files to be 1024
+ulimit -S -n 1024
+
+# Change Bash behaviour to 'vi' style command line editing
+set -o vi
+
+# Case-insensitive globbing (used in pathname expansion)
+shopt -s nocaseglob
+
+# Globbing for dot-files
+shopt -s dotglob
+
+# Append to the Bash history file, rather than overwriting it
+shopt -s histappend
+
+# Autocorrect typos in path names when using `cd`
+shopt -s cdspell
+
+# Enable some Bash 4 features when possible:
+# * `autocd`, e.g. `**/qux` will enter `./foo/bar/baz/qux`
+# * Recursive globbing, e.g. `echo **/*.txt`
+for option in autocd globstar; do
+	shopt -s "$option" 2> /dev/null
+done
+
+# Append to history all the time, to prevent losses
+PROMPT_COMMAND="history -a ; ${PROMPT_COMMAND}"
+
+
+# Load the shell dotfiles, and then some:
+# * ~/.path can be used to extend `$PATH`.
+# * ~/.extra can be used for other settings you don’t want to commit.
+for file in ~/.{bash_prompt,aliases,functions,dockerfunctions,path,extra,exports}; do
+	[[ -r "$file" ]] && [[ -f "$file" ]] && source "$file"
+done
+unset file
+
