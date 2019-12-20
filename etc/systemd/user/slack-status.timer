@@ -1,5 +1,6 @@
 [Unit]
 Description=Run Slack status update every three minutes
+Requires=slack-status.service
 
 [Timer]
 OnUnitActiveSec=3min
