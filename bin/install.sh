@@ -150,6 +150,7 @@ base() {
 	libc6-dev \
 	libltdl-dev \
 	libseccomp-dev \
+	libpam-u2f \
 	linux-headers-amd64 \
 	lm-sensors \
 	locales \
@@ -233,8 +234,11 @@ setup_sudo() {
   { \
 	echo -e "Defaults	secure_path=\"/usr/local/go/bin:/home/${USERNAME}/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\""; \
 	echo -e 'Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR"'; \
-	echo -e "${USERNAME} ALL=(ALL) NOPASSWD:ALL"; \
-	echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery"; \
+	echo -e "# Possibly allow 'sudo' to be used without password."; \
+	echo -e "#${USERNAME} ALL=(ALL) NOPASSWD:ALL"; \
+	echo -e "# When using U2F with Yubikey, need to use passwords (configured to only request Yubikey in PAM) but exclude some commands from needing password."; \
+	echo -e "${USERNAME} ALL=(ALL) ALL"; \
+	echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery, /usr/local/bin/light, /usr/bin/nsenter"; \
   } >> /etc/sudoers
 
   echo -e "\\n# binfmt for executing e.g. JAR files directly\\nnone\\t/proc/sys/fs/binfmt_misc\\tbinfmt_misc\\tdefaults\\t0\\t0" >> /etc/fstab
@@ -483,7 +487,16 @@ install_private() {
   rm -rf "/home/$USERNAME/dotfiles-private"
   git clone git@gitlab.com:mdonkers/dotfiles-private.git "/home/$USERNAME/dotfiles-private"
 
-  sudo ln -snf "/home/$USERNAME/dotfiles-private/bin/vpn-home" /usr/local/bin/vpn-home
+  # installs all the things (in subshell because we cd)
+  (
+  cd "/home/$USERNAME/dotfiles-private"
+  make
+  )
+
+  # Setup PAM to use the Yubikey for 2F authentication
+  # Note! For 'sudo' the line is added before 'common-auth' as its sufficient for authentication. For 'login' after the include
+  sudo sed -i "\\|common-auth|i \\auth       sufficient   pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue nouserok" /etc/pam.d/sudo
+  sudo sed -i "\\|common-auth|a \\auth       required     pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue nouserok" /etc/pam.d/login
 }
 
 install_virtualbox() {
