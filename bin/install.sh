@@ -115,7 +115,6 @@ base() {
 
   apt install -y \
 	adduser \
-	alsa-utils \
 	apparmor \
 	automake \
 	bash-completion \
@@ -453,7 +452,6 @@ get_dotfiles() {
   # systemctl --user enable dbus.socket
 
   sudo systemctl enable "i3lock@${USERNAME}"
-  sudo systemctl enable suspend-sedation.service
   sudo systemctl enable powertop.service
   systemctl --user enable slack-status.timer
 
