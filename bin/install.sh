@@ -164,6 +164,7 @@ base() {
 	openvpn \
 	pulseaudio \
 	rxvt-unicode-256color \
+	scdaemon \
 	silversearcher-ag \
 	ssh \
 	strace \
