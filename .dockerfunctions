@@ -104,7 +104,6 @@ gimp(){
     -v /etc/localtime:/etc/localtime:ro \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -e "DISPLAY=unix${DISPLAY}" \
-    -v "${HOME}/Pictures:/root/Pictures" \
     -v "${HOME}/Documents:/root/Documents" \
     -v "${HOME}/Downloads:/root/Downloads" \
     -v "${HOME}/.gtkrc:/root/.gtkrc" \
