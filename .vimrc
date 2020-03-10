@@ -206,6 +206,10 @@ map <leader>ll :ll<CR>
 
 nnoremap <leader>l :lclose<CR>
 
+" Map <leader>s to quickly find-replace the word under cursor.
+" Only need to complete the find-replace command
+nnoremap <Leader>s :%s/\<<C-r><C-w>\>/
+
 
 nnoremap <silent> <leader>q :Sayonara<CR>
 
