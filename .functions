@@ -24,7 +24,7 @@ calc() {
 # Create a new directory and enter it
 mkd() {
   mkdir -p "$@"
-  cd "$@" || exit
+  cd "$@" || return
 }
 
 # Make a temporary directory and enter it
@@ -35,7 +35,7 @@ tmpd() {
   else
 	dir=$(mktemp -d -t "${1}.XXXXXXXXXX")
   fi
-  cd "$dir" || exit
+  cd "$dir" || return
 }
 
 # Create a .tar.gz archive, using `zopfli`, `pigz` or `gzip` for compression
@@ -271,7 +271,7 @@ repo() {
   # Validate that this folder is a git folder
   if ! git branch 2>/dev/null 1>&2 ; then
 	echo "Not a git repo!"
-	exit $?
+	return $? # Exit the function, not the shell
   fi
 
   # Find current directory relative to .git parent
@@ -318,7 +318,7 @@ man() {
 openimage() {
 	local types='*.jpg *.JPG *.png *.PNG *.gif *.GIF *.jpeg *.JPEG'
 
-	cd "$(dirname "$1")" || exit
+	cd "$(dirname "$1")" || return
 	local file
 	file=$(basename "$1")
 
