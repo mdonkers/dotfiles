@@ -239,7 +239,7 @@ setup_sudo() {
 	echo -e "#${USERNAME} ALL=(ALL) NOPASSWD:ALL"; \
 	echo -e "# When using U2F with Yubikey, need to use passwords (configured to only request Yubikey in PAM) but exclude some commands from needing password."; \
 	echo -e "${USERNAME} ALL=(ALL) ALL"; \
-	echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery, /usr/local/bin/light, /usr/bin/nsenter"; \
+	echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery, /usr/bin/light, /usr/bin/nsenter"; \
   } >> /etc/sudoers
 
   echo -e "\\n# binfmt for executing e.g. JAR files directly\\nnone\\t/proc/sys/fs/binfmt_misc\\tbinfmt_misc\\tdefaults\\t0\\t0" >> /etc/fstab
