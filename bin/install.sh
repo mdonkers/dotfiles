@@ -150,6 +150,7 @@ base() {
 	libltdl-dev \
 	libseccomp-dev \
 	libpam-u2f \
+	light \
 	linux-headers-amd64 \
 	lm-sensors \
 	locales \
@@ -330,13 +331,6 @@ install_scripts() {
   # install lolcat
   curl -sSL https://raw.githubusercontent.com/tehmaze/lolcat/master/lolcat > /usr/local/bin/lolcat
   chmod +x /usr/local/bin/lolcat
-
-  local scripts=( have light )
-
-  for script in "${scripts[@]}"; do
-	curl -sSL "https://misc.j3ss.co/binaries/$script" > "/usr/local/bin/${script}"
-	chmod +x "/usr/local/bin/${script}"
-  done
 }
 
 # install syncthing
