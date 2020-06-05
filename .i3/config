@@ -164,6 +164,9 @@ bindsym XF86AudioNext exec pactl set-sink-volume "bluez_sink.08_DF_1F_89_DD_1B.a
 bindsym XF86AudioPrev exec pactl set-sink-volume "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" -5% #decrease sound volume
 bindsym XF86AudioPlay exec pactl set-sink-mute "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" toggle # mute sound
 
+# Toggle mic also via key-combination
+bindsym $mod+m exec pactl set-source-mute alsa_input.pci-0000_00_1f.3.analog-stereo toggle # mute mic
+
 # screen brightness controls
 bindsym XF86MonBrightnessUp exec sudo light -A 5 # increase screen brightness
 bindsym XF86MonBrightnessDown exec sudo light -U 5 # decrease screen brightness
