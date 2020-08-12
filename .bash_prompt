@@ -15,7 +15,7 @@ source ~/.bash_scripts/git-prompt.sh
 GIT_PS1_SHOWDIRTYSTATE=yes
 GIT_PS1_SHOWSTASHSTATE=yes
 function set_git_prompt {
-  __git_ps1 "\[\033[00;32m\]\h\[\033[00m\]:\W\[\033[00;34m\]" "\[\033[00m\] \u\\\$ "
+  __git_ps1 "\[\033[00;36m\]\h\[\033[00m\]:\W\[\033[00;34m\]" "\[\033[00m\] \u\\\$ "
 }
 PROMPT_COMMAND="set_git_prompt ; $PROMPT_COMMAND"
 
