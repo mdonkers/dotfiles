@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 help() {
 	echo "htotheizzo - a simple script that makes updating/upgrading homebrew or apt, gems, pip packages, and node packages so much easier"

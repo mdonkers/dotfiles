@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 SLACK_API_TOKEN_FILE="${HOME}/.passwd_files/slack"
 
 #
