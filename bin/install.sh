@@ -498,7 +498,7 @@ install_virtualbox() {
 
   apt update
   apt install -y \
-	virtualbox-6.0 \
+	virtualbox-6.1 \
 	--no-install-recommends
 }
 
