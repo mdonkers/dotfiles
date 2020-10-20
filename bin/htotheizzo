@@ -187,8 +187,7 @@ update() {
 }
 
 main() {
-	local arg=$1
-	if [[ -n "$arg" ]]; then
+	if [[ $# -gt 0 ]]; then
 		help
 	else
 		update
