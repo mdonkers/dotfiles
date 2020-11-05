@@ -97,6 +97,19 @@ EOF
 # 		nginx
 # }
 
+aws(){
+  # Do NOT use "-it" because it allocates a pseudo terminal which uses CRLF as linebreak, this malformes output.
+  # Instead the "-a stdout" with the redirect will make sure output is correctly captured.
+  docker run --rm -a stdout \
+	-v ~/.aws:/root/.aws \
+	-v $(pwd):/aws \
+	-e AWS_PROFILE \
+	--name aws-cli \
+	amazon/aws-cli "$@"
+}
+# Export function to be able to use in scripts
+export -f aws
+
 gimp(){
   del_stopped gimp
 

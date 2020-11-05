@@ -4,12 +4,14 @@ export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:/bin/java::" | sed "s:/jre
 export M2_HOME=/Development/java/apache-maven-3.5.4
 export M2=$M2_HOME/bin
 
+export GRADLE_HOME=/Development/java/gradle-6.7
+
 export GRAALVM_HOME=/Development/java/graalvm-ce-1.0.0-rc16
 
 export FLYWAY_HOME=/Development/tools/flyway-4.2.0
 
 export GOPATH="${HOME}/.go"
 
-export PATH=/usr/local/bin:${JAVA_HOME}/bin:${M2}:${FLYWAY_HOME}:/usr/local/go/bin:${PATH}:${GOPATH}/bin:/sbin
+export PATH=/usr/local/bin:${JAVA_HOME}/bin:${M2}:${GRADLE_HOME}/bin:${FLYWAY_HOME}:/usr/local/go/bin:${PATH}:${GOPATH}/bin:/sbin
 
 export CDPATH=${CDPATH}:/Development
