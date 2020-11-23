@@ -102,7 +102,7 @@ aws(){
   # Instead the "-a stdout" with the redirect will make sure output is correctly captured.
   docker run --rm -a stdout \
 	-v ~/.aws:/root/.aws \
-	-v $(pwd):/aws \
+	-v "$(pwd):/aws" \
 	-e AWS_PROFILE \
 	--name aws-cli \
 	amazon/aws-cli "$@"

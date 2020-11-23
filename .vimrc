@@ -413,8 +413,13 @@ let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standar
 " use deoplete for Neovim.
 if has('nvim')
   let g:deoplete#enable_at_startup = 1
+  let g:deoplete#enable_smart_case = 1
   let g:deoplete#ignore_sources = {}
   let g:deoplete#ignore_sources._ = ['buffer', 'member', 'tag', 'file', 'neosnippet']
+
+  " Disable Deoplete for Java because its slow and doesn't help much
+  "autocmd FileType java
+  "      \ call deoplete#custom#buffer_option('auto_complete', v:false)
 
   " Use partial fuzzy matches like YouCompleteMe
   call deoplete#custom#source('_', 'matchers', ['matcher_fuzzy'])
@@ -476,7 +481,8 @@ endfunction
 
 "==================== NeoMake =====================
 
-call neomake#configure#automake('nw', 1000)
+" Disable AutoMake for now, slows down editing Java files considerably
+"call neomake#configure#automake('nw', 1000)
 " Open the location-list when issues are found
 let g:neomake_open_list = 2
 " Enabled makers for different languages
