@@ -100,7 +100,9 @@ EOF
 aws(){
   # Do NOT use "-it" because it allocates a pseudo terminal which uses CRLF as linebreak, this malformes output.
   # Instead the "-a stdout" with the redirect will make sure output is correctly captured.
-  docker run --rm -a stdout \
+  docker run --rm \
+	-a stdout \
+	-a stderr \
 	-v ~/.aws:/root/.aws \
 	-v "$(pwd):/aws" \
 	-e AWS_PROFILE \
