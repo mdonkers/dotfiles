@@ -163,6 +163,7 @@ base() {
 	network-manager \
 	openresolv \
 	openvpn \
+	picom \
 	pulseaudio \
 	rxvt-unicode-256color \
 	scdaemon \
@@ -176,7 +177,6 @@ base() {
 	unzip \
 	uswsusp \
 	xclip \
-	xcompmgr \
 	xz-utils \
 	zip \
 	--no-install-recommends
