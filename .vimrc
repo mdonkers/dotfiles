@@ -28,6 +28,8 @@ set guifont=Inconsolata:h15
 set guioptions-=L
 " Change color of line numbers to grey
 "highlight LineNr ctermfg=grey ctermbg=black guibg=black guifg=grey
+" Clear Sign Column (showing e.g. git markers) color so it matches Solarized scheme
+highlight clear SignColumn
 
 set noerrorbells                " No beeps
 set noshowmode                  " We show the mode with airline or lightline
@@ -413,9 +415,12 @@ let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standar
 " use deoplete for Neovim.
 if has('nvim')
   let g:deoplete#enable_at_startup = 1
-  let g:deoplete#enable_smart_case = 1
-  let g:deoplete#ignore_sources = {}
-  let g:deoplete#ignore_sources._ = ['buffer', 'member', 'tag', 'file', 'neosnippet']
+
+  call deoplete#custom#option({
+        \ 'auto_complete_delay': 200,
+        \ 'smart_case': v:true,
+        \ 'ignore_sources': {'_': ['buffer', 'member', 'tag', 'file', 'neosnippet']}
+        \ })
 
   " Disable Deoplete for Java because its slow and doesn't help much
   "autocmd FileType java
