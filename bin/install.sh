@@ -503,7 +503,7 @@ install_virtualbox() {
 }
 
 install_vagrant() {
-  VAGRANT_VERSION=2.2.2
+  VAGRANT_VERSION=2.2.14
 
   # if we are passing the version
   if [[ -n "$1" ]]; then
@@ -511,7 +511,7 @@ install_vagrant() {
   fi
 
   # check if we need to install virtualbox
-  PKG_OK=$(dpkg-query -W --showformat='${Status}\n' virtualbox | grep "install ok installed") || echo ""
+  PKG_OK=$(dpkg-query -W --showformat='${Status}\n' "virtualbox*" | grep "install ok installed") || echo ""
   echo "Checking for virtualbox: $PKG_OK"
   if [ "" == "$PKG_OK" ]; then
 	echo "No virtualbox. Installing virtualbox."
@@ -529,6 +529,7 @@ install_vagrant() {
   rm -rf "$tmpdir"
 
   # install plugins
+  vagrant plugin expunge --force
   vagrant plugin install vagrant-vbguest vagrant-disksize
 }
 
