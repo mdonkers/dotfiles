@@ -113,6 +113,22 @@ update_docker() {
 
 	chmod +x /usr/local/bin/docker*
 
+	# Get Docker buildx plugin
+	local docker_buildx_release
+	docker_buildx_release=$(curl -L -s -H 'Accept: application/json' https://github.com/docker/buildx/releases/latest)
+	local docker_buildx_version
+	# shellcheck disable=SC2001
+	docker_buildx_version=$(echo "${docker_buildx_release}" | sed -e 's/.*"tag_name":"\(v[0-9\.]*\)".*/\1/')
+	local docker_buildx_binary_uri
+	docker_buildx_binary_uri="https://github.com/docker/buildx/releases/download/${docker_buildx_version}/buildx-${docker_buildx_version}.linux-amd64"
+	mkdir -p "${user_home}/.docker/cli-plugins"
+	(
+	set -x
+	curl -fSL "${docker_buildx_binary_uri}" -o "${user_home}/.docker/cli-plugins/docker-buildx"
+	)
+
+	chmod a+x "${user_home}/.docker/cli-plugins/docker-buildx"
+
 	# enable and start docker
 	systemctl daemon-reload
 	systemctl enable docker
