@@ -276,8 +276,8 @@ install_docker() {
 
   ### --- end of copy --- ###
 
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/docker.service > /etc/systemd/system/docker.service
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/docker.socket > /etc/systemd/system/docker.socket
+  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/systemd/system/docker.service > /etc/systemd/system/docker.service
+  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/systemd/system/docker.socket > /etc/systemd/system/docker.socket
 
   systemctl daemon-reload
   systemctl enable docker
@@ -338,7 +338,7 @@ install_syncthing() {
   sudo apt update
   sudo apt install -y syncthing --no-install-recommends
 
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/systemd/system/syncthing@.service > /etc/systemd/system/syncthing@.service
+  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/systemd/system/syncthing@.service > /etc/systemd/system/syncthing@.service
 
   systemctl daemon-reload
   systemctl enable "syncthing@${USERNAME}"
@@ -410,7 +410,7 @@ install_wmapps() {
   mkdir -p /etc/X11/xorg.conf.d/
 
   # pretty fonts
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/master/etc/fonts/local.conf > /etc/fonts/local.conf
+  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/fonts/local.conf > /etc/fonts/local.conf
 
   echo
   echo ">>>>>>>>>>"

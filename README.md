@@ -1,6 +1,6 @@
 ## dotfiles
 
-[![Travis CI](https://travis-ci.org/mdonkers/dotfiles.svg?branch=master)](https://travis-ci.org/mdonkers/dotfiles)
+[![Travis CI](https://travis-ci.org/mdonkers/dotfiles.svg?branch=main)](https://travis-ci.org/mdonkers/dotfiles)
 
 **To install:**
 
