@@ -572,7 +572,10 @@ install_golang() {
   go get golang.org/x/tools/cmd/gorename
   go get golang.org/x/tools/cmd/guru
 
-  go get github.com/cbednarski/hostess/cmd/hostess
+  go get github.com/cbednarski/hostess
+  go get github.com/google/go-jsonnet/cmd/jsonnet
+  go get github.com/mikefarah/yq/v4
+  go get sigs.k8s.io/kind
   )
 }
 
