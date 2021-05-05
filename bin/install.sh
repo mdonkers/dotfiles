@@ -24,7 +24,6 @@ setup_sources() {
   apt install -y \
 	apt-transport-https \
 	dirmngr \
-	gnupg \
 	gnupg2 \
 	--no-install-recommends
 
@@ -119,41 +118,35 @@ base() {
 	automake \
 	bash-completion \
 	bc \
+	bind9-dnsutils \
 	bridge-utils \
 	bzip2 \
 	ca-certificates \
 	cgroupfs-mount \
 	coreutils \
 	curl \
-	dnsutils \
 	file \
 	findutils \
 	fuse \
 	fwupd \
-	fwupdate \
 	gcc \
 	git \
 	git-lfs \
-	gnupg \
 	gnupg2 \
 	grep \
 	gzip \
 	hostname \
 	i8kutils \
-	indent \
 	inotify-tools \
+	iproute2 \
 	iptables \
 	jq \
 	less \
-	libapparmor-dev \
-	libc6-dev \
-	libltdl-dev \
-	libseccomp-dev \
 	libpam-u2f \
+	libwww-perl \
 	light \
 	linux-headers-amd64 \
 	lm-sensors \
-	locales \
 	lsof \
 	make \
 	mc \

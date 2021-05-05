@@ -83,7 +83,7 @@ update_docker() {
 
 	# get the binary
 	local tmp_tar=/tmp/docker.tgz
-	local binary_uri="https://download.docker.com/linux/static/stable/x86_64"
+	local binary_uri="https://download.docker.com/linux/static/test/x86_64"
 	local docker_version
 	docker_version=$(curl -sSL "https://api.github.com/repos/docker/docker-ce/releases/latest" | jq --raw-output .tag_name)
 	docker_version=${docker_version#v}
