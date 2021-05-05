@@ -8,7 +8,6 @@ set -o pipefail
 # get the user that is not root
 # TODO: makes a pretty bad assumption that there is only one other user
 USERNAME=$(find /home/* -maxdepth 0 -printf "%f" -type d)
-export DEBIAN_FRONTEND=noninteractive
 
 check_is_sudo() {
   if [ "$EUID" -ne 0 ]; then
@@ -17,202 +16,83 @@ check_is_sudo() {
   fi
 }
 
-# sets up apt sources
-# assumes you are going to use debian testing
-setup_sources() {
-  apt update
-  apt install -y \
-	apt-transport-https \
-	dirmngr \
-	gnupg \
-	gnupg2 \
-	--no-install-recommends
-
-  # Set "testing" distribution as default
-  cat <<-EOF > /etc/apt/apt.conf
-	APT::Default-Release "testing";
-	EOF
-
-  # Pin packages to "testing" distribution
-  cat <<-EOF > /etc/apt/preferences
-	Package: *
-	Pin: release o=Debian,a=testing
-	Pin-Priority: 900
-
-	Package: *
-	Pin: release o=Debian,a=unstable
-	Pin-Priority: 300
-
-	Package: *
-	Pin: release o=Debian
-	Pin-Priority: -1
-	EOF
-
-  cat <<-EOF > /etc/apt/sources.list
-	deb http://httpredir.debian.org/debian testing main contrib non-free
-	deb-src http://httpredir.debian.org/debian/ testing main contrib non-free
-
-	deb http://httpredir.debian.org/debian/ testing-updates main contrib non-free
-	deb-src http://httpredir.debian.org/debian/ testing-updates main contrib non-free
-
-	deb http://security.debian.org/ testing-security main contrib non-free
-	deb-src http://security.debian.org/ testing-security main contrib non-free
-
-	#deb http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
-	#deb-src http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
-
-	deb http://httpredir.debian.org/debian experimental main contrib non-free
-	deb-src http://httpredir.debian.org/debian experimental main contrib non-free
-
-	# hack for latest git (don't judge)
-	deb http://ppa.launchpad.net/git-core/ppa/ubuntu xenial main
-	deb-src http://ppa.launchpad.net/git-core/ppa/ubuntu xenial main
-
-	# neovim
-	deb http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu xenial main
-	deb-src http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu xenial main
-
-	# tlp: Advanced Linux Power Management
-	# http://linrunner.de/en/tlp/docs/tlp-linux-advanced-power-management.html
-	deb http://ppa.launchpad.net/linrunner/tlp/ubuntu xenial main
-	EOF
-
-  # add docker apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/docker.list
-	deb https://apt.dockerproject.org/repo debian-stretch main
-	deb https://apt.dockerproject.org/repo debian-stretch testing
-	deb https://apt.dockerproject.org/repo debian-stretch experimental
-	EOF
-
-  # add docker gpg key
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-
-  # add the git-core ppa gpg key
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys E1DD270288B4E6030699E45FA1715D88E1DF1F24
-
-  # add the neovim ppa gpg key
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DBB0BE9366964F134855E2255F96FCF8231B6DD
-
-  # add the tlp apt-repo gpg key
-  apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 02D65EFF
-
-  # turn off translations, speed up apt update
-  mkdir -p /etc/apt/apt.conf.d
-  echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
-}
-
-dist_upgrade() {
-  apt update
-  apt -y upgrade
-  apt -y dist-upgrade
-}
-
 # installs base packages
 # the utter bare minimal shit
 base() {
-  apt update
-  apt -y upgrade
+  dnf update -y
 
-  apt install -y \
-	adduser \
-	apparmor \
+  dnf install -y \
 	automake \
 	bash-completion \
 	bc \
+	bind-utils \
 	bridge-utils \
 	bzip2 \
 	ca-certificates \
-	cgroupfs-mount \
+	container-selinux \
 	coreutils \
 	curl \
-	dnsutils \
+	dnf-plugins-core \
+	fail2ban \
 	file \
 	findutils \
-	fuse \
 	fwupd \
-	fwupdate \
 	gcc \
 	git \
 	git-lfs \
-	gnupg \
 	gnupg2 \
+	gnutls-utils \
 	grep \
 	gzip \
 	hostname \
-	i8kutils \
-	indent \
 	inotify-tools \
+	iproute \
 	iptables \
 	jq \
 	less \
-	libapparmor-dev \
-	libc6-dev \
-	libltdl-dev \
-	libseccomp-dev \
-	libpam-u2f \
 	light \
-	linux-headers-amd64 \
-	lm-sensors \
-	locales \
+	lm_sensors \
 	lsof \
 	make \
 	mc \
-	mount \
 	neovim \
 	net-tools \
-	network-manager \
+	NetworkManager \
 	openresolv \
 	openvpn \
+	openssh \
+	openssl \
+	opensc \
+	pam-u2f \
+	pcsc-tools \
+	pcsc-lite \
+	perl-libwww-perl \
 	picom \
-	pulseaudio \
-	rxvt-unicode-256color \
-	scdaemon \
-	silversearcher-ag \
-	ssh \
+	procps \
+	rxvt-unicode \
+	the_silver_searcher \
 	strace \
 	sudo \
 	tar \
 	tree \
 	tzdata \
 	unzip \
-	uswsusp \
+	whois \
 	xclip \
-	xz-utils \
-	zip \
-	--no-install-recommends
-
-  # install tlp with recommends
-  apt install -y tlp tlp-rdw
+	xz \
+	zip
 
   setup_sudo
 
-  cleanup
-
-  # Load the i8k module for controlling the fans
-  modprobe i8k force=1
-
-  # update grub with system specific and docker configs and power-saving items
-  # acpi_rev_override=5                 -> necessary for bbswitch / bumblebee to disable discrete NVidia GPU
-  # acpi_osi=Linux                      -> tell ACPI we're running Linux
-  # pci=noaer                           -> disable Advanced Error Reporting because sometimes flooding the logs
-  # enable_psr=1 disable_power_well=0   -> powersaving options for i915 kernel module (if screen flickers, remove these)
-  # nmi_watchdog=0                      -> disable NMI Watchdog to reboot / shutdown without problems
-  sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=5 acpi_osi=Linux pci=noaer nmi_watchdog=0 apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
-  update-grub
-  echo
-  echo ">>>>>>>>>>"
-  echo "To make kernel parameters effective;"
-  echo "run update-grub & reboot"
-  echo "<<<<<<<<<<"
-
   install_docker
   install_scripts
+
+  cleanup
 }
 
 cleanup() {
-  apt autoremove
-  apt autoclean
-  apt clean
+  dnf autoremove -y
+  dnf clean -y all
 }
 
 # setup sudo for a user
@@ -224,7 +104,7 @@ cleanup() {
 # i know what the fuck im doing ;)
 setup_sudo() {
   # add user to sudoers
-  adduser "$USERNAME" sudo
+  usermod -aG wheel "$USERNAME"
 
   # add user to systemd groups
   # then you wont need sudo to view logs and shit
@@ -249,38 +129,37 @@ setup_sudo() {
 # and adds necessary items to boot params
 install_docker() {
 
+  # Remove potential old Docker installs
+  dnf remove -y docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-selinux \
+                  docker-engine-selinux \
+                  docker-engine
+
+
   # create docker group
-  sudo groupadd docker
+  sudo groupadd docker || true
   sudo gpasswd -a "$USERNAME" docker
 
+  dnf config-manager \
+    --add-repo \
+    https://download.docker.com/linux/fedora/docker-ce.repo
+  dnf config-manager --set-enabled docker-ce-test
+  rpm --import https://download.docker.com/linux/fedora/gpg
 
-  ### --- Section is basically a copy of htotheizzo --- ###
-
-  # get the binary
-  local tmp_tar=/tmp/docker.tgz
-  local binary_uri="https://download.docker.com/linux/static/edge/x86_64"
-  local docker_version
-  docker_version=$(curl -sSL "https://api.github.com/repos/docker/docker-ce/releases/latest" | jq --raw-output .tag_name)
-  docker_version=${docker_version#v}
-  # local docker_sha256
-  # docker_sha256=$(curl -sSL "${binary_uri}/docker-${docker_version}.tgz.sha256" | awk '{print $1}')
-  (
-  set -x
-  curl -fSL "${binary_uri}/docker-${docker_version}.tgz" -o "${tmp_tar}"
-  # echo "${docker_sha256} ${tmp_tar}" | sha256sum -c -
-  tar -C /usr/local/bin --strip-components 1 -xzvf "${tmp_tar}"
-  rm "${tmp_tar}"
-  docker -v
-  )
-  chmod +x /usr/local/bin/docker*
-
-  ### --- end of copy --- ###
-
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/systemd/system/docker.service > /etc/systemd/system/docker.service
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/systemd/system/docker.socket > /etc/systemd/system/docker.socket
+  dnf install -y docker-ce docker-ce-cli containerd.io
 
   systemctl daemon-reload
   systemctl enable docker
+  sleep 5
+  systemctl start docker
+
+  docker -v
 }
 
 # install graphics drivers
@@ -333,16 +212,6 @@ install_scripts() {
   chmod +x /usr/local/bin/lolcat
 }
 
-# install syncthing
-install_syncthing() {
-  sudo apt update
-  sudo apt install -y syncthing --no-install-recommends
-
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/systemd/system/syncthing@.service > /etc/systemd/system/syncthing@.service
-
-  systemctl daemon-reload
-  systemctl enable "syncthing@${USERNAME}"
-}
 
 # install wifi drivers
 install_wifi() {
@@ -669,13 +538,11 @@ usage() {
   echo -e "install.sh\n\tThis script installs my basic setup for a debian laptop\n"
   echo "Usage:"
   echo "  sources                            - setup sources & install base pkgs"
-  echo "  dist                               - setup sources & dist upgrade"
   echo "  wifi {broadcom,other}              - install wifi drivers"
   echo "  graphics {intel,geforce,optimus}   - install graphics drivers"
   echo "  wm                                 - install window manager/desktop pkgs"
   echo "  dotfiles                           - get dotfiles (!! as user !!)"
   echo "  scripts                            - install scripts (not needed)"
-  echo "  syncthing                          - install syncthing"
   echo "  private                            - install private repo and other personal stuff (!! as user !!)"
   echo "  vagrant                            - install vagrant and virtualbox"
   echo "  dev                                - install development environment for Java"
@@ -692,16 +559,7 @@ main() {
 
   if [[ $cmd == "sources" ]]; then
 	check_is_sudo
-
-	# setup /etc/apt/sources.list
-	setup_sources
-
 	base
-  elif [[ $cmd == "dist" ]]; then
-	check_is_sudo
-	# setup /etc/apt/sources.list
-	setup_sources
-	dist_upgrade
   elif [[ $cmd == "wifi" ]]; then
 	install_wifi "$2"
   elif [[ $cmd == "graphics" ]]; then
@@ -716,8 +574,6 @@ main() {
 	get_dotfiles
   elif [[ $cmd == "scripts" ]]; then
 	install_scripts
-  elif [[ $cmd == "syncthing" ]]; then
-	install_syncthing
   elif [[ $cmd == "vagrant" ]]; then
 	check_is_sudo
 
