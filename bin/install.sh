@@ -64,6 +64,7 @@ base() {
 	openssl \
 	opensc \
 	pam-u2f \
+	pamu2fcfg \
 	pcsc-tools \
 	pcsc-lite \
 	perl-libwww-perl \
@@ -166,12 +167,7 @@ install_docker() {
 install_graphics() {
   local system=$1
 
-  if [[ -z "$system" ]]; then
-	echo "You need to specify whether it's intel, geforce or optimus"
-	exit 1
-  fi
-
-  local pkgs=( xorg xserver-xorg xserver-xorg-input-libinput )
+  local pkgs=( xorg-x11-server-common xorg-x11-server-Xorg xorg-x11-drv-libinput )
 
   case $system in
 	"intel")
@@ -184,15 +180,13 @@ install_graphics() {
 	  pkgs+=( nvidia-kernel-dkms bumblebee-nvidia primus )
 	  ;;
 	*)
-	  echo "You need to specify whether it's intel, geforce or optimus"
-	  exit 1
+	  echo "No system specified, assuming graphics drivers present"
 	  ;;
   esac
 
-  apt update || true
-  apt -y upgrade
+  dnf update -y || true
 
-  apt install -y "${pkgs[@]}" --no-install-recommends
+  dnf install -y "${pkgs[@]}"
 }
 
 # install custom scripts/binaries
@@ -232,64 +226,45 @@ install_wifi() {
   else
 	local pkg="wireless-tools"
 
-	apt install -y "$pkg"
+	dnf install -y "$pkg"
   fi
 }
 
 # install stuff for i3 window manager
 install_wmapps() {
-  # Get Firefox from unstable to use the latest version
-  cat <<-EOF > /etc/apt/sources.list.d/firefox.list
-	deb http://http.debian.net/debian unstable main
-	EOF
 
-  # Google repo, because Chromium cannot play Netflix but Chrome can
-  cat <<-EOF > /etc/apt/sources.list.d/google-chrome-beta.list
-	deb https://dl.google.com/linux/chrome/deb/ stable main
-	EOF
+  # Add Google Chrome repository
+  dnf install -y fedora-workstation-repositories
+  dnf config-manager --set-enabled google-chrome
 
-  # add the Google Chrome apt-repo gpg key
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
-
-  apt update
-  apt install -y \
+  dnf update -y
+  dnf install -y \
 	feh \
 	i3 \
 	i3lock \
 	i3status \
-	suckless-tools \
-	libanyevent-i3-perl \
-	scrot \
+	dmenu \
+	ImageMagick \
 	arandr \
-	network-manager-gnome \
+	network-manager-applet \
 	xinput \
 	google-chrome-beta \
-	--no-install-recommends
+	firefox
 
-  apt install -y -t unstable firefox --no-install-recommends
-
-  local sound_pkgs="pulseaudio-module-bluetooth pulseaudio-utils pavucontrol bluez-firmware blueman"
-  apt install -y "${sound_pkgs}" --no-install-recommends
+  dnf install -y \
+	pipewire \
+	pipewire-alsa \
+	pipewire-pulseaudio \
+	pipewire-utils \
+	pavucontrol \
+	blueman
 
   # update Pulse audio settings (replaces entire line)
-  sed -i.bak '/flat-volumes/c\flat-volumes = no' /etc/pulse/daemon.conf
+  #sed -i.bak '/flat-volumes/c\flat-volumes = no' /etc/pulse/daemon.conf
 
   # update clickpad settings
   mkdir -p /etc/X11/xorg.conf.d/
 
-  # pretty fonts
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/fonts/local.conf > /etc/fonts/local.conf
-
-  echo
-  echo ">>>>>>>>>>"
-  echo "Fonts file setup successfully now run:"
-  echo "	dpkg-reconfigure fontconfig-config"
-  echo "with settings: "
-  echo "	Autohinter, Automatic, No."
-  echo "Run: "
-  echo "	dpkg-reconfigure fontconfig"
-  echo "<<<<<<<<<<"
 }
 
 get_dotfiles() {
@@ -306,17 +281,13 @@ get_dotfiles() {
 
   # install dotfiles from repo
   rm -rf "/home/$USERNAME/dotfiles"
-  git clone git://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
+  git clone --recursive git://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
 
   # installs all the things
   cd "/home/$USERNAME/dotfiles"
   make
 
-  # enable dbus for the user session
-  # systemctl --user enable dbus.socket
-
   sudo systemctl enable "i3lock@${USERNAME}"
-  sudo systemctl enable powertop.service
   systemctl --user enable slack-status.timer
 
   cd "/home/$USERNAME"
@@ -546,6 +517,7 @@ usage() {
   echo "  private                            - install private repo and other personal stuff (!! as user !!)"
   echo "  vagrant                            - install vagrant and virtualbox"
   echo "  dev                                - install development environment for Java"
+  echo "  golang                             - install golang language"
   echo "  cleanup                            - clean apt etc"
 }
 

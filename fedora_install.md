@@ -25,66 +25,61 @@ Finish the installation.
 
 ## Setup Fedora ##
 
-
-
-
-
-
-
-Some quick setup to make our live easier with further setup and configuration.
-
-Get a bigger font-size in the console
-
-    dpkg-reconfigure console-setup
-
-Choose font `Terminus` with size `14x28`.
+Fedora always installs a graphical environment (Gnome), so we're going to assume most software is available, and
+installation is done from the graphical environment. Then later disable Gnome to be able to switch to i3.
 
 Install git to fetch our `dotfiles` repository
 
-    apt-get install --no-install-recommends git
+    dnf install -y git
 
 Fetch the dotfiles repo
 
     git clone git://github.com/mdonkers/dotfiles.git "/tmp/dotfiles"
 
 
-## Dist upgrade to Stretch ##
-We need to do the dist-upgrade because for some reason 'Stretch' won't install directly. Hopefully at some point not needed anymore.
-Check the status of packages, you should see no warnings or either fix them
-
-    dpkg --audit
-
-Run the following commands to do the upgrade:
-
-    cd /tmp/dotfiles/bin
-    install.sh dist
-
-Because the kernel is upgraded, GRUB also needs to be updated to boot the correct stuff. Re-run the `mount` and `grub-install` steps to fix GRUB before rebooting.
-
-Now you're ready to reboot! Cross your fingers...
-
-
-## Continue Debian configuration ##
-Now we can start installing tools to make the MacBook work as intended. First we'll install them and then setup one by one.
+## Continue Fedora configuration ##
+Now we can start installing tools to make the laptop work as intended. First we'll install them and then setup one by one.
 (might need to fetch the `dotfiles` repo again)
 
     cd /tmp/dotfiles
     bin/install.sh sources
     bin/install.sh wifi other
-    bin/install.sh graphics nvidia
+    bin/install.sh graphics
     bin/install.sh wm
 
 As user, **not as root** !
 
     bin/install.sh dotfiles
-    bin/install.sh syncthing
-    bin/install.sh keybase
-
-After Syncthing is installed, enable / start the syncthing service and set it up.
 
 Verify wlan is working
 
     iwconfig
+
+Now disable Gnome and restart via the menu (afterwards login and run `startx`)
+
+    sudo systemctl set-default multi-user.target
+
+
+**Before** installing `private`, make sure the Yubikey is working properly. Follow below steps:
+
+    gpg --card-status
+    gpg --recv-keys 0x24046A96
+    gpg --edit-key gpg 0x24046A96
+
+Then type `trust` followed by `5` to give it full trust. Then `quit`.
+
+To allow logins / sudo via the Yubikey, first execute:
+
+    pamu2fcfg -u `whoami` -opam://`hostname` -ipam://`hostname`
+
+Copy the results to the file `/etc/yubikey/u2f_keys`
+Then continue installation (or manually add the two lines to the top of `/etc/pam.d/sudo` and `/etc/pam.d/login`):
+
+    ./bin/install.sh private
+
+
+
+## Remaining Software ##
 
 To install Slack, first download the Debian package. Then the following commands:
 
@@ -108,12 +103,6 @@ Cleanup
 
     bin/install.sh cleanup
 
-## S.M.A.R.T. monitoring for NVMe drives
-Smartmon tools / smartd might be failing because the Dell XPS is using a NVMe drive which is still in experimentel support.
-
-Check with `systemctl status smartd.service`.
-If failing, update `/etc/smartd.conf` and add the parameter `-d nvme` to the `DEVICESCAN` line.
-Restart with `sudo systemctl restart smartd.service` and check again.
 
 
 

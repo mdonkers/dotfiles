@@ -28,7 +28,6 @@ etc: ## Installs the etc directory files.
 	done
 	systemctl --user daemon-reload
 	sudo systemctl daemon-reload
-	sudo service i8kmon restart
 
 .PHONY: test
 test: shellcheck ## Runs all the tests on the files in the repository.

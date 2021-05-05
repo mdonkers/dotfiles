@@ -32,3 +32,4 @@ xhost local:root
 
 # See also "man i3", start i3 Window Manager directly from "~/.xsession"
 # exec i3 -V >> ~/.i3/logfile 2>&1
+exec i3 >> ~/.i3/logfile 2>&1
