@@ -23,7 +23,8 @@ dcleanup(){
   docker volume rm "${dangling_volumes[@]}" 2>/dev/null
 
   docker network prune -f 2>/dev/null
-  docker image prune -a -f --filter "until=4320h" 2>/dev/null
+  docker image prune -a -f --filter "until=1440h" 2>/dev/null
+  docker system prune -f 2>/dev/null
 }
 
 del_stopped(){

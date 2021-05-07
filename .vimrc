@@ -208,6 +208,10 @@ map <leader>ll :ll<CR>
 
 nnoremap <leader>l :lclose<CR>
 
+" Scroll through buffers easily
+nnoremap <leader>[ :bprevious<CR>
+nnoremap <leader>] :bnext<CR>
+
 " Map <leader>s to quickly find-replace the word under cursor.
 " Only need to complete the find-replace command
 nnoremap <Leader>s :%s/\<<C-r><C-w>\>/
