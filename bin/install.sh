@@ -333,44 +333,33 @@ install_private() {
 }
 
 install_virtualbox() {
-  echo "deb http://download.virtualbox.org/virtualbox/debian buster contrib" >> /etc/apt/sources.list.d/virtualbox.list
-  curl -sSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | apt-key add -
+  dnf config-manager \
+    --add-repo \
+    https://download.virtualbox.org/virtualbox/rpm/fedora/virtualbox.repo
 
-  apt update
-  apt install -y \
-	virtualbox-6.1 \
-	--no-install-recommends
+  sudo groupadd vboxusers || true
+  sudo gpasswd -a "$USERNAME" vboxusers
+
+  dnf install -y \
+	VirtualBox-6.1
 }
 
 install_vagrant() {
-  VAGRANT_VERSION=2.2.14
-
-  # if we are passing the version
-  if [[ -n "$1" ]]; then
-	export VAGRANT_VERSION=$1
-  fi
 
   # check if we need to install virtualbox
-  PKG_OK=$(dpkg-query -W --showformat='${Status}\n' "virtualbox*" | grep "install ok installed") || echo ""
+  PKG_OK=$(dnf list installed "VirtualBox-6*" | grep -i "virtualbox") || echo ""
   echo "Checking for virtualbox: $PKG_OK"
   if [ "" == "$PKG_OK" ]; then
 	echo "No virtualbox. Installing virtualbox."
 	install_virtualbox
   fi
 
-  tmpdir=$(mktemp -d)
-  (
-  cd "$tmpdir"
-  echo "Downloading Vagrant to $tmpdir"
-  curl -sSL -o vagrant.deb "https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb"
-  dpkg -i vagrant.deb
-  )
-
-  rm -rf "$tmpdir"
+  dnf install -y vagrant
 
   # install plugins
   vagrant plugin expunge --force
-  vagrant plugin install vagrant-vbguest vagrant-disksize
+  VAGRANT_DISABLE_STRICT_DEPENDENCY_ENFORCEMENT=1 \
+	vagrant plugin install vagrant-vbguest vagrant-disksize
 }
 
 # install/update golang from source
@@ -424,60 +413,20 @@ install_dev() {
   mkdir -p /Development/{misc,projects,tools,workspaces}
   chown -R "$USERNAME:$USERNAME" /Development
 
-  # add Java apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/webupd8team-java.list
-	deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
-	deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
-	EOF
-
   # add Azul Zulu Java apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/azul-java.list
-	deb http://repos.azulsystems.com/debian stable main
-	EOF
+  yum install -y https://cdn.azul.com/zulu/bin/zulu-repo-1.0.0-1.noarch.rpm
 
-  # add Erlang / Elixir apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/erlang-solutions.list
-	deb https://packages.erlang-solutions.com/ubuntu trusty contrib
-	EOF
-
-  # add Ansible apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/ansible.list
-	deb http://ppa.launchpad.net/ansible/ansible/ubuntu xenial main
-	EOF
-
-  # add the Java webupd8team gpg key
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
-
-  # add the Azul Zulu Java gpg key
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9
-
-  # add the Erlang Solutions gpg key
-  curl --silent https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc | apt-key add -
-
-  # add the Ansible gpg key
-  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
-
-  # Automatically accept license agreement
-  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
-
-  apt update
-  apt install -y \
-	openjdk-8-jdk \
-	openjdk-8-dbg \
-	erlang \
-	erlang-proper-dev \
-	rebar \
-	elixir \
+  dnf install -y \
+	zulu8-jdk \
+	java-11-openjdk \
 	python3-pip \
 	python3-setuptools \
 	python3-wheel \
-	wireshark-qt \
+	wireshark \
 	ansible \
-	linux-perf \
+	perf \
 	cmake \
-	build-essential \
-	gdb \
-	--no-install-recommends
+	gdb
 
   # Packages linux-perf and cmake are installed to run Linux performance tests
   # Get the FlameGraph software here: https://github.com/brendangregg/FlameGraph
@@ -485,14 +434,13 @@ install_dev() {
   cleanup
 
   # Add user to group Wireshark for capturing permissions
-  dpkg-reconfigure wireshark-common
   sudo gpasswd -a "$USERNAME" wireshark
 
   # Install some Python plugins. Neovim adds a Python extension to NeoVIM
-  pip3 install --system virtualenv maybe neovim j2cli-3 pygments
+  pip3 install virtualenv maybe neovim j2cli-3 pygments
 
   # Install NVM -> Node Version Manager
-  cat <<-EOF > /Development/tools/nvm-install.sh
+  cat <<-'EOF' > /Development/tools/nvm-install.sh
 	export NVM_DIR="/Development/tools/nvm" && (
 	git clone https://github.com/creationix/nvm.git "$NVM_DIR"
 	cd "$NVM_DIR"
@@ -501,7 +449,7 @@ install_dev() {
 	EOF
   chown "$USERNAME:$USERNAME" /Development/tools/nvm-install.sh
   chmod +x /Development/tools/nvm-install.sh
-  sudo -u "$USERNAME" nvm-install.sh
+  sudo -u "$USERNAME" /Development/tools/nvm-install.sh
 }
 
 

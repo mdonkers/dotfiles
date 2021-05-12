@@ -31,6 +31,9 @@ export QT_AUTO_SCREEN_SCALE_FACTOR=1
 
 export DOCKER_CONTENT_TRUST=0
 
+# Fedora does not support VirtualBox, therefore Vagrant cannot use it by default. Change the default behaviour
+export VAGRANT_DEFAULT_PROVIDER=virtualbox
+
 # if it's an ssh session export GPG_TTY
 if [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; then
 	GPG_TTY=$(tty)
