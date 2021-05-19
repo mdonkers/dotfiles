@@ -49,6 +49,8 @@ base() {
 	iproute \
 	iptables \
 	jq \
+	kernel-devel \
+	kernel-headers \
 	less \
 	light \
 	lm_sensors \
@@ -248,6 +250,7 @@ install_wmapps() {
 	arandr \
 	network-manager-applet \
 	xinput \
+	xset \
 	google-chrome-beta \
 	firefox
 
