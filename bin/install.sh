@@ -122,24 +122,21 @@ base() {
 	bridge-utils \
 	bzip2 \
 	ca-certificates \
-	cgroupfs-mount \
 	coreutils \
 	curl \
 	file \
 	findutils \
-	fuse \
 	fwupd \
 	gcc \
 	git \
 	git-lfs \
-	gnupg2 \
+	gnupg \
 	grep \
 	gzip \
 	hostname \
 	i8kutils \
 	inotify-tools \
 	iproute2 \
-	iptables \
 	jq \
 	less \
 	libpam-u2f \
@@ -154,11 +151,12 @@ base() {
 	neovim \
 	net-tools \
 	network-manager \
+	nftables \
 	openresolv \
 	openvpn \
 	picom \
 	pulseaudio \
-	rxvt-unicode-256color \
+	rxvt-unicode \
 	scdaemon \
 	silversearcher-ag \
 	ssh \
@@ -430,14 +428,11 @@ get_dotfiles() {
 
   # install dotfiles from repo
   rm -rf "/home/$USERNAME/dotfiles"
-  git clone git://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
+  git clone --recursive git://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
 
   # installs all the things
   cd "/home/$USERNAME/dotfiles"
   make
-
-  # enable dbus for the user session
-  # systemctl --user enable dbus.socket
 
   sudo systemctl enable "i3lock@${USERNAME}"
   sudo systemctl enable powertop.service
@@ -645,7 +640,7 @@ install_dev() {
   pip3 install --system virtualenv maybe neovim j2cli-3 pygments
 
   # Install NVM -> Node Version Manager
-  cat <<-EOF > /Development/tools/nvm-install.sh
+  cat <<-'EOF' > /Development/tools/nvm-install.sh
 	export NVM_DIR="/Development/tools/nvm" && (
 	git clone https://github.com/creationix/nvm.git "$NVM_DIR"
 	cd "$NVM_DIR"
@@ -654,7 +649,7 @@ install_dev() {
 	EOF
   chown "$USERNAME:$USERNAME" /Development/tools/nvm-install.sh
   chmod +x /Development/tools/nvm-install.sh
-  sudo -u "$USERNAME" nvm-install.sh
+  sudo -u "$USERNAME" /Development/tools/nvm-install.sh
 }
 
 

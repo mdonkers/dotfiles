@@ -3,3 +3,6 @@
 # Do we need any composition manager at all???
 #picom &
 #xcompmgr -c -l0 -t0 -r0 -o.00 &>/dev/null &
+
+# Disable the bell
+xset -b

@@ -104,6 +104,7 @@ URxvt.boldFont: xft:Inconsolata:style=bold:pixelsize=17:antialias=true:hinting=f
 
 !!*faceSize:              11
 *bellIsUrgent:          true
+URxvt.urgentOnBell:     true
 
 !! scroll
 !! do not scroll with output

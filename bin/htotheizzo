@@ -37,7 +37,6 @@ dcleanup(){
 
 update_docker() {
 	local user_home="/home/${TARGET_USER}"
-	local docker_dir="${user_home}/docker"
 
 	# stop docker
 	dcleanup || true
@@ -48,38 +47,6 @@ update_docker() {
 	curl -sSL -o /etc/bash_completion.d/docker https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker
 	curl -sSL -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/master/contrib/completion/bash/docker-compose
 
-
-	if [[ -d "${docker_dir}" ]]; then
-		(
-		cd "${docker_dir}"
-
-		# Clean up bundles
-		rm -rf bundles
-
-		# Include contributed man pages
-		man/md2man-all.sh -q
-		local manRoot="/usr/share/man"
-		local manBase
-		local manName
-		mkdir -p "$manRoot"
-		for manDir in man/man?; do
-			manBase="$(basename "$manDir")" # "man1"
-			for manFile in "$manDir"/*; do
-				manName="$(basename "$manFile")" # "docker-build.1"
-				mkdir -p "$manRoot/$manBase"
-				gzip -c "$manFile" > "$manRoot/$manBase/$manName.gz"
-			done
-		done
-
-		# move vim syntax highlighting
-		if [[ ! -d "${user_home}/.vim/bundle/Dockerfile" ]]; then
-			mkdir -p "${user_home}/.vim/bundle/Dockerfile"
-		fi
-		# shellcheck disable=SC2216
-		yes | cp -r contrib/syntax/vim/* "${user_home}/.vim/bundle/Dockerfile/"
-		chown -R "${TARGET_USER}" "${user_home}/.vim/bundle/Dockerfile"
-		)
-	fi
 
 	# get the binary
 	local tmp_tar=/tmp/docker.tgz
@@ -147,15 +114,16 @@ update_linux() {
 	rm -rf /var/lib/apt/lists/*
 
 	# Make sure Neovim and other packages are installed and up-to-date
-	pip3 install --upgrade --system virtualenv maybe neovim j2cli-3 pygments tcconfig
+	pip3 install --upgrade virtualenv maybe neovim j2cli-3 pygments tcconfig
 }
 
 update_kubectl() {
   KUBERNETES_VERSION=$(curl -sSL https://storage.googleapis.com/kubernetes-release/release/stable.txt)
   curl -fSL "https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/linux/amd64/kubectl" > /Development/tools/kubectl
   chown -R "${TARGET_USER}" "/Development/tools/kubectl"
-  chmod +x /usr/local/bin/kubectl
-  echo "kuebctl $(kubectl version --client --short)"
+  chmod +x /Development/tools/kubectl
+  ln -snf /Development/tools/kubectl /usr/local/bin/kubectl
+  echo "kubectl $(kubectl version --client --short)"
 }
 
 update_firmware() {
