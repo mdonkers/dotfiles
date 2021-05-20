@@ -77,6 +77,7 @@ update_docker() {
 	)
 
 	chmod a+x "${user_home}/.docker/cli-plugins/docker-buildx"
+	chown -R ${TARGET_USER}:${TARGET_USER} "${user_home}/.docker"
 
 }
 
