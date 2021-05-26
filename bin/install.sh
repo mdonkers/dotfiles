@@ -421,6 +421,7 @@ install_dev() {
 
   dnf install -y \
 	zulu8-jdk \
+	java-11-openjdk-devel \
 	java-11-openjdk \
 	python3-pip \
 	python3-setuptools \
