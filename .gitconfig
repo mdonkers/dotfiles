@@ -168,6 +168,12 @@
   rebase = true
 
 # URL shorthands
+[url "git@github.ibm.com:instana"]
+
+  insteadOf = "https://github.ibm.com/instana"
+  insteadOf = "github.ibm:instana"
+  insteadOf = "git://github.ibm.com/instana"
+
 [url "git@github.com:instana"]
 
   insteadOf = "https://github.com/instana"
