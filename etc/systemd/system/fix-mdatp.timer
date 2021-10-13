@@ -1,0 +1,9 @@
+[Unit]
+Description=Update MDATP exclusions every hour
+Requires=fix-mdatp.service
+
+[Timer]
+OnUnitActiveSec=1hour
+
+[Install]
+WantedBy=timers.target

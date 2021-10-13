@@ -1,0 +1,8 @@
+[Unit]
+Description=Update MDATP exclusions, run by timer
+Documentation=https://wiki.archlinux.org/index.php/Systemd/Timers
+
+[Service]
+ExecStart=/bin/bash -c '\
+   source /home/miel/dotfiles/.functions && fix_mdatp'
+

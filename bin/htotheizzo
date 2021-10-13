@@ -52,7 +52,7 @@ update_docker() {
 	docker_compose_release=$(curl -L -s -H 'Accept: application/json' https://github.com/docker/compose/releases/latest)
 	local docker_compose_version
 	# shellcheck disable=SC2001
-	docker_compose_version=$(echo "${docker_compose_release}" | sed -e 's/.*"tag_name":"\([0-9\.]*\)".*/\1/')
+	docker_compose_version=$(echo "${docker_compose_release}" | sed -e 's/.*"tag_name":"\(v[0-9\.]*\)".*/\1/')
 	local docker_compose_binary_uri
 	docker_compose_binary_uri="https://github.com/docker/compose/releases/download/${docker_compose_version}/docker-compose-Linux-x86_64"
 	(
