@@ -3,6 +3,7 @@ Description=Update MDATP exclusions, run by timer
 Documentation=https://wiki.archlinux.org/index.php/Systemd/Timers
 
 [Service]
-ExecStart=/bin/bash -c '\
-   source /home/miel/dotfiles/.functions && fix_mdatp'
+ExecStart=/bin/bash -c '/home/miel/dotfiles-private/bin/fix_beekeeper.sh'
+# Prevent spawned process getting killed by systemd control-group (cgroup)
+KillMode=process
 

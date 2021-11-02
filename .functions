@@ -484,36 +484,3 @@ monitor_off() {
   xrandr --output DP-1 --off
 }
 
-fix_mdatp() {
-  # Fixed exclusions
-  #
-  # Common working directory excludes
-  sudo mdatp exclusion folder add --path "/home/miel/"
-  sudo mdatp exclusion folder add --path "/Development/"
-
-  # VirtualBox file excludes
-  sudo mdatp exclusion extension add --name .vdi
-  sudo mdatp exclusion extension add --name .pst
-
-  # Process excludes
-  sudo mdatp exclusion process add --name slack
-  sudo mdatp exclusion process add --name dockerd
-  sudo mdatp exclusion process add --name go
-  sudo mdatp exclusion process add --name chrome
-  sudo mdatp exclusion process add --name java
-  sudo mdatp exclusion process add --name zoom
-
-  # Prepare variable also with fixed exclusions
-  fixed_excludes='[{"$type": "excludedPath","isDirectory": true, "path": "/home/miel/"}, {"$type": "excludedPath","isDirectory": true, "path": "/Development/"},'
-  fixed_excludes+='{"$type": "excludedFileName", "name": "slack"},{"$type": "excludedFileName", "name": "dockerd"},{"$type": "excludedFileName", "name": "docker"},'
-  fixed_excludes+='{"$type": "excludedFileName", "name": "go"},{"$type": "excludedFileName", "name": "chrome"},{"$type": "excludedFileName", "name": "java"},'
-  fixed_excludes+='{"$type": "excludedFileName", "name": "zoom"}]'
-
-  scan=$(sudo mdatp diagnostic real-time-protection-statistics --output json)
-
-  #echo "$scan" | jq '.counters[] | select(.total_scan_time > 0) | .name' | xargs -I{} sudo mdatp exclusion process add --name {}
-  echo "$scan" | jq '.counters[] | select(.total_scan_time > 0) | if (.path == null or .path == "null") then .name else .path end' | xargs -I{} basename {} | grep -v null | xargs -I{} sudo mdatp exclusion process add --name {}
-
-  scan_mapped=$(echo "$scan" | jq '.counters | map(select(.total_scan_time > 0) | {"$type":"excludedFileName","name":.name})' | tr -d '\n')
-  cat /etc/opt/microsoft/mdatp/managed/mdatp_managed.json | jq ".antivirusEngine.exclusions += ${scan_mapped} | .antivirusEngine.exclusions += ${fixed_excludes} | .antivirusEngine.exclusions |= unique_by({name,path,extension})" | sudo tee /etc/opt/microsoft/mdatp/managed/mdatp_managed.json
-}

@@ -30,6 +30,9 @@ xhost local:root
 # - Run "~/.xsession" or "~/.Xsession" and start Window Manager from there
 # - Run "/usr/bin/x-window-manager", which can be configured via "update-alternatives --config x-window-manager"
 
+# Make apps detect the WM correctly
+export XDG_CURRENT_DESKTOP=i3
+
 # See also "man i3", start i3 Window Manager directly from "~/.xsession"
 # exec i3 -V >> ~/.i3/logfile 2>&1
 exec i3 >> ~/i3-logfile 2>&1
