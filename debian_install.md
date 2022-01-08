@@ -119,13 +119,39 @@ As user, **not as root** !
 
     bin/install.sh dotfiles
     bin/install.sh syncthing
-    bin/install.sh keybase
 
 After Syncthing is installed, enable / start the syncthing service and set it up.
 
 Verify wlan is working
 
     iwconfig
+
+
+Now disable Gnome and restart via the menu (afterwards login and run `startx`)
+
+    sudo systemctl set-default multi-user.target
+
+
+**Before** installing `private`, make sure the Yubikey is working properly. Follow below steps:
+
+    gpg --card-status
+    gpg --recv-keys 0x24046A96
+    gpg --edit-key gpg 0x24046A96
+
+Then type `trust` followed by `5` to give it full trust. Then `quit`.
+
+To allow logins / sudo via the Yubikey, first execute:
+
+    pamu2fcfg -u `whoami` -opam://`hostname` -ipam://`hostname`
+
+Copy the results to the file `/etc/yubikey/u2f_keys`
+Then continue installation (or manually add the two lines to the top of `/etc/pam.d/sudo` and `/etc/pam.d/login`):
+
+    ./bin/install.sh private
+
+
+
+## Remaining Software ##
 
 To install Slack, first download the Debian package. Then the following commands:
 

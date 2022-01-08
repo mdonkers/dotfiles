@@ -24,7 +24,7 @@ setup_sources() {
   apt install -y \
 	apt-transport-https \
 	dirmngr \
-	gnupg2 \
+	gnupg \
 	--no-install-recommends
 
   # Set "testing" distribution as default
@@ -57,43 +57,16 @@ setup_sources() {
 	deb http://security.debian.org/ testing-security main contrib non-free
 	deb-src http://security.debian.org/ testing-security main contrib non-free
 
-	#deb http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
-	#deb-src http://httpredir.debian.org/debian/ jessie-backports main contrib non-free
-
 	deb http://httpredir.debian.org/debian experimental main contrib non-free
 	deb-src http://httpredir.debian.org/debian experimental main contrib non-free
 
-	# hack for latest git (don't judge)
-	deb http://ppa.launchpad.net/git-core/ppa/ubuntu xenial main
-	deb-src http://ppa.launchpad.net/git-core/ppa/ubuntu xenial main
-
 	# neovim
-	deb http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu xenial main
-	deb-src http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu xenial main
-
-	# tlp: Advanced Linux Power Management
-	# http://linrunner.de/en/tlp/docs/tlp-linux-advanced-power-management.html
-	deb http://ppa.launchpad.net/linrunner/tlp/ubuntu xenial main
+	deb http://ppa.launchpad.net/neovim-ppa/stable/ubuntu impish main
+	deb-src http://ppa.launchpad.net/neovim-ppa/stable/ubuntu impish main
 	EOF
-
-  # add docker apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/docker.list
-	deb https://apt.dockerproject.org/repo debian-stretch main
-	deb https://apt.dockerproject.org/repo debian-stretch testing
-	deb https://apt.dockerproject.org/repo debian-stretch experimental
-	EOF
-
-  # add docker gpg key
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-
-  # add the git-core ppa gpg key
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys E1DD270288B4E6030699E45FA1715D88E1DF1F24
 
   # add the neovim ppa gpg key
   apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DBB0BE9366964F134855E2255F96FCF8231B6DD
-
-  # add the tlp apt-repo gpg key
-  apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 02D65EFF
 
   # turn off translations, speed up apt update
   mkdir -p /etc/apt/apt.conf.d
@@ -122,6 +95,7 @@ base() {
 	bridge-utils \
 	bzip2 \
 	ca-certificates \
+	cgroupfs-mount \
 	coreutils \
 	curl \
 	file \
@@ -144,6 +118,7 @@ base() {
 	light \
 	linux-headers-amd64 \
 	lm-sensors \
+	lsb-release \
 	lsof \
 	make \
 	mc \
@@ -154,6 +129,11 @@ base() {
 	nftables \
 	openresolv \
 	openvpn \
+	openssl \
+	opensc \
+	pamu2fcfg \
+	pcscd \
+	pcsc-tools \
 	picom \
 	pulseaudio \
 	rxvt-unicode \
@@ -166,7 +146,6 @@ base() {
 	tree \
 	tzdata \
 	unzip \
-	uswsusp \
 	xclip \
 	xz-utils \
 	zip \
@@ -240,48 +219,43 @@ setup_sudo() {
 # and adds necessary items to boot params
 install_docker() {
 
+  # Remove potential old Docker installs
+  apt-get purge -y \
+	docker \
+	docker-engine \
+	docker.io \
+	containerd \
+	runc
+
   # create docker group
-  sudo groupadd docker
+  sudo groupadd docker || true
   sudo gpasswd -a "$USERNAME" docker
 
+  curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  chmod a+r /usr/share/keyrings/docker-archive-keyring.gpg
 
-  ### --- Section is basically a copy of htotheizzo --- ###
+  cat <<-EOF > /etc/apt/sources.list.d/docker.list
+	deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable
+	EOF
 
-  # get the binary
-  local tmp_tar=/tmp/docker.tgz
-  local binary_uri="https://download.docker.com/linux/static/edge/x86_64"
-  local docker_version
-  docker_version=$(curl -sSL "https://api.github.com/repos/docker/docker-ce/releases/latest" | jq --raw-output .tag_name)
-  docker_version=${docker_version#v}
-  # local docker_sha256
-  # docker_sha256=$(curl -sSL "${binary_uri}/docker-${docker_version}.tgz.sha256" | awk '{print $1}')
-  (
-  set -x
-  curl -fSL "${binary_uri}/docker-${docker_version}.tgz" -o "${tmp_tar}"
-  # echo "${docker_sha256} ${tmp_tar}" | sha256sum -c -
-  tar -C /usr/local/bin --strip-components 1 -xzvf "${tmp_tar}"
-  rm "${tmp_tar}"
-  docker -v
-  )
-  chmod +x /usr/local/bin/docker*
-
-  ### --- end of copy --- ###
-
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/systemd/system/docker.service > /etc/systemd/system/docker.service
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/systemd/system/docker.socket > /etc/systemd/system/docker.socket
+  apt update
+  apt install -y \
+	docker-ce \
+	docker-ce-cli \
+	containerd.io \
+	--no-install-recommends
 
   systemctl daemon-reload
   systemctl enable docker
+  sleep 5
+  systemctl start docker
+
+  docker -v
 }
 
 # install graphics drivers
 install_graphics() {
   local system=$1
-
-  if [[ -z "$system" ]]; then
-	echo "You need to specify whether it's intel, geforce or optimus"
-	exit 1
-  fi
 
   local pkgs=( xorg xserver-xorg xserver-xorg-input-libinput )
 
@@ -296,8 +270,7 @@ install_graphics() {
 	  pkgs+=( nvidia-kernel-dkms bumblebee-nvidia primus )
 	  ;;
 	*)
-	  echo "You need to specify whether it's intel, geforce or optimus"
-	  exit 1
+	  echo "No system specified, assuming graphics drivers present"
 	  ;;
   esac
 
@@ -481,7 +454,7 @@ install_private() {
 }
 
 install_virtualbox() {
-  echo "deb http://download.virtualbox.org/virtualbox/debian buster contrib" >> /etc/apt/sources.list.d/virtualbox.list
+  echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" >> /etc/apt/sources.list.d/virtualbox.list
   curl -sSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | apt-key add -
 
   apt update
@@ -491,7 +464,7 @@ install_virtualbox() {
 }
 
 install_vagrant() {
-  VAGRANT_VERSION=2.2.14
+  VAGRANT_VERSION=2.2.19
 
   # if we are passing the version
   if [[ -n "$1" ]]; then
@@ -572,12 +545,6 @@ install_dev() {
   mkdir -p /Development/{misc,projects,tools,workspaces}
   chown -R "$USERNAME:$USERNAME" /Development
 
-  # add Java apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/webupd8team-java.list
-	deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
-	deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
-	EOF
-
   # add Azul Zulu Java apt repo
   cat <<-EOF > /etc/apt/sources.list.d/azul-java.list
 	deb http://repos.azulsystems.com/debian stable main
@@ -585,16 +552,13 @@ install_dev() {
 
   # add Erlang / Elixir apt repo
   cat <<-EOF > /etc/apt/sources.list.d/erlang-solutions.list
-	deb https://packages.erlang-solutions.com/ubuntu trusty contrib
+	deb https://packages.erlang-solutions.com/ubuntu impish contrib
 	EOF
 
   # add Ansible apt repo
   cat <<-EOF > /etc/apt/sources.list.d/ansible.list
-	deb http://ppa.launchpad.net/ansible/ansible/ubuntu xenial main
+	deb http://ppa.launchpad.net/ansible/ansible/ubuntu impish main
 	EOF
-
-  # add the Java webupd8team gpg key
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
 
   # add the Azul Zulu Java gpg key
   apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9
@@ -610,8 +574,8 @@ install_dev() {
 
   apt update
   apt install -y \
-	openjdk-8-jdk \
-	openjdk-8-dbg \
+	openjdk-11-jdk \
+	openjdk-11-dbg \
 	erlang \
 	erlang-proper-dev \
 	rebar \
@@ -667,6 +631,7 @@ usage() {
   echo "  private                            - install private repo and other personal stuff (!! as user !!)"
   echo "  vagrant                            - install vagrant and virtualbox"
   echo "  dev                                - install development environment for Java"
+  echo "  golang                             - install golang language"
   echo "  cleanup                            - clean apt etc"
 }
 

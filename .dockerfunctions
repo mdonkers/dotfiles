@@ -169,6 +169,19 @@ eclipse-mat(){
 	${DOCKER_REPO_PREFIX}/eclipse-mat
 }
 
+shellcheck(){
+  # Do NOT use "-it" because it allocates a pseudo terminal which uses CRLF as linebreak, this malformes output.
+  # Instead the "-a stdout" with the redirect will make sure output is correctly captured.
+  docker run --rm \
+	-a stdout \
+	-a stderr \
+	-v "$(pwd):/usr/src:ro" \
+	--workdir /usr/src \
+	--name shellcheck \
+	jess/shellcheck \
+	shellcheck "$@"
+}
+
 vlc() {
   del_stopped vlc
 

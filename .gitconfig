@@ -168,12 +168,6 @@
   rebase = true
 
 # URL shorthands
-[url "git@github.com:instana"]
-
-  insteadOf = "https://github.com/instana"
-  insteadOf = "github:instana"
-  insteadOf = "git://github.com/instana"
-
 [url "git@github.com:"]
 
   pushInsteadOf = "https://github.com/"
@@ -218,3 +212,5 @@
 [mergetool]
 
   prompt = false
+[init]
+	defaultBranch = main
