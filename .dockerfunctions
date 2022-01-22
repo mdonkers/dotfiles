@@ -144,6 +144,12 @@ htop(){
     jess/htop
 }
 
+mitmproxy(){
+   docker run --rm -it \
+	 -p 9090:8080 \
+	 mitmproxy/mitmproxy mitmdump
+}
+
 virtualbox(){
   del_stopped virtualbox
 
