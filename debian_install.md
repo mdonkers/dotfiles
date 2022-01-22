@@ -15,7 +15,7 @@ https://github.com/rcasero/doc/wiki/Ubuntu-linux-on-Dell-XPS-15-(9560)
 
 ### Download Debian distro and create bootable USB ###
 Download the Debian net-installer ISO. Make sure to get the *non-free including firmware* ISO from
-the link above, because we need the non-free drivers for the WiFi. Pick stable (Stretch) because testing
+the link above, because we need the non-free drivers for the WiFi. Pick stable because testing
 often gives issues during install. We'll upgrade later.
 The following steps assume a *nix environment.
 
@@ -67,7 +67,16 @@ Shutdown the laptop and insert the USB with Debian installer. Startup, repeatedl
 Boot the Debian installer, easiest is to opt for the graphical installer. The installer might ask to search for the WiFi firmware,
 just selecting _No_ should make it fetch from the non-free firmware included.
 
-Create at least the SWAP and EXT4 partition.
+For the modules, add those for disk partitioning and dm-crypt (encrypted disk)
+
+To create an encrypted disk, follow these steps:
+- Create one partition for 'boot' of about 1G, using "ext4" and "/boot" as mountpoint
+- Select "Configure encrypted volumes", take the entire remaining free space (reserved for Debian)
+- Select "Logical Volume Manager", using the encrypted partition (asks to format which is fine)
+- First create a "Volume Group" and name this e.g. "vg-1"
+- Then create 2 logical volumes, for root and swap (same size as RAM)
+- For every volume, setup the partition correctly and define the mount-points (/ and swap). Make root as "ext4".
+
 Finish the installation.
 
 
