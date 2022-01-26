@@ -59,14 +59,7 @@ setup_sources() {
 
 	deb http://httpredir.debian.org/debian experimental main contrib non-free
 	deb-src http://httpredir.debian.org/debian experimental main contrib non-free
-
-	# neovim
-	deb http://ppa.launchpad.net/neovim-ppa/stable/ubuntu impish main
-	deb-src http://ppa.launchpad.net/neovim-ppa/stable/ubuntu impish main
 	EOF
-
-  # add the neovim ppa gpg key
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 9DBB0BE9366964F134855E2255F96FCF8231B6DD
 
   # turn off translations, speed up apt update
   mkdir -p /etc/apt/apt.conf.d
@@ -105,6 +98,7 @@ base() {
 	git \
 	git-lfs \
 	gnupg \
+	gpg-agent \
 	grep \
 	gzip \
 	hostname \
@@ -114,6 +108,7 @@ base() {
 	jq \
 	less \
 	libpam-u2f \
+	libpam-systemd \
 	libwww-perl \
 	light \
 	linux-headers-amd64 \
@@ -135,8 +130,6 @@ base() {
 	pcscd \
 	pcsc-tools \
 	picom \
-	pulseaudio \
-	rxvt-unicode \
 	scdaemon \
 	silversearcher-ag \
 	ssh \
@@ -146,7 +139,7 @@ base() {
 	tree \
 	tzdata \
 	unzip \
-	xclip \
+	wireless-tools \
 	xz-utils \
 	zip \
 	--no-install-recommends
@@ -161,22 +154,24 @@ base() {
   # Load the i8k module for controlling the fans
   modprobe i8k force=1
 
+  install_docker
+  install_scripts
+
   # update grub with system specific and docker configs and power-saving items
-  # acpi_rev_override=5                 -> necessary for bbswitch / bumblebee to disable discrete NVidia GPU
-  # acpi_osi=Linux                      -> tell ACPI we're running Linux
-  # pci=noaer                           -> disable Advanced Error Reporting because sometimes flooding the logs
-  # enable_psr=1 disable_power_well=0   -> powersaving options for i915 kernel module (if screen flickers, remove these)
-  # nmi_watchdog=0                      -> disable NMI Watchdog to reboot / shutdown without problems
-  sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 acpi_rev_override=5 acpi_osi=Linux pci=noaer nmi_watchdog=0 apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
+  # acpi_rev_override=5                         -> necessary for bbswitch / bumblebee to disable discrete NVidia GPU
+  # acpi_osi=Linux                              -> tell ACPI we're running Linux
+  # pci=noaer                                   -> disable Advanced Error Reporting because sometimes flooding the logs
+  # nmi_watchdog=0                              -> disable NMI Watchdog, which looks for interrupts to determine if kernel is hanging, to reboot / shutdown without problems
+  # page_poison=1 slab_nomerge vsyscall=none    -> Kernel hardening around leaking sensitive data via memory
+  #sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="acpi_rev_override=5 acpi_osi=Linux pci=noaer nmi_watchdog=0 apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
+
+  sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
   update-grub
   echo
   echo ">>>>>>>>>>"
   echo "To make kernel parameters effective;"
   echo "run update-grub & reboot"
   echo "<<<<<<<<<<"
-
-  install_docker
-  install_scripts
 }
 
 cleanup() {
@@ -201,18 +196,26 @@ setup_sudo() {
   gpasswd -a "$USERNAME" systemd-journal
   gpasswd -a "$USERNAME" systemd-network
 
-  # set secure path
-  { \
-	echo -e "Defaults	secure_path=\"/usr/local/go/bin:/home/${USERNAME}/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\""; \
-	echo -e 'Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR"'; \
-	echo -e "# Possibly allow 'sudo' to be used without password."; \
-	echo -e "#${USERNAME} ALL=(ALL) NOPASSWD:ALL"; \
-	echo -e "# When using U2F with Yubikey, need to use passwords (configured to only request Yubikey in PAM) but exclude some commands from needing password."; \
-	echo -e "${USERNAME} ALL=(ALL) ALL"; \
-	echo -e "${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery, /usr/bin/light, /usr/bin/nsenter"; \
-  } >> /etc/sudoers
+  local -r SUDOERS_CONFIG=$(cat <<-END
+	Defaults	secure_path=\"/usr/local/go/bin:/home/${USERNAME}/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"
+	Defaults	env_keep += \"ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR\"
+	# Possibly allow 'sudo' to be used without password.
+	#${USERNAME} ALL=(ALL) NOPASSWD:ALL
+	# When using U2F with Yubikey, need to use passwords (configured to only request Yubikey in PAM) but exclude some commands from needing password.
+	${USERNAME} ALL=(ALL) ALL
+	${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery, /usr/bin/light, /usr/bin/nsenter
+END
+) || true
 
-  echo -e "\\n# binfmt for executing e.g. JAR files directly\\nnone\\t/proc/sys/fs/binfmt_misc\\tbinfmt_misc\\tdefaults\\t0\\t0" >> /etc/fstab
+  # set secure path
+  if ! grep -q -z "${SUDOERS_CONFIG}" /etc/sudoers; then
+	echo "Appending to the /etc/sudoers file"
+	printf "%s\n" "${SUDOERS_CONFIG}" >> /etc/sudoers
+	echo -e "\\n# binfmt for executing e.g. JAR files directly\\nnone\\t/proc/sys/fs/binfmt_misc\\tbinfmt_misc\\tdefaults\\t0\\t0" >> /etc/fstab
+  else
+	echo "Not appending, /etc/sudoers already in correct state"
+  fi
+
 }
 
 # installs docker master
@@ -222,7 +225,6 @@ install_docker() {
   # Remove potential old Docker installs
   apt-get purge -y \
 	docker \
-	docker-engine \
 	docker.io \
 	containerd \
 	runc
@@ -231,11 +233,13 @@ install_docker() {
   sudo groupadd docker || true
   sudo gpasswd -a "$USERNAME" docker
 
-  curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor > /usr/share/keyrings/docker-archive-keyring.gpg
   chmod a+r /usr/share/keyrings/docker-archive-keyring.gpg
+  gpg --show-keys --with-colons /usr/share/keyrings/docker-archive-keyring.gpg | grep -q -i "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
 
   cat <<-EOF > /etc/apt/sources.list.d/docker.list
-	deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable
+	#deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) test
+	deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian bullseye test
 	EOF
 
   apt update
@@ -260,14 +264,8 @@ install_graphics() {
   local pkgs=( xorg xserver-xorg xserver-xorg-input-libinput )
 
   case $system in
-	"intel")
-	  pkgs+=( xserver-xorg-video-intel )
-	  ;;
 	"geforce")
-	  pkgs+=( nvidia-driver )
-	  ;;
-	"optimus")
-	  pkgs+=( nvidia-kernel-dkms bumblebee-nvidia primus )
+	  pkgs+=( nvidia-driver nvidia-settings )
 	  ;;
 	*)
 	  echo "No system specified, assuming graphics drivers present"
@@ -308,29 +306,6 @@ install_syncthing() {
   systemctl enable "syncthing@${USERNAME}"
 }
 
-# install wifi drivers
-install_wifi() {
-  local system=$1
-
-  if [[ -z "$system" ]]; then
-	echo "You need to specify whether it's broadcom or other"
-	exit 1
-  fi
-
-  if [[ $system == "broadcom" ]]; then
-	local pkg="broadcom-sta-dkms wireless-tools"
-
-	apt install -y "$pkg"
-	# Unload conflicting modules and load the wireless module
-	modprobe -r b44 b43 b43legacy ssb brcmsmac bcma
-	modprobe wl
-  else
-	local pkg="wireless-tools"
-
-	apt install -y "$pkg"
-  fi
-}
-
 # install stuff for i3 window manager
 install_wmapps() {
   # Get Firefox from unstable to use the latest version
@@ -340,32 +315,40 @@ install_wmapps() {
 
   # Google repo, because Chromium cannot play Netflix but Chrome can
   cat <<-EOF > /etc/apt/sources.list.d/google-chrome-beta.list
-	deb https://dl.google.com/linux/chrome/deb/ stable main
+	deb [signed-by=/usr/share/keyrings/google-linux-archive-keyring.gpg] https://dl.google.com/linux/chrome/deb/ stable main
 	EOF
 
-  # add the Google Chrome apt-repo gpg key
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991
-  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796
+  wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-linux-archive-keyring.gpg
+  chmod a+r /usr/share/keyrings/google-linux-archive-keyring.gpg
+  # Validate the key if it matches the expected fingerprints
+  gpg --show-keys --with-colons /usr/share/keyrings/google-linux-archive-keyring.gpg | grep -q -i "4CCA1EAF950CEE4AB83976DCA040830F7FAC5991"
+  gpg --show-keys --with-colons /usr/share/keyrings/google-linux-archive-keyring.gpg | grep -q -i "EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796"
 
   apt update
   apt install -y \
+	arandr \
+	blueman \
+	bluez-firmware \
 	feh \
 	i3 \
 	i3lock \
 	i3status \
-	suckless-tools \
 	libanyevent-i3-perl \
-	scrot \
-	arandr \
 	network-manager-gnome \
+	pavucontrol \
+	pulseaudio \
+	pulseaudio-module-bluetooth \
+	pulseaudio-utils \
+	pulsemixer \
+	rxvt-unicode \
+	scrot \
+	suckless-tools \
 	xinput \
+	xclip \
 	google-chrome-beta \
 	--no-install-recommends
 
   apt install -y -t unstable firefox --no-install-recommends
-
-  local sound_pkgs="pulseaudio-module-bluetooth pulseaudio-utils pavucontrol bluez-firmware blueman"
-  apt install -y "${sound_pkgs}" --no-install-recommends
 
   # update Pulse audio settings (replaces entire line)
   sed -i.bak '/flat-volumes/c\flat-volumes = no' /etc/pulse/daemon.conf
@@ -393,10 +376,8 @@ get_dotfiles() {
   cd "/home/$USERNAME"
   mkdir "/home/$USERNAME/.gnupg"
 
-  # setup downloads folder as tmpfs
-  # that way things are removed on reboot
-  # i like things clean but you may not want this
   mkdir -p "/home/$USERNAME/Downloads"
+  # Optionally setup downloads folder as tmpfs
   # echo -e "\n# tmpfs for downloads\ntmpfs\t/home/${USERNAME}/Downloads\ttmpfs\tnodev,nosuid,size=2G\t0\t0" >> /etc/fstab
 
   # install dotfiles from repo
@@ -454,7 +435,10 @@ install_private() {
 }
 
 install_virtualbox() {
-  echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" >> /etc/apt/sources.list.d/virtualbox.list
+  cat <<-EOF > /etc/apt/sources.list.d/virtualbox.list
+  #deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib
+  deb http://download.virtualbox.org/virtualbox/debian bullseye contrib
+EOF
   curl -sSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | apt-key add -
 
   apt update
@@ -622,8 +606,7 @@ usage() {
   echo "Usage:"
   echo "  sources                            - setup sources & install base pkgs"
   echo "  dist                               - setup sources & dist upgrade"
-  echo "  wifi {broadcom,other}              - install wifi drivers"
-  echo "  graphics {intel,geforce,optimus}   - install graphics drivers"
+  echo "  graphics {geforce}                 - install graphics drivers"
   echo "  wm                                 - install window manager/desktop pkgs"
   echo "  dotfiles                           - get dotfiles (!! as user !!)"
   echo "  scripts                            - install scripts (not needed)"
@@ -645,25 +628,19 @@ main() {
 
   if [[ $cmd == "sources" ]]; then
 	check_is_sudo
-
 	# setup /etc/apt/sources.list
 	setup_sources
-
 	base
   elif [[ $cmd == "dist" ]]; then
 	check_is_sudo
 	# setup /etc/apt/sources.list
 	setup_sources
 	dist_upgrade
-  elif [[ $cmd == "wifi" ]]; then
-	install_wifi "$2"
   elif [[ $cmd == "graphics" ]]; then
 	check_is_sudo
-
 	install_graphics "$2"
   elif [[ $cmd == "wm" ]]; then
 	check_is_sudo
-
 	install_wmapps
   elif [[ $cmd == "dotfiles" ]]; then
 	get_dotfiles
@@ -673,11 +650,9 @@ main() {
 	install_syncthing
   elif [[ $cmd == "vagrant" ]]; then
 	check_is_sudo
-
 	install_vagrant "$2"
   elif [[ $cmd == "dev" ]]; then
 	check_is_sudo
-
 	install_dev
   elif [[ $cmd == "golang" ]]; then
 	install_golang "$2"

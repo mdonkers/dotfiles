@@ -372,8 +372,9 @@ whoseport() {
 # Add new wifi network with (SSID) and (passwd) as parameters
 wifi-add() {
   if [ $# -eq 2 ]; then
-	echo "Trying to add wifi with SSID $1 and passwd $2"
-	nmcli connection add con-name "$1" ifname wlp2s0 type wifi ssid "$1" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$2"
+	local -r device=$(nmcli device | grep -E -m 1 -i -o -w "wlp[a-zA-Z0-9]*") || true
+	echo "Trying to add wifi with SSID $1 and passwd $2 for device $device"
+	nmcli connection add con-name "$1" ifname "$device" type wifi ssid "$1" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$2"
   else
 	echo
 	echo "wifi-add needs two parameters; (SSID) and (passwd)"

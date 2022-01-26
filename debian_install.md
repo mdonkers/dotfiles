@@ -89,6 +89,16 @@ Get a bigger font-size in the console
 
 Choose font `Terminus` with size `14x28`.
 
+Enable Wifi if not directly connected. First making sure the device is enabled, then set the password and connect it
+with a network (only needed first few times, until we have NetworkManager / `nmcli` installed):
+
+    ip link set dev <device> up
+    iwlist <device> scan | grep ESSID
+    wpa_passphrase <network ssid> >> /etc/wpa_supplicant.conf
+    wpa_supplicant -B -D wext -i <device> -c /etc/wpa_supplicant.conf
+    dhclient <device>
+
+
 Install git to fetch our `dotfiles` repository
 
     apt-get install --no-install-recommends git
