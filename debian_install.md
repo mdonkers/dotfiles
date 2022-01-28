@@ -155,7 +155,7 @@ Now disable Gnome and restart via the menu (afterwards login and run `startx`)
 
     gpg --card-status
     gpg --recv-keys 0x24046A96
-    gpg --edit-key gpg 0x24046A96
+    gpg --edit-key 0x24046A96
 
 Then type `trust` followed by `5` to give it full trust. Then `quit`.
 

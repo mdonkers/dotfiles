@@ -130,6 +130,10 @@ base() {
 	pcscd \
 	pcsc-tools \
 	picom \
+	python3-pip \
+	python3-setuptools \
+	python3-wheel \
+	python-is-python3 \
 	scdaemon \
 	silversearcher-ag \
 	ssh \
@@ -375,7 +379,8 @@ get_dotfiles() {
   # create subshell
   (
   cd "/home/$USERNAME"
-  mkdir "/home/$USERNAME/.gnupg"
+  mkdir -p "/home/$USERNAME/.gnupg"
+  chmod go-rx "/home/$USERNAME/.gnupg"
 
   mkdir -p "/home/$USERNAME/Downloads"
   # Optionally setup downloads folder as tmpfs
@@ -511,17 +516,17 @@ install_golang() {
   (
   set -x
   set +e
-  go get github.com/golang/lint/golint
-  go get golang.org/x/tools/cmd/cover
-  go get golang.org/x/review/git-codereview
-  go get golang.org/x/tools/cmd/goimports
-  go get golang.org/x/tools/cmd/gorename
-  go get golang.org/x/tools/cmd/guru
+  go install github.com/golang/lint/golint@latest
+  go install golang.org/x/tools/cmd/cover@latest
+  go install golang.org/x/review/git-codereview@latest
+  go install golang.org/x/tools/cmd/goimports@latest
+  go install golang.org/x/tools/cmd/gorename@latest
+  go install golang.org/x/tools/cmd/guru@latest
 
-  go get github.com/cbednarski/hostess
-  go get github.com/google/go-jsonnet/cmd/jsonnet
-  go get github.com/mikefarah/yq/v4
-  go get sigs.k8s.io/kind
+  go install github.com/cbednarski/hostess@latest
+  go install github.com/google/go-jsonnet/cmd/jsonnet@latest
+  go install github.com/mikefarah/yq/v4@latest
+  go install sigs.k8s.io/kind@latest
   )
 }
 
@@ -561,13 +566,6 @@ install_dev() {
   apt install -y \
 	openjdk-11-jdk \
 	openjdk-11-dbg \
-	erlang \
-	erlang-proper-dev \
-	rebar \
-	elixir \
-	python3-pip \
-	python3-setuptools \
-	python3-wheel \
 	wireshark-qt \
 	ansible \
 	linux-perf \
@@ -576,17 +574,23 @@ install_dev() {
 	gdb \
 	--no-install-recommends
 
+  # Not needed for now
+	#erlang \
+	#erlang-proper-dev \
+	#rebar \
+	#elixir \
+
   # Packages linux-perf and cmake are installed to run Linux performance tests
   # Get the FlameGraph software here: https://github.com/brendangregg/FlameGraph
 
   cleanup
 
   # Add user to group Wireshark for capturing permissions
-  dpkg-reconfigure wireshark-common
+  DEBIAN_FRONTEND=dialog dpkg-reconfigure wireshark-common
   sudo gpasswd -a "$USERNAME" wireshark
 
   # Install some Python plugins. Neovim adds a Python extension to NeoVIM
-  pip3 install --system virtualenv maybe neovim j2cli-3 pygments
+  pip3 install virtualenv maybe neovim j2cli-3 pygments tcconfig
 
   # Install NVM -> Node Version Manager
   cat <<-'EOF' > /Development/tools/nvm-install.sh
@@ -615,7 +619,7 @@ usage() {
   echo "  private                            - install private repo and other personal stuff (!! as user !!)"
   echo "  vagrant                            - install vagrant and virtualbox"
   echo "  dev                                - install development environment for Java"
-  echo "  golang                             - install golang language"
+  echo "  golang                             - install golang language (!! as user !!)"
   echo "  cleanup                            - clean apt etc"
 }
 

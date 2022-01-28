@@ -12,7 +12,7 @@ bin: ## Installs the bin directory files.
 .PHONY: dotfiles
 dotfiles: ## Installs the dotfiles.
 	# add aliases for dotfiles
-	for file in $(shell find $(CURDIR) -name ".*" -not -name ".gitignore" -not -name ".git" -not -name ".gitmodules" -not -name ".*.swp" -not -name ".travis.yml" -not -name ".gnupg"); do \
+	for file in $(shell find $(CURDIR) -name ".*" -maxdepth 1 -not -name ".gitignore" -not -name ".git" -not -name ".gitmodules" -not -name ".*.swp" -not -name ".travis.yml" -not -name ".gnupg"); do \
 		f=$$(basename $$file); \
 		ln -sfn $$file $(HOME)/$$f; \
 	done; \
