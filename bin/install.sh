@@ -148,6 +148,7 @@ base() {
   apt install -y tlp tlp-rdw
 
   setup_sudo
+  mkdir -p /mnt/sdcard
 
   cleanup
 
