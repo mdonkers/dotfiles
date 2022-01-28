@@ -297,7 +297,12 @@ Use `arandr` as graphical interface to `xrandr` to configure the screen resoluti
 
 ## Mounting
 
-To mount e.g. USB devices, first connect the device and get the UUID for mounting:
+For simple mounting, first get the drive and then mount:
+
+    lsblk
+    sudo mount -t vfat /dev/sda1 /mnt/sdcard/ -o dmask=0022,fmask=0133,uid=miel,gid=miel
+
+To be able to mount e.g. USB devices quickly (adding to fstab), first connect the device and get the UUID for mounting:
 
     sudo mkdir -p /media/usb
     sudo fstab -l
