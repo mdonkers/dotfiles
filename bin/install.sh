@@ -434,6 +434,8 @@ install_private() {
   make
   )
 
+  # Make sure user rights for yubikey file is correct
+  sudo chown -R root:root /etc/yubikey/
   # Setup PAM to use the Yubikey for 2F authentication
   # Note! For 'sudo' the line is added before 'common-auth' as its sufficient for authentication. For 'login' after the include
   sudo sed -i "\\|common-auth|i \\auth       sufficient   pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue nouserok" /etc/pam.d/sudo
