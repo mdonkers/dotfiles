@@ -475,12 +475,17 @@ monitor() {
   #xrandr --output eDP-1 --auto --primary --output HDMI-3 --mode 1920x1200 --rate 60 --panning 3840x2400+2880+0 --scale 2x2 --right-of eDP-1
   #xrandr --output eDP-1 --auto --primary --output HDMI-3 --mode 1920x1200 --rate 60 --panning 3360x2100+2880+0 --scale 1.75x1.75 --right-of eDP-1
 
+  local -r monitor=$(xrandr -q | grep -P '\s+connected' | grep -P -m 1 -i -o -w '(?!eDP)[a-zA-Z0-9]*-[0-9]') || true
+  echo "Connected to: ${monitor}"
   # Without HDPI screen no panning necessary. Can add scaling (e.g. 1.2x1.2) but this makes fonts blurry)
-  xrandr --output eDP-1 --auto --output HDMI-1 --primary --mode 1920x1200 --rate 60 --right-of eDP-1
+  xrandr --output eDP-1 --auto --output "${monitor}" --primary --mode 1920x1200 --rate 60 --right-of eDP-1
 }
 
 monitor_off() {
   xrandr --output eDP-1 --auto --primary
-  xrandr --output HDMI-1 --off
-  xrandr --output DP-1 --off
+
+  # Try to grep a still existing monitor.
+  local -r monitor=$(xrandr --listmonitors | grep -P -m 1 -i -o -w '(?!eDP)[a-zA-Z0-9]*-[0-9]' | head -n 1) || true
+  echo "Disconnected from: ${monitor}"
+  xrandr --output "${monitor}" --off
 }
