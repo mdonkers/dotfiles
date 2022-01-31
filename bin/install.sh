@@ -202,8 +202,8 @@ setup_sudo() {
   gpasswd -a "$USERNAME" systemd-network
 
   local -r SUDOERS_CONFIG=$(cat <<-END
-	Defaults	secure_path=\"/usr/local/go/bin:/home/${USERNAME}/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"
-	Defaults	env_keep += \"ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR\"
+	Defaults	secure_path="/usr/local/go/bin:/home/${USERNAME}/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR"
 	# Possibly allow 'sudo' to be used without password.
 	#${USERNAME} ALL=(ALL) NOPASSWD:ALL
 	# When using U2F with Yubikey, need to use passwords (configured to only request Yubikey in PAM) but exclude some commands from needing password.
