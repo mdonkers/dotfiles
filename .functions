@@ -342,6 +342,8 @@ dbs() {
 }
 
 restart_gpgagent(){
+	# Restart the dirmngr service in case of DNS issues
+	systemctl --user restart dirmngr.service
 	# Restart the gpg agent.
 	# shellcheck disable=SC2046
 	kill -9 $(pidof scdaemon) >/dev/null 2>&1

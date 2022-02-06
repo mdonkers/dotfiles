@@ -92,7 +92,7 @@ update_linux() {
 	rm -rf /var/lib/apt/lists/*
 
 	# Make sure Neovim and other packages are installed and up-to-date
-	pip3 install --upgrade virtualenv maybe neovim j2cli-3 pygments tcconfig
+	pip3 install --upgrade virtualenv neovim pygments tcconfig
 }
 
 update_kubectl() {

@@ -1,0 +1,1 @@
+ACTION=="add", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="7681", ENV{XKBMODEL}="pc104", ENV{XKBLAYOUT}="us", ENV{XKBVARIANT}="euro", ENV{XKBOPTIONS}="compose:caps"

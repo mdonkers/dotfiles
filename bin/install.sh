@@ -142,7 +142,9 @@ base() {
 	tar \
 	tree \
 	tzdata \
+	udisks2 \
 	unzip \
+	whois \
 	wireless-tools \
 	xz-utils \
 	zip \
@@ -592,7 +594,7 @@ install_dev() {
   sudo gpasswd -a "$USERNAME" wireshark
 
   # Install some Python plugins. Neovim adds a Python extension to NeoVIM
-  pip3 install virtualenv maybe neovim j2cli-3 pygments tcconfig
+  pip3 install virtualenv neovim pygments tcconfig
 
   # Install NVM -> Node Version Manager
   cat <<-'EOF' > /Development/tools/nvm-install.sh
