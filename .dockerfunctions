@@ -105,6 +105,7 @@ aws(){
 	-a stdout \
 	-a stderr \
 	-v ~/.aws:/root/.aws \
+	-v ~/.kube:/root/.kube \
 	-v "$(pwd):/aws" \
 	-e AWS_PROFILE \
 	--name aws-cli \

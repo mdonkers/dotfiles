@@ -30,6 +30,12 @@ xhost local:root
 # - Run "~/.xsession" or "~/.Xsession" and start Window Manager from there
 # - Run "/usr/bin/x-window-manager", which can be configured via "update-alternatives --config x-window-manager"
 
+##
+# Propogate DISPLAY vars to Systemd, for more info see this
+#  https://wiki.archlinux.org/index.php/Systemd/User#Environment_variables
+#
+systemctl --user import-environment DISPLAY XAUTHORITY
+
 # Make apps detect the WM correctly
 export XDG_CURRENT_DESKTOP=i3
 

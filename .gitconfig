@@ -191,7 +191,7 @@
 [user]
 
   name = Miel Donkers
-  email = miel.donkers@instana.com
+  email = miel@clickhouse.com
   signingkey = 24046A96
 
 [github]
