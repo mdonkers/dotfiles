@@ -24,11 +24,15 @@ dotfiles: ## Installs the dotfiles.
 etc: ## Installs the etc directory files.
 	for file in $(shell find $(CURDIR)/etc -type f -not -name ".*.swp"); do \
 		f=$$(echo $$file | sed -e 's|$(CURDIR)||'); \
+		sudo mkdir -p $$(dirname $$f); \
 		sudo ln -f $$file $$f; \
 	done
 	systemctl --user daemon-reload
 	sudo systemctl daemon-reload
 	sudo service i8kmon restart
+	sudo systemctl enable systemd-networkd systemd-resolved
+	sudo systemctl start systemd-networkd systemd-resolved
+	sudo ln -snf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 .PHONY: test
 test: shellcheck ## Runs all the tests on the files in the repository.

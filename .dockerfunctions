@@ -98,7 +98,7 @@ EOF
 # 		nginx
 # }
 
-aws(){
+aws-cli(){
   # Do NOT use "-it" because it allocates a pseudo terminal which uses CRLF as linebreak, this malformes output.
   # Instead the "-a stdout" with the redirect will make sure output is correctly captured.
   docker run --rm \
@@ -108,11 +108,18 @@ aws(){
 	-v ~/.kube:/root/.kube \
 	-v "$(pwd):/aws" \
 	-e AWS_PROFILE \
+	-e AWS_ACCESS_KEY_ID \
+	-e AWS_SECRET_ACCESS_KEY \
+	-e AWS_SESSION_TOKEN \
 	--name aws-cli \
 	amazon/aws-cli "$@"
 }
 # Export function to be able to use in scripts
-export -f aws
+export -f aws-cli
+# For some usages, its needed to create a separate script named `aws` which will then call this function:
+#   #!/bin/bash
+#   aws-cli "$@"
+
 
 gimp(){
   del_stopped gimp
@@ -143,6 +150,32 @@ htop(){
     --net none \
     --name htop \
     jess/htop
+}
+
+lens(){
+  del_stopped lens
+
+  # Make sure the directory for lens config exists
+  mkdir -p "${HOME}/.k8slens"
+
+  docker run -d \
+	-v /etc/localtime:/etc/localtime:ro \
+	-v /tmp/.X11-unix:/tmp/.X11-unix \
+	-e "DISPLAY=unix${DISPLAY}" \
+	-v "${HOME}/.aws:/home/lens/.aws" \
+	-v "${HOME}/.kube:/home/lens/.kube" \
+	-v "${HOME}/.k8slens:/home/lens/.k8slens" \
+	-v /dev/shm:/dev/shm \
+	-v /etc/hosts:/etc/hosts \
+	--net host \
+	--device /dev/snd \
+	--device /dev/dri \
+	--device /dev/video0 \
+	--group-add audio \
+	--group-add video \
+	--security-opt "seccomp=/etc/docker/seccomp/electron.json" \
+	--name lens \
+	${DOCKER_REPO_PREFIX}/lens
 }
 
 mitmproxy(){
