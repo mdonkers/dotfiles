@@ -576,7 +576,16 @@ install_dev() {
 	cmake \
 	build-essential \
 	gdb \
+	lld \
+	ccache \
+	clang \
+	ninja-build \
 	--no-install-recommends
+
+  # Make LD (linker) configurable via 'update-alternatives' and set default to lld
+  update-alternatives --install "/usr/bin/ld" "ld" "$(command -v ld.lld)" 20
+  update-alternatives --install "/usr/bin/ld" "ld" "$(command -v ld.gold)" 10
+  update-alternatives --config ld
 
   # Not needed for now
 	#erlang \
