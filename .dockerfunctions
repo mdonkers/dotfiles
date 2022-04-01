@@ -120,6 +120,12 @@ export -f aws-cli
 #   #!/bin/bash
 #   aws-cli "$@"
 
+dive(){
+  docker run --rm -it \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	--name dive \
+	wagoodman/dive:latest "$@"
+}
 
 gimp(){
   del_stopped gimp
