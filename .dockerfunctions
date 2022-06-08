@@ -104,8 +104,8 @@ aws-cli(){
   docker run --rm \
 	-a stdout \
 	-a stderr \
-	-v ~/.aws:/root/.aws \
-	-v ~/.kube:/root/.kube \
+	-v "${HOME}/.aws:/root/.aws" \
+	-v "${HOME}/.kube:/root/.kube" \
 	-v "$(pwd):/aws" \
 	-e AWS_PROFILE \
 	-e AWS_ACCESS_KEY_ID \
@@ -180,6 +180,7 @@ lens(){
 	--group-add audio \
 	--group-add video \
 	--security-opt "seccomp=/etc/docker/seccomp/electron.json" \
+	-u $(id -u ${USER}):$(id -g ${USER}) \
 	--name lens \
 	${DOCKER_REPO_PREFIX}/lens
 }

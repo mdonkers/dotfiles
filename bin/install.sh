@@ -94,6 +94,7 @@ base() {
 	file \
 	findutils \
 	fwupd \
+	fwupd-signed \
 	gcc \
 	git \
 	git-lfs \
