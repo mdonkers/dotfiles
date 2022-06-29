@@ -104,8 +104,8 @@ aws-cli(){
   docker run --rm \
 	-a stdout \
 	-a stderr \
-	-v "${HOME}/.aws:/root/.aws" \
-	-v "${HOME}/.kube:/root/.kube" \
+	-v "${HOME}/.aws:/root/.aws:Z" \
+	-v "${HOME}/.kube:/root/.kube:Z" \
 	-v "$(pwd):/aws" \
 	-e AWS_PROFILE \
 	-e AWS_ACCESS_KEY_ID \
