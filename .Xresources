@@ -99,8 +99,12 @@ Xft.hinting:    1
 Xft.antialias:  1
 
 ! -- Fonts -- !
-URxvt.font: xft:Inconsolata:pixelsize=17:antialias=true:hinting=full,xft:Symbola:pixelsize=12:antialias=true:hinting=full
-URxvt.boldFont: xft:Inconsolata:style=bold:pixelsize=17:antialias=true:hinting=full,xft:Symbola:pixelsize=12:antialias=true:hinting=full
+URxvt.font:     xft:Inconsolata Nerd Font:pixelsize=17:antialias=true:hinting=full,\
+                xft:Noto Emoji:style=Regular:pixelsize=11,\
+                xft:Symbola:pixelsize=12:antialias=true:hinting=full
+URxvt.boldFont: xft:Inconsolata Nerd Font:pixelsize=17:antialias=true:hinting=full,\
+                xft:Noto Emoji:style=Regular:pixelsize=11,\
+                xft:Symbola:pixelsize=12:antialias=true:hinting=full
 
 !!*faceSize:              11
 *bellIsUrgent:          true

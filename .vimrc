@@ -24,7 +24,7 @@ let g:solarized_termtrans=1
 " let g:hybrid_use_Xresources = 1
 " let g:rehash256 = 1
 colorscheme solarized
-set guifont=Inconsolata:h15
+set guifont=Inconsolata\ NF:h15
 set guioptions-=L
 " Change color of line numbers to grey
 "highlight LineNr ctermfg=grey ctermbg=black guibg=black guifg=grey

@@ -174,6 +174,7 @@ base() {
   #sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="acpi_rev_override=5 acpi_osi=Linux pci=noaer nmi_watchdog=0 apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
 
   sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
+  grep -qx '^GRUB_DISABLE_OS_PROBER=.*' /etc/default/grub || echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
   update-grub
   echo
   echo ">>>>>>>>>>"
@@ -338,6 +339,7 @@ install_wmapps() {
 	blueman \
 	bluez-firmware \
 	feh \
+	fonts-noto-color-emoji \
 	i3 \
 	i3lock \
 	i3status \
