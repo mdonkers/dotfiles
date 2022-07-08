@@ -1,0 +1,77 @@
+
+format = """
+$kubernetes\
+$golang\
+$python\
+$line_break\
+$hostname\
+:\
+$directory\
+$git_branch\
+$git_state\
+$git_status\
+$username\
+$character\
+"""
+
+# A continuation prompt that displays two filled in arrows
+continuation_prompt = "[→](dimmed yellow) "
+
+# Disable the blank line at the start of the prompt
+add_newline = true
+
+# Longer timeout, for commands executed by Starship (such as Git)
+command_timeout = 750
+
+[hostname]
+ssh_only = false
+format = "[$ssh_symbol](bold blue)[$hostname](cyan)"
+disabled = false
+
+[directory]
+truncation_length = 1
+format = "[$path]($style) "
+style = ""
+
+[username]
+format = "[$user]($style)"
+style_user = ""
+style_root = "bold red"
+disabled = false
+show_always = true
+
+[character]
+success_symbol = '[\$]()'
+error_symbol = '[\$](bold green)'
+
+[git_branch]
+format = '[\($branch]($style)'
+style = "blue"
+
+[git_state]
+format = '[|$state]($style)'
+style = "blue"
+
+[git_status]
+format = '[ $untracked$modified$staged$stashed\)]($style) '
+style = "blue"
+modified = "*"
+
+[kubernetes]
+format = '\[[⛵ $context](bold green)\]'
+disabled = false
+[kubernetes.context_aliases]
+".*cluster/(?P<var_cluster>[\\w-]+)" = "$var_cluster"
+
+[golang]
+format = '\[[$symbol($version)]($style)\]'
+style = "bold green"
+
+[python]
+format = '\[[${symbol}${pyenv_prefix}(${version})(\($virtualenv\))]($style)\]'
+style = "bold green"
+
+# Disable the package module, hiding it from the prompt completely
+[package]
+disabled = false
+

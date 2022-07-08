@@ -11,17 +11,21 @@ elif infocmp xterm-256color >/dev/null 2>&1; then
 	export TERM='xterm-256color';
 fi;
 
-source ~/.bash_scripts/git-prompt.sh
-GIT_PS1_SHOWDIRTYSTATE=yes
-GIT_PS1_SHOWSTASHSTATE=yes
-function set_git_prompt {
-  __git_ps1 "\[\033[00;36m\]\h\[\033[00m\]:\W\[\033[00;34m\]" "\[\033[00m\] \u\\\$ "
-}
-PROMPT_COMMAND="set_git_prompt ; $PROMPT_COMMAND"
+#source ~/.bash_scripts/git-prompt.sh
+#GIT_PS1_SHOWDIRTYSTATE=yes
+#GIT_PS1_SHOWSTASHSTATE=yes
+#function set_git_prompt {
+#  __git_ps1 "\[\033[00;36m\]\h\[\033[00m\]:\W\[\033[00;34m\]" "\[\033[00m\] \u\\\$ "
+#}
+#PROMPT_COMMAND="set_git_prompt ; $PROMPT_COMMAND"
+#
+#PS2="\[${yellow}\]→ \[${reset}\]";
+#export PS2;
 
-PS2="\[${yellow}\]→ \[${reset}\]";
-export PS2;
+eval "$(starship init bash)"
 
+
+## OLD, probably don't use anymore ##
 
 #prompt_git() {
 #	local s='';
