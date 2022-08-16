@@ -523,7 +523,7 @@ install_golang() {
   (
   set -x
   set +e
-  go install github.com/golang/lint/golint@latest
+  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   go install golang.org/x/tools/cmd/cover@latest
   go install golang.org/x/review/git-codereview@latest
   go install golang.org/x/tools/cmd/goimports@latest

@@ -1,15 +1,15 @@
 
 format = """
-$kubernetes\
-$golang\
-$python\
-$line_break\
 $hostname\
 :\
 $directory\
 $git_branch\
 $git_state\
 $git_status\
+$kubernetes\
+$golang\
+$python\
+$line_break\
 $username\
 $character\
 """
@@ -18,7 +18,7 @@ $character\
 continuation_prompt = "[→](dimmed yellow) "
 
 # Disable the blank line at the start of the prompt
-add_newline = true
+add_newline = false
 
 # Longer timeout, for commands executed by Starship (such as Git)
 command_timeout = 750
