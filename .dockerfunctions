@@ -99,6 +99,8 @@ EOF
 # }
 
 aws-cli(){
+  # Generate a random to start the container multiple times under different names
+  local r=$(( RANDOM % 100 ))
   # Do NOT use "-it" because it allocates a pseudo terminal which uses CRLF as linebreak, this malformes output.
   # Instead the "-a stdout" with the redirect will make sure output is correctly captured.
   docker run --rm \
@@ -111,7 +113,7 @@ aws-cli(){
 	-e AWS_ACCESS_KEY_ID \
 	-e AWS_SECRET_ACCESS_KEY \
 	-e AWS_SESSION_TOKEN \
-	--name aws-cli \
+	--name "aws-cli-${r}" \
 	amazon/aws-cli "$@"
 }
 # Export function to be able to use in scripts
@@ -119,6 +121,24 @@ export -f aws-cli
 # For some usages, its needed to create a separate script named `aws` which will then call this function:
 #   #!/bin/bash
 #   aws-cli "$@"
+
+clickhouse-client(){
+  # Determine either to open a TTY or attach to stdin/stdout
+  if [ ! -t 0 ]; then
+	local args="-i --attach stdin --attach stdout --attach stderr"
+  else
+	local args="-it"
+  fi
+  # Generate a random to start the container multiple times under different names
+  local r=$(( RANDOM % 100 ))
+  docker run \
+	${args} \
+	--rm \
+	--net=host \
+	--entrypoint=clickhouse-client \
+	--name "clickhouse-client-${r}" \
+	clickhouse/clickhouse-server "$@"
+}
 
 dive(){
   docker run --rm -it \
@@ -180,7 +200,7 @@ lens(){
 	--group-add audio \
 	--group-add video \
 	--security-opt "seccomp=/etc/docker/seccomp/electron.json" \
-	-u $(id -u ${USER}):$(id -g ${USER}) \
+	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
 	--name lens \
 	${DOCKER_REPO_PREFIX}/lens
 }

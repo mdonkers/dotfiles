@@ -7,6 +7,7 @@ $git_branch\
 $git_state\
 $git_status\
 $kubernetes\
+$aws\
 $golang\
 $python\
 $line_break\
@@ -53,9 +54,14 @@ format = '[|$state]($style)'
 style = "blue"
 
 [git_status]
-format = '[ $untracked$modified$staged$stashed\)]($style) '
+format = '[( $untracked$modified$staged$stashed)\)]($style) '
 style = "blue"
 modified = "*"
+
+[aws]
+format = '\[[$symbol($profile )(\($region\))( \[$duration\])](bold green)\]'
+symbol = "☁️ "
+force_display = false
 
 [kubernetes]
 format = '\[[⛵ $context](bold green)\]'

@@ -440,7 +440,8 @@ rebase() {
         echo -e "${BLUE}GIT - updating following directory; "
         pwd
         echo -e "${NC}"
-        git pull --prune
+        # Using alias from .gitconfig
+        git p
       fi
     fi
     )
