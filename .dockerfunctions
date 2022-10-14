@@ -123,6 +123,8 @@ export -f aws-cli
 #   aws-cli "$@"
 
 clickhouse-client(){
+  local ch_history_file="${HOME}/.clickhouse-client-history"
+  test -f "${ch_history_file}" || touch -a "${ch_history_file}"
   # Determine either to open a TTY or attach to stdin/stdout
   if [ ! -t 0 ]; then
 	local args="-i --attach stdin --attach stdout --attach stderr"
@@ -135,9 +137,10 @@ clickhouse-client(){
 	${args} \
 	--rm \
 	--net=host \
+	-v "${ch_history_file}:/etc/clickhouse-client/history:Z" \
 	--entrypoint=clickhouse-client \
 	--name "clickhouse-client-${r}" \
-	clickhouse/clickhouse-server "$@"
+	clickhouse/clickhouse-server --history_file=/etc/clickhouse-client/history "$@"
 }
 
 dive(){
