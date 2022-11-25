@@ -99,12 +99,18 @@ Xft.hinting:    1
 Xft.antialias:  1
 
 ! -- Fonts -- !
+! To show emoji's, explicitly pick NON-color Noto font as there are two installed.
+! See fc-list for the style to correctly match
 URxvt.font:     xft:Inconsolata Nerd Font:pixelsize=17:antialias=true:hinting=full,\
-                xft:Noto Emoji:style=Regular:pixelsize=11,\
+                xft:Noto Emoji Medium:style=Medium:pixelsize=11:antialias=true:hinting=full,\
                 xft:Symbola:pixelsize=12:antialias=true:hinting=full
 URxvt.boldFont: xft:Inconsolata Nerd Font:pixelsize=17:antialias=true:hinting=full,\
-                xft:Noto Emoji:style=Regular:pixelsize=11,\
+                xft:Noto Emoji Medium:style=Medium:pixelsize=11:antialias=true:hinting=full,\
                 xft:Symbola:pixelsize=12:antialias=true:hinting=full
+
+!URxvt*skipBuiltinGlyphs:    true
+!URxvt*letterSpace: 0
+!URxvt*lineSpace: -5
 
 !!*faceSize:              11
 *bellIsUrgent:          true
