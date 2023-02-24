@@ -48,17 +48,17 @@ setup_sources() {
 	EOF
 
   cat <<-EOF > /etc/apt/sources.list
-	deb http://httpredir.debian.org/debian testing main contrib non-free
-	deb-src http://httpredir.debian.org/debian/ testing main contrib non-free
+	deb http://httpredir.debian.org/debian testing main contrib non-free non-free-firmware
+	deb-src http://httpredir.debian.org/debian/ testing main contrib non-free non-free-firmware
 
-	deb http://httpredir.debian.org/debian/ testing-updates main contrib non-free
-	deb-src http://httpredir.debian.org/debian/ testing-updates main contrib non-free
+	deb http://httpredir.debian.org/debian/ testing-updates main contrib non-free non-free-firmware
+	deb-src http://httpredir.debian.org/debian/ testing-updates main contrib non-free non-free-firmware
 
-	deb http://security.debian.org/ testing-security main contrib non-free
-	deb-src http://security.debian.org/ testing-security main contrib non-free
+	deb http://security.debian.org/ testing-security main contrib non-free non-free-firmware
+	deb-src http://security.debian.org/ testing-security main contrib non-free non-free-firmware
 
-	deb http://httpredir.debian.org/debian experimental main contrib non-free
-	deb-src http://httpredir.debian.org/debian experimental main contrib non-free
+	deb http://httpredir.debian.org/debian experimental main contrib non-free non-free-firmware
+	deb-src http://httpredir.debian.org/debian experimental main contrib non-free non-free-firmware
 	EOF
 
   # turn off translations, speed up apt update
@@ -134,6 +134,9 @@ base() {
 	python3-pip \
 	python3-setuptools \
 	python3-wheel \
+	python3-virtualenv \
+	python3-neovim \
+	python3-pygments \
 	python-is-python3 \
 	scdaemon \
 	silversearcher-ag \
@@ -607,8 +610,8 @@ install_dev() {
   DEBIAN_FRONTEND=dialog dpkg-reconfigure wireshark-common
   sudo gpasswd -a "$USERNAME" wireshark
 
-  # Install some Python plugins. Neovim adds a Python extension to NeoVIM
-  pip3 install virtualenv neovim pygments tcconfig
+  # Install some Python plugins. Other plugins are installed as Debian packages
+  pip3 install tcconfig
 
   # Install NVM -> Node Version Manager
   cat <<-'EOF' > /Development/tools/nvm-install.sh
