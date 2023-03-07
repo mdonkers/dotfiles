@@ -101,7 +101,7 @@ update_kubectl() {
   chown -R "${TARGET_USER}" "/Development/tools/kubectl"
   chmod +x /Development/tools/kubectl
   ln -snf /Development/tools/kubectl /usr/local/bin/kubectl
-  echo "kubectl $(kubectl version --client --short)"
+  echo "kubectl $(kubectl version --client)"
 }
 
 update_firmware() {
