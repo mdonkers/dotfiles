@@ -123,6 +123,33 @@ export -f aws-cli
 #   #!/bin/bash
 #   aws-cli "$@"
 
+gcloud-cli(){
+  # Generate a random to start the container multiple times under different names
+  local r=$(( RANDOM % 100 ))
+  local boto_config="${HOME}/.boto"
+  test -f "${boto_config}" || touch -a "${boto_config}"
+  # Do NOT use "-it" because it allocates a pseudo terminal which uses CRLF as linebreak, this malformes output.
+  # Instead the "-a stdout" with the redirect will make sure output is correctly captured.
+  docker run --rm \
+	-i \
+	-a stdout \
+	-a stderr \
+	-v "${HOME}/.gcloud:/config/.gcloud:Z" \
+	-v "${boto_config}:/root/.boto:Z" \
+	-v "${HOME}/certs:/certs:Z" \
+	-v "${HOME}/.kube:/root/.kube:Z" \
+	-e CLOUDSDK_CONFIG=/config/.gcloud \
+	--entrypoint=gcloud \
+	--name "gcloud-${r}" \
+	google/cloud-sdk "$@"
+}
+# Export function to be able to use in scripts
+export -f gcloud-cli
+# For some usages, its needed to create a separate script named `gcloud` which will then call this function:
+#   #!/bin/bash
+#   gcloud-cli "$@"
+
+
 clickhouse-client(){
   local ch_history_file="${HOME}/.clickhouse-client-history"
   test -f "${ch_history_file}" || touch -a "${ch_history_file}"
