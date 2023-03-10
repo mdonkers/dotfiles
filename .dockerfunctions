@@ -219,9 +219,12 @@ lens(){
 	-v /etc/localtime:/etc/localtime:ro \
 	-v /tmp/.X11-unix:/tmp/.X11-unix \
 	-e "DISPLAY=unix${DISPLAY}" \
+	-v "${HOME}/certs:/certs:Z" \
 	-v "${HOME}/.aws:/home/lens/.aws" \
 	-v "${HOME}/.kube:/home/lens/.kube" \
 	-v "${HOME}/.k8slens:/home/lens/.k8slens" \
+	-v "${HOME}/.gcloud:/home/lens/.gcloud:Z" \
+	-e CLOUDSDK_CONFIG=/home/lens/.gcloud \
 	-v /dev/shm:/dev/shm \
 	-v /etc/hosts:/etc/hosts \
 	--net host \
