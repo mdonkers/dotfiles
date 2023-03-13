@@ -106,8 +106,8 @@ aws-cli(){
   docker run --rm \
 	-a stdout \
 	-a stderr \
-	-v "${HOME}/.aws:/root/.aws:Z" \
-	-v "${HOME}/.kube:/root/.kube:Z" \
+	-v "${HOME}/.aws:/root/.aws" \
+	-v "${HOME}/.kube:/root/.kube" \
 	-v "$(pwd):/aws" \
 	-e AWS_PROFILE \
 	-e AWS_REGION \
@@ -134,10 +134,10 @@ gcloud-cli(){
 	-i \
 	-a stdout \
 	-a stderr \
-	-v "${HOME}/.gcloud:/config/.gcloud:Z" \
-	-v "${boto_config}:/root/.boto:Z" \
-	-v "${HOME}/certs:/certs:Z" \
-	-v "${HOME}/.kube:/root/.kube:Z" \
+	-v "${HOME}/.gcloud:/config/.gcloud" \
+	-v "${boto_config}:/root/.boto" \
+	-v "${HOME}/certs:/certs" \
+	-v "${HOME}/.kube:/root/.kube" \
 	-e CLOUDSDK_CONFIG=/config/.gcloud \
 	--entrypoint=gcloud \
 	--name "gcloud-${r}" \
@@ -165,7 +165,7 @@ clickhouse-client(){
 	${args} \
 	--rm \
 	--net=host \
-	-v "${ch_history_file}:/etc/clickhouse-client/history:Z" \
+	-v "${ch_history_file}:/etc/clickhouse-client/history" \
 	--entrypoint=clickhouse-client \
 	--name "clickhouse-client-${r}" \
 	clickhouse/clickhouse-server --history_file=/etc/clickhouse-client/history "$@"
@@ -219,11 +219,11 @@ lens(){
 	-v /etc/localtime:/etc/localtime:ro \
 	-v /tmp/.X11-unix:/tmp/.X11-unix \
 	-e "DISPLAY=unix${DISPLAY}" \
-	-v "${HOME}/certs:/certs:Z" \
+	-v "${HOME}/certs:/certs" \
 	-v "${HOME}/.aws:/home/lens/.aws" \
 	-v "${HOME}/.kube:/home/lens/.kube" \
 	-v "${HOME}/.k8slens:/home/lens/.k8slens" \
-	-v "${HOME}/.gcloud:/home/lens/.gcloud:Z" \
+	-v "${HOME}/.gcloud:/home/lens/.gcloud" \
 	-e CLOUDSDK_CONFIG=/home/lens/.gcloud \
 	-v /dev/shm:/dev/shm \
 	-v /etc/hosts:/etc/hosts \
