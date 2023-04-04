@@ -212,9 +212,6 @@ htop(){
 lens(){
   del_stopped lens
 
-  # Make sure the directory for lens config exists
-  mkdir -p "${HOME}/.k8slens"
-
   docker run -d \
 	-v /etc/localtime:/etc/localtime:ro \
 	-v /tmp/.X11-unix:/tmp/.X11-unix \
@@ -222,7 +219,6 @@ lens(){
 	-v "${HOME}/certs:/certs" \
 	-v "${HOME}/.aws:/home/lens/.aws" \
 	-v "${HOME}/.kube:/home/lens/.kube" \
-	-v "${HOME}/.k8slens:/home/lens/.k8slens" \
 	-v "${HOME}/.gcloud:/home/lens/.gcloud" \
 	-e CLOUDSDK_CONFIG=/home/lens/.gcloud \
 	-v /dev/shm:/dev/shm \
