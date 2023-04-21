@@ -466,7 +466,7 @@ EOF
 }
 
 install_vagrant() {
-  VAGRANT_VERSION=2.2.19
+  VAGRANT_VERSION=2.3.0
 
   # if we are passing the version
   if [[ -n "$1" ]]; then
@@ -552,11 +552,6 @@ install_dev() {
 	deb http://repos.azulsystems.com/debian stable main
 	EOF
 
-  # add Erlang / Elixir apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/erlang-solutions.list
-	deb https://packages.erlang-solutions.com/ubuntu impish contrib
-	EOF
-
   # add Ansible apt repo
   cat <<-EOF > /etc/apt/sources.list.d/ansible.list
 	deb http://ppa.launchpad.net/ansible/ansible/ubuntu impish main
@@ -564,9 +559,6 @@ install_dev() {
 
   # add the Azul Zulu Java gpg key
   apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9
-
-  # add the Erlang Solutions gpg key
-  curl --silent https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc | apt-key add -
 
   # add the Ansible gpg key
   apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
@@ -576,8 +568,8 @@ install_dev() {
 
   apt update
   apt install -y \
-	openjdk-11-jdk \
-	openjdk-11-dbg \
+	openjdk-20-jdk \
+	openjdk-20-dbg \
 	wireshark-qt \
 	ansible \
 	linux-perf \
@@ -594,12 +586,6 @@ install_dev() {
   update-alternatives --install "/usr/bin/ld" "ld" "$(command -v ld.lld)" 20
   update-alternatives --install "/usr/bin/ld" "ld" "$(command -v ld.gold)" 10
   update-alternatives --config ld
-
-  # Not needed for now
-	#erlang \
-	#erlang-proper-dev \
-	#rebar \
-	#elixir \
 
   # Packages linux-perf and cmake are installed to run Linux performance tests
   # Get the FlameGraph software here: https://github.com/brendangregg/FlameGraph

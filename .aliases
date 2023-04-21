@@ -137,7 +137,3 @@ alias mvn='mvn -T=1C -Djava.awt.headless=true'
 # shellcheck disable=SC2154
 alias clean_mvn='find ~/.m2/repository \( -iname "agent-*" -o -iname "javaagent-*" \) -prune -o -atime +14 -iname "*.pom" -print0 | while read -d "" -r pom; do parent=`dirname "$pom"`; rm -rf "$parent"; done'
 
-alias argo="argocd --grpc-web"
-alias argo-fwd="kubectl port-forward svc/argocd-server -n argocd 8080:443"
-alias argo-password='kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo'
-alias argo-login='argocd login localhost:8080 --insecure --username admin --password $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo)'
