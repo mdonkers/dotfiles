@@ -53,6 +53,9 @@ export PIP_REQUIRE_VIRTUALENV=true
 syspip() {
    PIP_REQUIRE_VIRTUALENV="" pip3 "$@"
  }
+# pipx install binaries in /usr/local/bin (instead of $HOME/.local/bin). Make sure env is used when installing as root
+PIPX_HOME=/opt/pipx
+PIPX_BIN_DIR=/usr/local/bin
 
 # Clang exports for building C++ projects (via symlinks picks up latest installed)
 export CC=clang

@@ -79,6 +79,7 @@ base() {
   apt -y upgrade
 
   apt install -y \
+	acpi \
 	adduser \
 	apparmor \
 	automake \
@@ -103,7 +104,6 @@ base() {
 	grep \
 	gzip \
 	hostname \
-	i8kutils \
 	inotify-tools \
 	iproute2 \
 	jq \
@@ -123,7 +123,6 @@ base() {
 	net-tools \
 	network-manager \
 	nftables \
-	openresolv \
 	openvpn \
 	openssl \
 	opensc \
@@ -139,12 +138,14 @@ base() {
 	python3-pygments \
 	python-is-python3 \
 	scdaemon \
+	smbios-utils \
 	silversearcher-ag \
 	ssh \
 	strace \
 	sudo \
 	systemd-resolved \
 	tar \
+	thermald \
 	tree \
 	tzdata \
 	udisks2 \
@@ -157,14 +158,12 @@ base() {
 
   # install tlp with recommends
   apt install -y tlp tlp-rdw
+  systemctl enable powertop.service
 
   setup_sudo
   mkdir -p /mnt/sdcard
 
   cleanup
-
-  # Load the i8k module for controlling the fans
-  modprobe i8k force=1
 
   install_docker
   install_scripts
@@ -212,7 +211,7 @@ setup_sudo() {
 
   local -r SUDOERS_CONFIG=$(cat <<-END
 	Defaults	secure_path="/usr/local/go/bin:/home/${USERNAME}/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-	Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR"
+	Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR PIPX_HOME PIPX_BIN_DIR"
 	# Possibly allow 'sudo' to be used without password.
 	#${USERNAME} ALL=(ALL) NOPASSWD:ALL
 	# When using U2F with Yubikey, need to use passwords (configured to only request Yubikey in PAM) but exclude some commands from needing password.
@@ -252,8 +251,7 @@ install_docker() {
   gpg --show-keys --with-colons /usr/share/keyrings/docker-archive-keyring.gpg | grep -q -i "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
 
   cat <<-EOF > /etc/apt/sources.list.d/docker.list
-	#deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) test
-	deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian bullseye test
+	deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) test
 	EOF
 
   apt update
@@ -392,21 +390,25 @@ get_dotfiles() {
   mkdir -p "/home/$USERNAME/.gnupg"
   chmod go-rx "/home/$USERNAME/.gnupg"
 
+  mkdir -p "/home/$USERNAME/.config"
+  chmod go-rx "/home/$USERNAME/.config"
+
   mkdir -p "/home/$USERNAME/Downloads"
   # Optionally setup downloads folder as tmpfs
   # echo -e "\n# tmpfs for downloads\ntmpfs\t/home/${USERNAME}/Downloads\ttmpfs\tnodev,nosuid,size=2G\t0\t0" >> /etc/fstab
 
   # install dotfiles from repo
   rm -rf "/home/$USERNAME/dotfiles"
-  git clone --recursive git://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
+  git clone --recursive https://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
 
   # installs all the things
   cd "/home/$USERNAME/dotfiles"
   make
 
   sudo systemctl enable "i3lock@${USERNAME}"
-  sudo systemctl enable powertop.service
-  systemctl --user enable slack-status.timer
+  #systemctl --user enable slack-status.timer
+
+  curl -sSL "https://github.com/starship/starship/releases/latest/download/starship-x86_64-unknown-linux-gnu.tar.gz" | sudo tar -v -C /usr/local/bin -xz --no-same-owner
 
   cd "/home/$USERNAME"
 
@@ -547,24 +549,16 @@ install_dev() {
   mkdir -p /Development/{misc,projects,tools,workspaces}
   chown -R "$USERNAME:$USERNAME" /Development
 
-  # add Azul Zulu Java apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/azul-java.list
-	deb http://repos.azulsystems.com/debian stable main
-	EOF
-
   # add Ansible apt repo
   cat <<-EOF > /etc/apt/sources.list.d/ansible.list
 	deb http://ppa.launchpad.net/ansible/ansible/ubuntu impish main
 	EOF
 
-  # add the Azul Zulu Java gpg key
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9
-
   # add the Ansible gpg key
   apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
 
   # Automatically accept license agreement
-  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
+  #echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
 
   apt update
   apt install -y \
@@ -580,6 +574,7 @@ install_dev() {
 	ccache \
 	clang \
 	ninja-build \
+	pipx \
 	--no-install-recommends
 
   # Make LD (linker) configurable via 'update-alternatives' and set default to lld
@@ -597,7 +592,7 @@ install_dev() {
   sudo gpasswd -a "$USERNAME" wireshark
 
   # Install some Python plugins. Other plugins are installed as Debian packages
-  pip3 install tcconfig
+  PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install tcconfig
 
   # Install NVM -> Node Version Manager
   cat <<-'EOF' > /Development/tools/nvm-install.sh

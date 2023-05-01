@@ -92,13 +92,13 @@ update_linux() {
 	rm -rf /var/lib/apt/lists/*
 
 	# Make sure Neovim and other packages are installed and up-to-date
-	pip3 install --upgrade --break-system-packages tcconfig
+	PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx upgrade-all
 }
 
 update_kubectl() {
   KUBERNETES_VERSION=$(curl -sSL https://storage.googleapis.com/kubernetes-release/release/stable.txt)
   curl -fSL "https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/linux/amd64/kubectl" > /Development/tools/kubectl
-  chown -R "${TARGET_USER}" "/Development/tools/kubectl"
+  chown -R "${TARGET_USER}:${TARGET_USER}" "/Development/tools/kubectl"
   chmod +x /Development/tools/kubectl
   ln -snf /Development/tools/kubectl /usr/local/bin/kubectl
   echo "kubectl $(kubectl version --client)"
@@ -116,8 +116,7 @@ update_bios() {
   echo "Checking for BIOS updates..."
   echo
   fwupdmgr refresh --force
-  fwupdmgr get-updates
-  fwupdmgr update
+  fwupdmgr get-updates && fwupdmgr update || true
 }
 
 update() {
