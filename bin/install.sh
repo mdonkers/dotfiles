@@ -611,17 +611,16 @@ install_dev() {
 usage() {
   echo -e "install.sh\n\tThis script installs my basic setup for a debian laptop\n"
   echo "Usage:"
-  echo "  sources                            - setup sources & install base pkgs"
   echo "  dist                               - setup sources & dist upgrade"
+  echo "  sources                            - setup sources & install base pkgs"
   echo "  graphics {geforce}                 - install graphics drivers"
   echo "  wm                                 - install window manager/desktop pkgs"
   echo "  dotfiles                           - get dotfiles (!! as user !!)"
-  echo "  scripts                            - install scripts (not needed)"
-  echo "  syncthing                          - install syncthing"
   echo "  private                            - install private repo and other personal stuff (!! as user !!)"
   echo "  vagrant                            - install vagrant and virtualbox"
   echo "  dev                                - install development environment for Java"
   echo "  golang                             - install golang language (!! as user !!)"
+  echo "  syncthing                          - install syncthing (!! as user !!)"
   echo "  cleanup                            - clean apt etc"
 }
 
