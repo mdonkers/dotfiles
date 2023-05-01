@@ -5,10 +5,10 @@ This manual assumes (at least) the following versions:
 - Debian Bookworm (Testing)
 
 ## Resources used ##
-https://cdimage.debian.org/cdimage/unofficial/non-free/cd-including-firmware/
-https://www.debian.org/releases/stable/i386/ch04s03.html.en
-https://wiki.archlinux.org/index.php/Dell_XPS_15_9560
-https://github.com/rcasero/doc/wiki/Ubuntu-linux-on-Dell-XPS-15-(9560)
+- https://cdimage.debian.org/cdimage/unofficial/non-free/cd-including-firmware/
+- https://www.debian.org/releases/stable/i386/ch04s03.html.en
+- https://wiki.archlinux.org/index.php/Dell_XPS_15_9560
+- https://github.com/rcasero/doc/wiki/Ubuntu-linux-on-Dell-XPS-15-(9560)
 
 
 ## Preparations ##
