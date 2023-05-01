@@ -1,8 +1,8 @@
 # Install Debian on Dell XPS 15 #
 
 This manual assumes (at least) the following versions:
-- Dell XPS 15 - 9560 model from 2017 - BIOS version 1.3.4
-- Debian Stretch 9.1.0 (with upgrade to Buster / Testing)
+- Dell XPS 15 - 9510 model from 2022 - BIOS version 1.19.0
+- Debian Bookworm (Testing)
 
 ## Resources used ##
 https://cdimage.debian.org/cdimage/unofficial/non-free/cd-including-firmware/
@@ -14,12 +14,13 @@ https://github.com/rcasero/doc/wiki/Ubuntu-linux-on-Dell-XPS-15-(9560)
 ## Preparations ##
 
 ### Download Debian distro and create bootable USB ###
-Download the Debian net-installer ISO. Make sure to get the *non-free including firmware* ISO from
-the link above, because we need the non-free drivers for the WiFi. Pick stable because testing
-often gives issues during install. We'll upgrade later.
+Download the Debian Testing DVD-installer ISO from https://www.debian.org/devel/debian-installer/.
+Make sure to get the *non-free including firmware* ISO from the link above, because we need
+the non-free drivers for the WiFi.
+
 The following steps assume a *nix environment.
 
-Insert the USB drive and check which device is added. Either via `dmesg` or checking `/dev/...`.
+Insert the USB drive and check which device is added. Either via `dmesg` or `lsblk`.
 Under Linux this will presumably be `/dev/sdb`, under MacOS `/dev/disk2`.
 
 The images can be simply copied to the device:
@@ -27,7 +28,7 @@ The images can be simply copied to the device:
     cp debian-<version>.iso /dev/sdb
     sync
 
-Remove the USB stick again (under MacOS using `diskutil eject /dev/disk2`).
+Remove the USB stick again.
 
 
 ### Resize current partition ###
@@ -64,13 +65,16 @@ When in Windows, check the "IDE ATA/ATAPI controller" is "Intel(R) 100 Series/C2
 ## Install Debian ##
 Shutdown the laptop and insert the USB with Debian installer. Startup, repeatedly pressing F12 for the one-time boot menu.
 
-Boot the Debian installer, easiest is to opt for the graphical installer. The installer might ask to search for the WiFi firmware,
-just selecting _No_ should make it fetch from the non-free firmware included.
+Boot the Debian installer, easiest is to opt for the graphical **expert** installer.
 
-For the modules, add those for disk partitioning and dm-crypt (encrypted disk)
+For the modules, add those for disk **partitioning** and **dm-crypt** (encrypted disk)
+
+### Disk Configuration ###
+
+Create one partition for 'boot' of about 1G, using "ext4" and "/boot" as mountpoint
+Additionally partitions for `/` (root) and swap are needed.
 
 To create an encrypted disk, follow these steps:
-- Create one partition for 'boot' of about 1G, using "ext4" and "/boot" as mountpoint
 - Select "Configure encrypted volumes", take the entire remaining free space (reserved for Debian)
 - Select "Logical Volume Manager", using the encrypted partition (asks to format which is fine)
 - First create a "Volume Group" and name this e.g. "vg-1"
@@ -78,17 +82,10 @@ To create an encrypted disk, follow these steps:
 - For every volume, setup the partition correctly and define the mount-points (/ and swap). Make root as "ext4".
 
 Finish the installation.
+If Windows does not show up in the Grub start menu afterwards, this will be fixed during remaining installation (due to OS Prober being disabled).
 
 
 ## Setup Debian ##
-Some quick setup to make our live easier with further setup and configuration.
-
-Get a bigger font-size in the console
-
-    dpkg-reconfigure console-setup
-
-Choose font `Terminus` with size `14x28`.
-
 Enable Wifi if not directly connected. First making sure the device is enabled, then set the password and connect it
 with a network (only needed first few times, until we have NetworkManager / `nmcli` installed):
 
@@ -99,56 +96,40 @@ with a network (only needed first few times, until we have NetworkManager / `nmc
     dhclient <device>
 
 
+Remove the DVD install media from `/etc/apt/sources.list`
+
 Install git to fetch our `dotfiles` repository
 
     apt-get install --no-install-recommends git
 
 Fetch the dotfiles repo
 
-    git clone git://github.com/mdonkers/dotfiles.git "/tmp/dotfiles"
-
-
-## Dist upgrade to Stretch ##
-We need to do the dist-upgrade because for some reason 'Stretch' won't install directly. Hopefully at some point not needed anymore.
-Check the status of packages, you should see no warnings or either fix them
-
-    dpkg --audit
-
-Run the following commands to do the upgrade:
-
-    cd /tmp/dotfiles/bin
-    install.sh dist
-
-Because the kernel is upgraded, GRUB also needs to be updated to boot the correct stuff. Re-run the `mount` and `grub-install` steps to fix GRUB before rebooting.
-
-Now you're ready to reboot! Cross your fingers...
+    git clone https://github.com/mdonkers/dotfiles.git "/tmp/dotfiles"
 
 
 ## Continue Debian configuration ##
-Now we can start installing tools to make the MacBook work as intended. First we'll install them and then setup one by one.
+Now we can start installing tools to work as intended. First we'll install them and then setup one by one.
 (might need to fetch the `dotfiles` repo again)
+**Note**: After running `install.sh sources` WiFi might break as `systemd-resolved` is installed. To resolve, try:
+
+- run nmcli to check if a WiFi device is found and available: `nmcli d`
+- if WiFi is unavailable, remove the WiFi device from `/etc/network/interfaces`
+- run `systemctl stop wpa_supplicant`
+- run `service NetworkManager restart`
+- run `systemctl restart systemd-resolved`
+- check if the WiFi device now is available and connect to a network
+
+List of install steps:
 
     cd /tmp/dotfiles
+    bin/install.sh dist
     bin/install.sh sources
-    bin/install.sh wifi other
-    bin/install.sh graphics nvidia
+    bin/install.sh graphics gforce
     bin/install.sh wm
 
 As user, **not as root** !
 
     bin/install.sh dotfiles
-    bin/install.sh syncthing
-
-After Syncthing is installed, enable / start the syncthing service and set it up.
-
-Verify wlan is working
-
-    iwconfig
-
-
-Now disable Gnome and restart via the menu (afterwards login and run `startx`)
-
-    sudo systemctl set-default multi-user.target
 
 
 **Before** installing `private`, make sure the Yubikey is working properly. Follow below steps:
@@ -163,24 +144,34 @@ To allow logins / sudo via the Yubikey, first execute:
 
     pamu2fcfg -u `whoami` -opam://`hostname` -ipam://`hostname`
 
+If a PIN is asked, this is the 'numeric' PIN set for the Yubikey.
 Copy the results to the file `/etc/yubikey/u2f_keys`
-Then continue installation (or manually add the two lines to the top of `/etc/pam.d/sudo` and `/etc/pam.d/login`):
+
+
+Follow up with the remaining installation:
 
     ./bin/install.sh private
-
+    sudo ./bin/install.sh dev
+    ./bin/install.sh golang
 
 
 ## Remaining Software ##
 
-To install Slack, first download the Debian package. Then the following commands:
+To install **Slack**, first download the Debian package. Then the following commands:
 
     sudo apt-get update
     sudo dpkg -i path/to/deb/file
+
+There might be some missing dependencies (e.g. `libnotify4`). KDE dependencies should **not** be needed. Install missing dependencies separately, then complete installation as:
+
+    sudo apt install --no-install-recommends trash-cli libnotify4
     sudo apt-get install -f
 
-To install IntelliJ, download the package and extract. Move to the following location:
+Limit Slack log output by adding the `-s` flag to the Desktop entry in `/usr/share/applications/slack.desktop`.
 
-    /usr/local/share/idea-IU-<version>
+To install **IntelliJ**, download the package and extract. Move to the following location:
+
+    /opt/idea-IU-<version>
 
 Install the desktop shortcut by starting IntelliJ and from the _Configure_ menu select _Create Desktop Entry_.
 This will put a `.desktop` entry in `~/.local/share/applications/jetbrains-idea.desktop`.
@@ -188,53 +179,90 @@ Install global desktop shortcuts to the following location (optional):
 
     /usr/share/applications/
 
-To fix keyboard input problems caused by IBus, update the `Exec` command and prefix with: `env XMODIFIERS= `.
-
-Cleanup
-
-    bin/install.sh cleanup
-
-## S.M.A.R.T. monitoring for NVMe drives
-Smartmon tools / smartd might be failing because the Dell XPS is using a NVMe drive which is still in experimentel support.
-
-Check with `systemctl status smartd.service`.
-If failing, update `/etc/smartd.conf` and add the parameter `-d nvme` to the `DEVICESCAN` line.
-Restart with `sudo systemctl restart smartd.service` and check again.
+To fix keyboard input problems caused by IBus and accessibility warnings, update the `Exec` command and prefix with: `env XMODIFIERS= NO_AT_BRIDGE=1 `.
 
 
+# Misc Information
+
+Use `arandr` as graphical interface to `xrandr` to configure the screen resolution. A resolution of 1440x900 works for me (1680x1050 if you like small fonts).
+
+## Mounting
+
+For simple mounting, first get the drive and then mount:
+
+    lsblk
+    sudo mount -t vfat /dev/sda1 /mnt/sdcard/ -o dmask=0022,fmask=0133,uid=miel,gid=miel
+
+To be able to mount e.g. USB devices quickly (adding to fstab), first connect the device and get the UUID for mounting:
+
+    sudo mkdir -p /media/usb
+    sudo fstab -l
+    ll /dev/disk/by-uuid/
+
+Having the correct UUID, add the following line to `/etc/fstab`
+
+    UUID=<ID...>  /media/usb	vfat defaults,noauto,users,noatime,nodiratime,dmask=0022,fmask=0133 0 0
+
+Then simply mount the device with `mount /media/usb`
 
 
-## High kworker CPU usage & Suspending
+## Use of FN-key
+With the Dell keyboard its easy to switch between FN-key behaviour. Simply press Fn+Esc
 
-After all setup is done, check CPU usage with `top`. If `kworker` shows high usage,
-typically > 70%, something might be wrong with ACPI interrupts. To check, execute:
+To find keycodes for any key pressed, use the following command (the second prints the full keymap):
 
-    grep . -r /sys/firmware/acpi/interrupts/
+    xev | sed -n 's/^.*keycode *\([0-9]\+\).*$/keycode \1 = /p'
+    xmodmap -pke
 
-If one of the interrupts stands out and has high interrupts, it can be disabled (as root):
 
-    echo disable > /sys/firmware/acpi/interrupts/gpeXX
+## Special characters
+Special characters can be typed in two ways, with the 'compose' key or by typing the unicode character.
+To set the 'compose' key to Right-Alt / AltGr, first check if it is available, then do the mapping:
 
-Permanently (as root):
+    grep "compose:" /usr/share/X11/xkb/rules/base.lst
+    setxkbmap -option compose:ralt
 
-    crontab -e
-    @reboot echo "disable" > /sys/firmware/acpi/interrupts/gpe[XX]
+Typing characters with the compose key works e.g. by `compose+", e` which results in ë.
+Unicode characters can also be entered directly using the combination; `ctrl+shift+u` followed by
+the numeric code of the character.
 
-Before and after, check there are no errors using `dmesg`.
 
-Also if suspend is not working correctly, this might be due to the bluetooth driver triggering
-a wakeup. First check wich devices may trigger a wakeup:
+## Some useful key commands
 
-    cat /proc/acpi/wakeup
+- Switch between terminals:                 ALT+F1/F6
+- Switch between terminals from X:          CTRL+ALT+F1/F6
+- Scroll up/down:                           FN+SHIFT+UP/DOWN
+- Copy/paste from application:              CTRL+C/V
+- Copy/paste from RXVT Terminal:            CTRL+ALT+C/V
 
-If anything else besides `LID0` is `*enabled` this might prevent sleeping. Temporarily disable (as root):
 
-    echo XHC1 > /proc/acpi/wakeup
+## Cleanup unused wifi connections
+Cleanup unused connections in:
 
-Permanently (as root):
+    /etc/NetworkManager/system-connections
 
-    crontab -e
-    @reboot echo "XHC1" > /proc/acpi/wakeup
+
+## Connect to WiFi via cli
+Using the `nmcli` tool it's also possible to connect instead of using the applet.
+Here are the relevant commands.
+
+See list of all WiFi networks and the currently connected network:
+
+    nmcli dev wifi list
+
+Add new connection:
+
+    nmcli connection add con-name <Name> ifname wlan0 type wifi ssid <SSID_Name> wifi-sec.key-mgmt wpa-psk wifi-sec.psk <Password>
+
+See list of all locally know connections:
+
+    nmcli connection show
+
+Connect to a network:
+
+    nmcli connection up <Name>
+
+
 
 ## Repair GRUB
 
@@ -291,89 +319,8 @@ If this fails, the `debian` entry in the EFI boot sector might have become corru
 - Exit, and follow the steps at the top of this section to reinstall GRUB
 
 
-## Misc stuff
-
-Use `arandr` as graphical interface to `xrandr` to configure the screen resolution. A resolution of 1440x900 works for me (1680x1050 if you like small fonts).
-
-## Mounting
-
-For simple mounting, first get the drive and then mount:
-
-    lsblk
-    sudo mount -t vfat /dev/sda1 /mnt/sdcard/ -o dmask=0022,fmask=0133,uid=miel,gid=miel
-
-To be able to mount e.g. USB devices quickly (adding to fstab), first connect the device and get the UUID for mounting:
-
-    sudo mkdir -p /media/usb
-    sudo fstab -l
-    ll /dev/disk/by-uuid/
-
-Having the correct UUID, add the following line to `/etc/fstab`
-
-    UUID=<ID...>  /media/usb	vfat defaults,noauto,users,noatime,nodiratime,dmask=0022,fmask=0133 0 0
-
-Then simply mount the device with `mount /media/usb`
-
-
 ## HP Printer installation
 Follow guidelines here: http://hplipopensource.com/hplip-web/install/manual/distros/debian.html
-
-
-## Use of FN-key
-With the Dell keyboard its easy to switch between FN-key behaviour. Simply press Fn+Esc
-
-To find keycodes for any key pressed, use the following command (the second prints the full keymap):
-
-    xev | sed -n 's/^.*keycode *\([0-9]\+\).*$/keycode \1 = /p'
-    xmodmap -pke
-
-
-## Special characters
-Special characters can be typed in two ways, with the 'compose' key or by typing the unicode character.
-To set the 'compose' key to Right-Alt / AltGr, first check if it is available, then do the mapping:
-
-    grep "compose:" /usr/share/X11/xkb/rules/base.lst
-    setxkbmap -option compose:ralt
-
-Typing characters with the compose key works e.g. by `compose+", e` which results in ë.
-Unicode characters can also be entered directly using the combination; `ctrl+shift+u` followed by
-the numeric code of the character.
-
-
-## Cleanup unused wifi connections
-Cleanup unused connections in:
-
-    /etc/NetworkManager/system-connections
-
-
-## Connect to WiFi via cli
-Using the `nmcli` tool it's also possible to connect instead of using the applet.
-Here are the relevant commands.
-
-See list of all WiFi networks and the currently connected network:
-
-    nmcli dev wifi list
-
-Add new connection:
-
-    nmcli connection add con-name <Name> ifname wlan0 type wifi ssid <SSID_Name> wifi-sec.key-mgmt wpa-psk wifi-sec.psk <Password>
-
-See list of all locally know connections:
-
-    nmcli connection show
-
-Connect to a network:
-
-    nmcli connection up <Name>
-
-
-## Some useful key commands
-
-- Switch between terminals:                 ALT+F1/F6
-- Switch between terminals from X:          CTRL+ALT+F1/F6
-- Scroll up/down:                           FN+SHIFT+UP/DOWN
-- Copy/paste from application:              CTRL+C/V
-- Copy/paste from RXVT Terminal:            CTRL+ALT+C/V
 
 
 ## Disabled Speedstep
@@ -386,5 +333,4 @@ this command:
 
 Speedstep can be enabled again by disconnecting the battery. For more information, see here;
 https://www.reddit.com/r/Dell/comments/5uh6wo/fixing_your_dell_xps_cpu_stuck_at_minimum/
-
 
