@@ -562,8 +562,8 @@ install_dev() {
 
   apt update
   apt install -y \
-	openjdk-20-jdk \
-	openjdk-20-dbg \
+	openjdk-17-jdk-headless \
+	openjdk-17-dbg \
 	wireshark-qt \
 	ansible \
 	linux-perf \
