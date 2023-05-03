@@ -219,6 +219,7 @@ lens(){
 	-v "${HOME}/certs:/certs" \
 	-v "${HOME}/.aws:/home/lens/.aws" \
 	-v "${HOME}/.kube:/home/lens/.kube" \
+	-v "${HOME}/.minikube:${HOME}/.minikube" \
 	-v "${HOME}/.gcloud:/home/lens/.gcloud" \
 	-e CLOUDSDK_CONFIG=/home/lens/.gcloud \
 	-v /dev/shm:/dev/shm \
