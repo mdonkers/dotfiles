@@ -236,6 +236,23 @@ lens(){
 	${DOCKER_REPO_PREFIX}/lens
 }
 
+k9s(){
+  del_stopped k9s
+
+  docker run -it \
+	-v "${HOME}/certs:/certs" \
+	-v "${HOME}/.aws:/home/k9s/.aws" \
+	-v "${HOME}/.kube:/home/k9s/.kube" \
+	-v "${HOME}/.minikube:${HOME}/.minikube" \
+	-v "${HOME}/.gcloud:/home/k9s/.gcloud" \
+	-e CLOUDSDK_CONFIG=/home/k9s/.gcloud \
+	-v /etc/hosts:/etc/hosts \
+	--net host \
+	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
+	--name k9s \
+	${DOCKER_REPO_PREFIX}/k9s
+}
+
 mitmproxy(){
    docker run --rm -it \
 	 -p 9090:8080 \
