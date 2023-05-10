@@ -237,9 +237,10 @@ lens(){
 }
 
 k9s(){
-  del_stopped k9s
-
-  docker run -it \
+  # Generate a random to start the container multiple times under different names
+  local r=$(( RANDOM % 100 ))
+  docker run --rm \
+	-it \
 	-v "${HOME}/certs:/certs" \
 	-v "${HOME}/.aws:/home/k9s/.aws" \
 	-v "${HOME}/.kube:/home/k9s/.kube" \
@@ -249,7 +250,7 @@ k9s(){
 	-v /etc/hosts:/etc/hosts \
 	--net host \
 	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
-	--name k9s \
+	--name "k9s-${r}" \
 	${DOCKER_REPO_PREFIX}/k9s
 }
 
