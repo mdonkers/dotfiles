@@ -341,12 +341,15 @@ install_wmapps() {
 	arandr \
 	blueman \
 	bluez-firmware \
+	dunst \
 	feh \
 	fonts-noto-color-emoji \
 	i3 \
 	i3lock \
 	i3status \
 	libanyevent-i3-perl \
+	libnotify-bin \
+	libnotify4 \
 	network-manager-gnome \
 	pavucontrol \
 	pulseaudio \

@@ -171,6 +171,7 @@
 [push]
 
   default = simple
+  autoSetupRemote = true
 
 [pull]
 
