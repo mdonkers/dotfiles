@@ -27,18 +27,27 @@
 import sys
 import json
 import subprocess
+import datetime
+
+last_fetch_minute = -1
+tailscale_command_result = None
 
 def get_tailscale():
     """ Get Tailscale status, coloring 'green' or 'red' based on connection status. """
-    tail_command = None
-    try:
-        tail_command = subprocess.run(["tailscale", "status"], timeout=1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except:
-        pass
+    global last_fetch_minute
+    global tailscale_command_result
+    current_minute = datetime.datetime.now().minute
+
+    if last_fetch_minute != current_minute:
+        try:
+            last_fetch_minute = current_minute
+            tailscale_command_result = subprocess.run(["tailscale", "status"], timeout=1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except:
+            pass
 
     state = "no"
     color = "#FF0000"
-    if tail_command is not None and tail_command.returncode == 0:
+    if tailscale_command_result is not None and tailscale_command_result.returncode == 0:
         state = "yes"
         color = "#00FF00"
     return {'full_text' : 'Tailscale: %s' % state, 'name' : 'tailscale', 'color' : color}
