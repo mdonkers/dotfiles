@@ -43,7 +43,10 @@ alias lsd="ls -lF ${colorflag} | grep --color=never '^d'"
 
 # Always use color output for `ls`
 # shellcheck disable=SC2139
-alias ls="command ls ${colorflag}"
+alias ls="ls ${colorflag}"
+# Running "ls" via "command ls" prevents a recursive loop in case "ls" is also a function. But it's only defined
+# as alias and cannot run "command" via sudo so it breaks e.g. "sudo ll"
+#alias ls="command ls ${colorflag}"
 export LS_COLORS='no=00:fi=00:di=01;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:'
 
 # Always enable colored `grep` output
@@ -129,13 +132,6 @@ alias mv='mv -i'
 
 # untar
 alias untar='tar xzvf'
-
-# Prevent terminal losing focus when running Maven commands
-alias mvn='mvn -T=1C -Djava.awt.headless=true'
-
-# Cleanup the Maven repository with all files older than 14 days
-# shellcheck disable=SC2154
-alias clean_mvn='find ~/.m2/repository \( -iname "agent-*" -o -iname "javaagent-*" \) -prune -o -atime +14 -iname "*.pom" -print0 | while read -d "" -r pom; do parent=`dirname "$pom"`; rm -rf "$parent"; done'
 
 alias argo="argocd --grpc-web"
 alias argo-fwd="kubectl port-forward svc/argocd-server -n argocd 8080:443"
