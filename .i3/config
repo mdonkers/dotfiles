@@ -36,8 +36,11 @@ for_window [class="Slack"] border none
 for_window [class="^Spotify$"] border none
 for_window [class="^Spotify Premium$"] border none
 
-# Make just the Zoom notification pop-ups float
-for_window [title="^zoom$" class="[zoom]*"] floating enable
+# Make just the Zoom notification pop-ups float, and give no focus to them
+no_focus [title="^zoom$" class="zoom"]
+for_window [title="^zoom$" class="zoom"] floating enable
+for_window [class="(.*join\?action\=join.*|.*zoom.*)" title="Zoom - Licensed Account"] floating disable
+for_window [class="(.*join\?action\=join.*|.*zoom.*)" title="Zoom Meeting"] floating disable
 # Allow some other apps to float
 #for_window [class="Code"] floating enable
 #for_window [class="Firefox"] floating enable
