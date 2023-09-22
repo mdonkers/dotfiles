@@ -1,7 +1,7 @@
 
 # xcompmgr was giving many errors and resulted in bugs. Trying with PiCom
 # Do we need any composition manager at all???
-#picom &
+picom &>/dev/null &
 #xcompmgr -c -l0 -t0 -r0 -o.00 &>/dev/null &
 
 # Disable the bell

@@ -37,8 +37,10 @@ for_window [class="^Spotify$"] border none
 for_window [class="^Spotify Premium$"] border none
 
 # Make just the Zoom notification pop-ups float, and give no focus to them  - instance="(.*start\?action\=start.*|.*zoom.*)"
-no_focus [title="(z|Z)oom.*"]
-for_window [title="(z|Z)oom.*"] floating enable
+no_focus [title="^(z|Z)oom.*"]
+for_window [title="^(z|Z)oom.*"] floating enable
+for_window [title="(z|Z)oom.*float.*"] sticky enable
+for_window [title="as_toolbar" class="((z|Z)oom)?"] sticky enable
 for_window [title="Breakout Rooms.*"] floating enable
 for_window [title="(z|Z)oom - Licensed Account"] floating disable
 for_window [title="(z|Z)oom Meeting"] floating disable

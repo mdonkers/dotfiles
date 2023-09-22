@@ -505,7 +505,7 @@ install_vagrant() {
 # install/update golang from source
 install_golang() {
   export GO_VERSION
-  GO_VERSION=$(curl -sSL "https://golang.org/VERSION?m=text")
+  GO_VERSION=$(curl -sSL "https://golang.org/VERSION?m=text" | head -n 1)
   export GO_SRC=/usr/local/go
 
   # if we are passing the version
