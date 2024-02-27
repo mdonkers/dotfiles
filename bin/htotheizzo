@@ -43,10 +43,9 @@ update_docker() {
 
 	# Include contributed completions
 	mkdir -p /etc/bash_completion.d
-	curl -sSL -o /etc/bash_completion.d/docker https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker
-	curl -sSL -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/master/contrib/completion/bash/docker-compose
+	curl -sSL -o /etc/bash_completion.d/docker https://raw.githubusercontent.com/docker/cli/master/contrib/completion/bash/docker
 
-	# Get the Docker Compose files
+	# Get the Docker Compose plugin
 	local docker_compose_release
 	docker_compose_release=$(curl -L -s -H 'Accept: application/json' https://github.com/docker/compose/releases/latest)
 	local docker_compose_version
@@ -54,12 +53,13 @@ update_docker() {
 	docker_compose_version=$(echo "${docker_compose_release}" | sed -e 's/.*"tag_name":"\(v[0-9\.]*\)".*/\1/')
 	local docker_compose_binary_uri
 	docker_compose_binary_uri="https://github.com/docker/compose/releases/download/${docker_compose_version}/docker-compose-Linux-x86_64"
+	mkdir -p "${user_home}/.docker/cli-plugins"
 	(
 	set -x
-	curl -fSL "${docker_compose_binary_uri}" -o "/usr/local/bin/docker-compose"
+	curl -fSL "${docker_compose_binary_uri}" -o "${user_home}/.docker/cli-plugins/docker-compose"
 	)
 
-	chmod +x /usr/local/bin/docker*
+	chmod a+x "${user_home}/.docker/cli-plugins/docker-compose"
 
 	# Get Docker buildx plugin
 	local docker_buildx_release
