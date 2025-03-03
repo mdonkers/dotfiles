@@ -170,6 +170,28 @@ clickhouse-client(){
 	--name "clickhouse-client-${r}" \
 	clickhouse/clickhouse-server --history_file=/etc/clickhouse-client/history "$@"
 }
+# Export function to be able to use in scripts
+export -f clickhouse-client
+
+clickhouse-benchmark(){
+  # Determine either to open a TTY or attach to stdin/stdout
+  if [ ! -t 0 ]; then
+	local args="-i --attach stdin --attach stdout --attach stderr"
+  else
+	local args="-it"
+  fi
+  # Generate a random to start the container multiple times under different names
+  local r=$(( RANDOM % 100 ))
+  docker run \
+	${args} \
+	--rm \
+	--net=host \
+	--entrypoint=clickhouse-benchmark \
+	--name "clickhouse-benchmark-${r}" \
+	clickhouse/clickhouse-server "$@"
+}
+# Export function to be able to use in scripts
+export -f clickhouse-benchmark
 
 dive(){
   docker run --rm -it \
@@ -251,7 +273,7 @@ k9s(){
 	--net host \
 	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
 	--name "k9s-${r}" \
-	${DOCKER_REPO_PREFIX}/k9s
+	${DOCKER_REPO_PREFIX}/k9s --all-namespaces
 }
 
 mitmproxy(){

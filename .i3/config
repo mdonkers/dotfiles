@@ -40,7 +40,7 @@ for_window [class="^Spotify Premium$"] border none
 no_focus [title="^(z|Z)oom.*"]
 for_window [title="^(z|Z)oom.*" instance="^(?!(g|G)oogle-chrome).*$"] floating enable
 for_window [title="(?i)breakout rooms.*"] floating enable
-for_window [title="(?i)zoom - licensed account"] floating disable
+for_window [title="(?i)zoom.* - licensed account"] floating disable
 for_window [title="(?i)zoom meeting"] floating disable
 # Allow some other apps to float
 #for_window [class="Code"] floating enable
@@ -58,7 +58,9 @@ for_window [class="vlc"] floating enable
 
 # Bind certain workspaces to specific monitors
 set $monL eDP-1
-set $monR DP-1
+#set $monR DP-1
+# Instead of trying to use a (changing) monitor identifier, simply bind to the primary screen
+set $monR primary
 
 workspace "1: slack"   output $monL
 workspace "2: www"     output $monR

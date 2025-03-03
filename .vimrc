@@ -418,7 +418,7 @@ let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files -co --exclude-standar
 " ==================== Completion =========================
 " use deoplete for Neovim.
 if has('nvim')
-  let g:deoplete#enable_at_startup = 1
+  let g:deoplete#enable_at_startup = 0
 
   call deoplete#custom#option({
         \ 'auto_complete_delay': 200,
