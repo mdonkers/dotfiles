@@ -558,14 +558,6 @@ install_dev() {
   curl -s https://repos.azul.com/azul-repo.key | gpg --dearmor -o /usr/share/keyrings/azul.gpg
   echo "deb [signed-by=/usr/share/keyrings/azul.gpg] https://repos.azul.com/zulu/deb stable main" | tee /etc/apt/sources.list.d/zulu.list
 
-  # add Ansible apt repo
-  cat <<-EOF > /etc/apt/sources.list.d/ansible.list
-	deb http://ppa.launchpad.net/ansible/ansible/ubuntu impish main
-	EOF
-
-  # add the Ansible gpg key
-  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
-
   # Automatically accept license agreement
   #echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
 
