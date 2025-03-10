@@ -106,14 +106,16 @@ aws-cli(){
   docker run --rm \
 	-a stdout \
 	-a stderr \
-	-v "${HOME}/.aws:/root/.aws" \
-	-v "${HOME}/.kube:/root/.kube" \
+	-v "${HOME}/.aws:/tmp/.aws" \
+	-v "${HOME}/.kube:/tmp/.kube" \
 	-v "$(pwd):/aws" \
+	-e HOME=/tmp \
 	-e AWS_PROFILE \
 	-e AWS_REGION \
 	-e AWS_ACCESS_KEY_ID \
 	-e AWS_SECRET_ACCESS_KEY \
 	-e AWS_SESSION_TOKEN \
+	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
 	--name "aws-cli-${r}" \
 	amazon/aws-cli "$@"
 }
@@ -154,11 +156,10 @@ clickhouse-client(){
   local ch_history_file="${HOME}/.clickhouse-client-history"
   test -f "${ch_history_file}" || touch -a "${ch_history_file}"
   # Determine either to open a TTY or attach to stdin/stdout
-  if [ ! -t 0 ]; then
-	local args="-i --attach stdin --attach stdout --attach stderr"
-  else
-	local args="-it"
-  fi
+  case $- in
+  *i*) local args="-it";;
+  *) local args="-i --attach stdin --attach stdout --attach stderr";;
+  esac
   # Generate a random to start the container multiple times under different names
   local r=$(( RANDOM % 100 ))
   docker run \
@@ -175,11 +176,10 @@ export -f clickhouse-client
 
 clickhouse-benchmark(){
   # Determine either to open a TTY or attach to stdin/stdout
-  if [ ! -t 0 ]; then
-	local args="-i --attach stdin --attach stdout --attach stderr"
-  else
-	local args="-it"
-  fi
+  case $- in
+  *i*) local args="-it";;
+  *) local args="-i --attach stdin --attach stdout --attach stderr";;
+  esac
   # Generate a random to start the container multiple times under different names
   local r=$(( RANDOM % 100 ))
   docker run \
