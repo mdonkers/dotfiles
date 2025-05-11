@@ -64,10 +64,15 @@ symbol = "☁️ "
 force_display = false
 
 [kubernetes]
-format = '\[[⛵ $context](bold green)\]'
 disabled = false
-[kubernetes.context_aliases]
-".*cluster/(?P<var_cluster>[\\w-]+)" = "$var_cluster"
+format = '\[[$symbol $context]($style)\]'
+symbol = "⛵"
+style = "bold green"
+contexts = [
+  { context_pattern = "production.*", style = "bold red" },
+]
+#[kubernetes.context_aliases]
+#".*cluster/(?P<var_cluster>[\\w-]+)" = "$var_cluster"
 
 [golang]
 format = '\[[$symbol($version)]($style)\]'
