@@ -57,7 +57,7 @@ set nocursorline
 
 syntax sync minlines=256
 set synmaxcol=300
-set re=1                        " Use the old regex engine (faster/better)
+set re=0                        " Use the old regex engine (faster/better)
 
 
 " Better command-line completion

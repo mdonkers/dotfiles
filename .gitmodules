@@ -1,24 +1,6 @@
 [submodule ".vim/bundle/ctrlp.vim"]
 	path = .vim/bundle/ctrlp.vim
 	url = https://github.com/ctrlpvim/ctrlp.vim.git
-[submodule ".vim/bundle/vim-erlang-compiler"]
-	path = .vim/bundle/vim-erlang-compiler
-	url = https://github.com/vim-erlang/vim-erlang-compiler.git
-[submodule ".vim/bundle/vim-erlang-omnicomplete"]
-	path = .vim/bundle/vim-erlang-omnicomplete
-	url = https://github.com/vim-erlang/vim-erlang-omnicomplete.git
-[submodule ".vim/bundle/erlang-motions.vim"]
-	path = .vim/bundle/erlang-motions.vim
-	url = https://github.com/vim-erlang/erlang-motions.vim.git
-[submodule ".vim/bundle/vim-erlang-skeletons"]
-	path = .vim/bundle/vim-erlang-skeletons
-	url = https://github.com/vim-erlang/vim-erlang-skeletons.git
-[submodule ".vim/bundle/elixir-alchemist"]
-	path = .vim/bundle/elixir-alchemist
-	url = https://github.com/slashmili/alchemist.vim.git
-[submodule ".vim/bundle/vim-elixir"]
-	path = .vim/bundle/vim-elixir
-	url = https://github.com/elixir-editors/vim-elixir.git
 [submodule ".vim/bundle/ack.vim"]
 	path = .vim/bundle/ack.vim
 	url = https://github.com/mileszs/ack.vim.git
