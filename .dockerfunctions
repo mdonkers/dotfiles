@@ -193,6 +193,25 @@ clickhouse-benchmark(){
 # Export function to be able to use in scripts
 export -f clickhouse-benchmark
 
+psql(){
+  # Determine either to open a TTY or attach to stdin/stdout
+  case $- in
+  *i*) local args="-it";;
+  *) local args="-i --attach stdin --attach stdout --attach stderr";;
+  esac
+  # Generate a random to start the container multiple times under different names
+  local r=$(( RANDOM % 100 ))
+  docker run \
+	${args} \
+	--rm \
+	-e PGPASSWORD="${PGPASSWORD}" \
+	--net host \
+	--name "psql-${r}" \
+	postgres psql "$@"
+}
+# Export function to be able to use in scripts
+export -f psql
+
 dive(){
   docker run --rm -it \
 	-v /var/run/docker.sock:/var/run/docker.sock \
