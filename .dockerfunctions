@@ -141,6 +141,7 @@ gcloud-cli(){
 	-v "${HOME}/certs:/certs" \
 	-v "${HOME}/.kube:/root/.kube" \
 	-e CLOUDSDK_CONFIG=/config/.gcloud \
+	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
 	--entrypoint=gcloud \
 	--name "gcloud-${r}" \
 	google/cloud-sdk "$@"
@@ -199,6 +200,10 @@ psql(){
   *i*) local args="-it";;
   *) local args="-i --attach stdin --attach stdout --attach stderr";;
   esac
+  if [[ -n "$MAKEFLAGS" ]] || [[ -n "$MAKELEVEL" ]] || [[ -n "$MFLAGS" ]]; then
+	# Override when calling from Makefile, then we likely also want interactive
+	args="-it"
+  fi
   # Generate a random to start the container multiple times under different names
   local r=$(( RANDOM % 100 ))
   docker run \
