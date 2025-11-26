@@ -8,6 +8,6 @@ export GRADLE_HOME=/Development/java/gradle-6.7
 
 export GOPATH="${HOME}/.go"
 
-export PATH=/usr/local/bin:${JAVA_HOME}/bin:${M2}:${GRADLE_HOME}/bin:/usr/local/go/bin:${PATH}:${GOPATH}/bin:/sbin
+export PATH=/usr/local/bin:${HOME}/.local/bin:${JAVA_HOME}/bin:${M2}:${GRADLE_HOME}/bin:/usr/local/go/bin:${PATH}:${GOPATH}/bin:/sbin
 
 export CDPATH=${CDPATH}:/Development/projects
