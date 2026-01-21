@@ -523,7 +523,7 @@ install_golang() {
 
   # subshell
   (
-  curl -sSL "https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz" | sudo tar -v -C /usr/local -xz
+  curl -sSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | sudo tar -v -C /usr/local -xz
   local user="$USER"
   # rebuild stdlib for faster builds
   sudo chown -R "${user}" /usr/local/go/pkg
