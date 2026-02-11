@@ -563,7 +563,7 @@ install_dev() {
 
   apt update
   apt install -y \
-	zulu17-jdk-headless \
+	zulu25-jdk-headless \
 	wireshark-qt \
 	ansible \
 	linux-perf \
