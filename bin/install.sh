@@ -130,6 +130,7 @@ base() {
 	pcscd \
 	pcsc-tools \
 	picom \
+	pinentry-gtk2 \
 	python3-pip \
 	python3-setuptools \
 	python3-wheel \
