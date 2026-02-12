@@ -19,6 +19,7 @@ dotfiles: ## Installs the dotfiles.
 	ln -sfn $(CURDIR)/.config/starship.toml $(HOME)/.config/starship.toml
 	ln -sfn $(CURDIR)/.gnupg/gpg.conf $(HOME)/.gnupg/gpg.conf;
 	ln -sfn $(CURDIR)/.gnupg/gpg-agent.conf $(HOME)/.gnupg/gpg-agent.conf;
+	ln -sfn $(CURDIR)/.gnupg/pinentry-auto.sh $(HOME)/.gnupg/pinentry-auto.sh;
 	ln -fn $(CURDIR)/gitignore $(HOME)/.gitignore;
 
 .PHONY: etc
