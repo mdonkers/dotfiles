@@ -234,7 +234,7 @@ exec --no-startup-id nm-applet
 # set background
 # use the same background as slim (login manager)
 # this file is an alias to something in /home/jessie/Pictures
-exec --no-startup-id feh --no-fehbg --image-bg black --bg-fill /home/miel/Documents/images/Desktop-Background.png
+exec --no-startup-id sleep 1 && feh --no-fehbg --image-bg black --bg-fill /home/miel/Documents/images/Desktop-Background.png
 
 # run the merge for good colors
 exec xrdb -merge /home/miel/.Xresources
@@ -248,6 +248,6 @@ exec --no-startup-id "i3-msg 'workspace 5; append_layout ~/.i3/workspace-console
 # then startup programs
 exec --no-startup-id i3-msg 'workspace 1: slack; exec slack -s %U;'
 exec --no-startup-id i3-msg 'workspace 2: www; exec google-chrome;'
-exec --no-startup-id i3-msg 'workspace 3: console; exec urxvt; exec urxvt; exec urxvt'
+exec --no-startup-id i3-msg 'workspace 3: console; exec urxvt; exec urxvt; exec urxvt; exec urxvt'
 exec --no-startup-id i3-msg 'workspace 5; exec urxvt; exec urxvt; exec urxvt; exec urxvt'
 
