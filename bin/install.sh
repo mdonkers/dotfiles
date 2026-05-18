@@ -535,18 +535,13 @@ install_golang() {
   (
   set -x
   set +e
-  go install golang.org/x/tools/cmd/cover@latest
-  go install golang.org/x/review/git-codereview@latest
-  go install golang.org/x/tools/cmd/goimports@latest
-  go install golang.org/x/tools/cmd/gorename@latest
-  go install golang.org/x/tools/cmd/guru@latest
   go install github.com/go-delve/delve/cmd/dlv@latest
-  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   go install github.com/google/pprof@latest
   go install github.com/cbednarski/hostess@latest
-  go install github.com/google/go-jsonnet/cmd/jsonnet@latest
   go install github.com/mikefarah/yq/v4@latest
-  go install sigs.k8s.io/kind@latest
+  #go install golang.org/x/tools/cmd/cover@latest
+  #go install github.com/google/go-jsonnet/cmd/jsonnet@latest
+  #go install sigs.k8s.io/kind@latest
   )
 }
 
