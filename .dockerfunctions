@@ -170,7 +170,7 @@ clickhouse-client(){
 	-v "${ch_history_file}:/etc/clickhouse-client/history" \
 	--entrypoint=clickhouse-client \
 	--name "clickhouse-client-${r}" \
-	clickhouse/clickhouse-server --history_file=/etc/clickhouse-client/history "$@"
+	clickhouse/clickhouse-server --history_file=/etc/clickhouse-client/history --output_format_pretty_named_tuples_as_json=0 "$@"
 }
 # Export function to be able to use in scripts
 export -f clickhouse-client
@@ -252,7 +252,7 @@ htop(){
     --pid host \
     --net none \
     --name htop \
-    jess/htop
+    miel/htop
 }
 
 lens(){
@@ -292,6 +292,7 @@ k9s(){
 	-v "${HOME}/.kube:/home/k9s/.kube" \
 	-v "${HOME}/.minikube:${HOME}/.minikube" \
 	-v "${HOME}/.gcloud:/home/k9s/.gcloud" \
+	-v "${HOME}/.config/gcloud:/home/k9s/.gcloud-config" \
 	-e CLOUDSDK_CONFIG=/home/k9s/.gcloud \
 	-v /etc/hosts:/etc/hosts \
 	--net host \

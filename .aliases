@@ -99,6 +99,7 @@ alias c="tr -d '\n' | xclip -selection clipboard"
 
 # URL-encode strings
 alias urlencode='python -c "import sys, urllib.parse; print(urllib.parse.quote_plus(sys.argv[1]));"'
+alias urldecode='python -c "import sys, urllib.parse; print(urllib.parse.unquote_plus(sys.argv[1]));"'
 
 # Intuitive map function
 # For example, to list all directories that contain a certain file:
