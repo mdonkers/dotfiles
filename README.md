@@ -1,7 +1,5 @@
 ## dotfiles
 
-[![Travis CI](https://travis-ci.org/mdonkers/dotfiles.svg?branch=main)](https://travis-ci.org/mdonkers/dotfiles)
-
 **To install:**
 
 ```console

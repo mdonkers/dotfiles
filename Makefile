@@ -31,7 +31,6 @@ etc: ## Installs the etc directory files.
 	done
 	systemctl --user daemon-reload
 	sudo systemctl daemon-reload
-	sudo service i8kmon restart
 	sudo systemctl enable systemd-networkd systemd-resolved
 	sudo systemctl start systemd-networkd systemd-resolved
 	sudo ln -snf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf

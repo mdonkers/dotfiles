@@ -252,7 +252,7 @@ install_docker() {
   gpg --show-keys --with-colons /usr/share/keyrings/docker-archive-keyring.gpg | grep -q -i "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
 
   cat <<-EOF > /etc/apt/sources.list.d/docker.list
-	deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) test
+	deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian trixie stable
 	EOF
 
   apt update
@@ -293,19 +293,12 @@ install_graphics() {
 
 # install custom scripts/binaries
 install_scripts() {
-  # install speedtest
-  curl -sSL https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py > /usr/local/bin/speedtest
-  chmod +x /usr/local/bin/speedtest
-
-  # install icdiff
-  curl -sSL https://raw.githubusercontent.com/jeffkaufman/icdiff/master/icdiff > /usr/local/bin/icdiff
-  curl -sSL https://raw.githubusercontent.com/jeffkaufman/icdiff/master/git-icdiff > /usr/local/bin/git-icdiff
-  chmod +x /usr/local/bin/icdiff
-  chmod +x /usr/local/bin/git-icdiff
-
-  # install lolcat
-  curl -sSL https://raw.githubusercontent.com/tehmaze/lolcat/master/lolcat > /usr/local/bin/lolcat
-  chmod +x /usr/local/bin/lolcat
+  # speedtest-cli and icdiff are packaged in Debian (icdiff also provides git-icdiff)
+  apt update
+  apt install -y \
+	speedtest-cli \
+	icdiff \
+	--no-install-recommends
 }
 
 # install syncthing
@@ -459,48 +452,14 @@ install_private() {
   sudo sed -i "\\|common-auth|a \\auth       required     pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue nouserok" /etc/pam.d/login
 }
 
+# install VirtualBox from Debian's contrib repo (already enabled in the apt sources).
+# Not part of the default install flow; run manually via "install.sh virtualbox" when a VM is needed.
 install_virtualbox() {
-  cat <<-EOF > /etc/apt/sources.list.d/virtualbox.list
-  #deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib
-  deb http://download.virtualbox.org/virtualbox/debian bullseye contrib
-EOF
-  curl -sSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | apt-key add -
-
   apt update
   apt install -y \
-	virtualbox-6.1 \
+	virtualbox \
+	virtualbox-qt \
 	--no-install-recommends
-}
-
-install_vagrant() {
-  VAGRANT_VERSION=2.3.0
-
-  # if we are passing the version
-  if [[ -n "$1" ]]; then
-	export VAGRANT_VERSION=$1
-  fi
-
-  # check if we need to install virtualbox
-  PKG_OK=$(dpkg-query -W --showformat='${Status}\n' "virtualbox*" | grep "install ok installed") || echo ""
-  echo "Checking for virtualbox: $PKG_OK"
-  if [ "" == "$PKG_OK" ]; then
-	echo "No virtualbox. Installing virtualbox."
-	install_virtualbox
-  fi
-
-  tmpdir=$(mktemp -d)
-  (
-  cd "$tmpdir"
-  echo "Downloading Vagrant to $tmpdir"
-  curl -sSL -o vagrant.deb "https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb"
-  dpkg -i vagrant.deb
-  )
-
-  rm -rf "$tmpdir"
-
-  # install plugins
-  vagrant plugin expunge --force
-  vagrant plugin install vagrant-vbguest vagrant-disksize
 }
 
 # install/update golang from source
@@ -613,7 +572,7 @@ usage() {
   echo "  wm                                 - install window manager/desktop pkgs"
   echo "  dotfiles                           - get dotfiles (!! as user !!)"
   echo "  private                            - install private repo and other personal stuff (!! as user !!)"
-  echo "  vagrant                            - install vagrant and virtualbox"
+  echo "  virtualbox                         - install VirtualBox (manual, when needed)"
   echo "  dev                                - install development environment for Java"
   echo "  golang                             - install golang language (!! as user !!)"
   echo "  syncthing                          - install syncthing (!! as user !!)"
@@ -650,9 +609,9 @@ main() {
 	install_scripts
   elif [[ $cmd == "syncthing" ]]; then
 	install_syncthing
-  elif [[ $cmd == "vagrant" ]]; then
+  elif [[ $cmd == "virtualbox" ]]; then
 	check_is_sudo
-	install_vagrant "$2"
+	install_virtualbox
   elif [[ $cmd == "dev" ]]; then
 	check_is_sudo
 	install_dev
