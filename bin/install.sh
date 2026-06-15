@@ -280,6 +280,12 @@ install_graphics() {
 	"geforce")
 	  pkgs+=( nvidia-driver nvidia-settings )
 	  ;;
+	"intel")
+	  # Intel Arc / Xe (Panther Lake, XPS 16): in-kernel "xe" driver, so no driver package -
+	  # just firmware (GPU, Wi-Fi, ISH sensors, SOF audio), microcode, Mesa and VA-API.
+	  # Verify package names against the current testing snapshot if apt can't find one.
+	  pkgs+=( firmware-misc-nonfree firmware-intel-graphics firmware-intel-misc firmware-iwlwifi firmware-sof-signed intel-media-va-driver-non-free mesa-vulkan-drivers intel-microcode )
+	  ;;
 	*)
 	  echo "No system specified, assuming graphics drivers present"
 	  ;;
@@ -289,6 +295,9 @@ install_graphics() {
   apt -y upgrade
 
   apt install -y "${pkgs[@]}" --no-install-recommends
+
+  # refresh initramfs so newly-installed firmware is loaded early at boot
+  update-initramfs -u
 }
 
 # install custom scripts/binaries
@@ -568,7 +577,7 @@ usage() {
   echo "Usage:"
   echo "  dist                               - setup sources & dist upgrade"
   echo "  sources                            - setup sources & install base pkgs"
-  echo "  graphics {geforce}                 - install graphics drivers"
+  echo "  graphics {geforce|intel}          - install graphics drivers"
   echo "  wm                                 - install window manager/desktop pkgs"
   echo "  dotfiles                           - get dotfiles (!! as user !!)"
   echo "  private                            - install private repo and other personal stuff (!! as user !!)"
