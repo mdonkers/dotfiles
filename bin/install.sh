@@ -284,7 +284,7 @@ install_graphics() {
 	  # Intel Arc / Xe (Panther Lake, XPS 16): in-kernel "xe" driver, so no driver package -
 	  # just firmware (GPU, Wi-Fi, ISH sensors, SOF audio), microcode, Mesa and VA-API.
 	  # Verify package names against the current testing snapshot if apt can't find one.
-	  pkgs+=( firmware-misc-nonfree firmware-intel-graphics firmware-intel-misc firmware-iwlwifi firmware-sof-signed intel-media-va-driver-non-free mesa-vulkan-drivers intel-microcode )
+	  pkgs+=( firmware-misc-nonfree firmware-intel-graphics firmware-intel-misc firmware-iwlwifi firmware-sof-signed intel-media-va-driver-non-free mesa-vulkan-drivers intel-gpu-tools vainfo intel-microcode )
 	  ;;
 	*)
 	  echo "No system specified, assuming graphics drivers present"
@@ -456,8 +456,11 @@ install_private() {
   # Make sure user rights for yubikey file is correct
   sudo chown -R root:root /etc/yubikey/
   # Setup PAM to use the Yubikey for 2F authentication
-  # Note! For 'sudo' the line is added before 'common-auth' as its sufficient for authentication. For 'login' after the include
-  sudo sed -i "\\|common-auth|i \\auth       sufficient   pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue nouserok" /etc/pam.d/sudo
+  # Note! 'sudo' line goes BEFORE common-auth (sufficient: Yubikey touch, else fall through to password).
+  # No 'nouserok' on sudo, so a missing/empty u2f_keys falls back to password instead of granting access.
+  # 'login' line goes AFTER common-auth (required: password AND Yubikey = 2FA) and KEEPS 'nouserok' so that
+  # root / any user without a registered key can still log in with just a (strong) password -- a recovery path.
+  sudo sed -i "\\|common-auth|i \\auth       sufficient   pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue" /etc/pam.d/sudo
   sudo sed -i "\\|common-auth|a \\auth       required     pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue nouserok" /etc/pam.d/login
 }
 
@@ -583,9 +586,38 @@ usage() {
   echo "  private                            - install private repo and other personal stuff (!! as user !!)"
   echo "  virtualbox                         - install VirtualBox (manual, when needed)"
   echo "  dev                                - install development environment for Java"
+  echo "  tools                              - install CLI tools (gh, kubectl, helm, terraform)"
   echo "  golang                             - install golang language (!! as user !!)"
   echo "  syncthing                          - install syncthing (!! as user !!)"
   echo "  cleanup                            - clean apt etc"
+}
+
+# install commonly-used CLI tools from their official, GPG-signed apt repos.
+# Tools without a signed package (aws-cli, bun) are installed manually -- see
+# debian_install.md -- to avoid piping unverified install scripts into a shell.
+install_clitools() {
+  apt update
+  apt install -y curl gnupg --no-install-recommends
+
+  # GitHub CLI
+  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg > /usr/share/keyrings/githubcli-archive-keyring.gpg
+  chmod a+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+
+  # Kubernetes (kubectl) -- bump vX.YY to the desired minor version
+  curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | gpg --dearmor > /usr/share/keyrings/kubernetes-apt-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /" > /etc/apt/sources.list.d/kubernetes.list
+
+  # Helm
+  curl -fsSL https://baltocdn.com/helm/signing.asc | gpg --dearmor > /usr/share/keyrings/helm.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" > /etc/apt/sources.list.d/helm-stable-debian.list
+
+  # HashiCorp (terraform) -- pinned to a stable codename (no 'forky' repo upstream)
+  curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com trixie main" > /etc/apt/sources.list.d/hashicorp.list
+
+  apt update
+  apt install -y gh kubectl helm terraform --no-install-recommends
 }
 
 main() {
@@ -624,6 +656,9 @@ main() {
   elif [[ $cmd == "dev" ]]; then
 	check_is_sudo
 	install_dev
+  elif [[ $cmd == "tools" ]]; then
+	check_is_sudo
+	install_clitools
   elif [[ $cmd == "golang" ]]; then
 	install_golang "$2"
   elif [[ $cmd == "private" ]]; then

@@ -117,12 +117,18 @@ sudo ./bin/install.sh wm
 ```
 ./bin/install.sh private
 sudo ./bin/install.sh dev
+sudo ./bin/install.sh tools               # gh, kubectl, helm, terraform (signed apt repos)
 ./bin/install.sh golang
 ```
 - After `sources`, Wi-Fi can drop when `systemd-resolved` installs: `nmcli d`; if needed remove the wifi line from `/etc/network/interfaces`, restart NetworkManager + systemd-resolved.
 - Snapshot-boot: install `snapper` + `grub-btrfs` + enable `grub-btrfsd`; add an apt pre/post snapshot hook.
 - **Validate hibernation** (hibernate with a marker open -> cold resume -> repeat -> closed-lid for days) before relying on it.
 - **Webcam:** build the out-of-tree `intel_cvs` DKMS module (github.com/intel/vision-drivers); no MOK signing (Secure Boot off). Or wait for upstream.
+- **aws-cli v2, bun, sops** -- no signed apt repo, so install manually/verified (never `curl|bash`):
+  - **aws-cli:** download `awscli-exe-linux-x86_64.zip` + its `.sig` from awscli.amazonaws.com, import AWS's PGP key, `gpg --verify`, unzip, `sudo ./aws/install` (provides `aws`).
+  - **bun:** no upstream signature -- safest is the GitHub release zip from `oven-sh/bun` checked against its `SHASUMS256.txt` (integrity only), dropped in `/Development/tools` + symlinked. Review before trusting, or install when actually needed.
+  - **sops + age:** in `dotfiles-private`, just `make deps` (installs `age` via apt + `sops` via a checksum-verified `.deb`). Used to decrypt the private repo's `secrets/` via `make secrets`.
+- **`intel-lpmd`** (Panther Lake low-power daemon, optional, *not* in Debian): build from `github.com/intel/intel-lpmd` and enable the service -- noticeably better idle battery.
 - Slack/IntelliJ: install from `.deb`/tarball; IntelliJ to `/opt/idea-*`, then create a desktop entry.
 
 ## Misc / reference

@@ -95,15 +95,6 @@ update_linux() {
 	(export PIPX_HOME=/opt/pipx; export PIPX_BIN_DIR=/usr/local/bin; pipx upgrade-all || pipx reinstall-all)
 }
 
-update_kubectl() {
-  KUBERNETES_VERSION=$(curl -sSL https://storage.googleapis.com/kubernetes-release/release/stable.txt)
-  curl -fSL "https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/linux/amd64/kubectl" > /Development/tools/kubectl
-  chown -R "${TARGET_USER}:${TARGET_USER}" "/Development/tools/kubectl"
-  chmod +x /Development/tools/kubectl
-  ln -snf /Development/tools/kubectl /usr/local/bin/kubectl
-  echo "kubectl $(kubectl version --client)"
-}
-
 update_firmware() {
   echo
   echo "Updating firmware..."
@@ -136,7 +127,6 @@ update() {
 		get_user;
 		update_linux;
 		update_docker;
-		update_kubectl;
 		update_firmware;
 		update_bios;
 	else

@@ -1,0 +1,4 @@
+# Auto-arrange displays on monitor hotplug (i3 / X11). A DRM connector change hands off
+# to a detached systemd unit so udev doesn't kill the (blocking) xrandr call.
+# If hotplug events don't fire on some hardware, drop the ENV{HOTPLUG} match.
+ACTION=="change", SUBSYSTEM=="drm", ENV{HOTPLUG}=="1", RUN+="/usr/bin/systemd-run --no-block /usr/local/bin/monitor-hotplug"

@@ -1,0 +1,26 @@
+#!/bin/bash
+# Auto-arrange displays on monitor (dis)connect for i3 / X11.
+# Triggered by etc/udev/rules.d/95-monitor-hotplug.rules (via systemd-run).
+# The manual monitor() / monitor_off() shell functions remain as a fallback.
+set -u
+
+# Find the running X server and the auth cookie it actually uses. startx uses a
+# per-session /tmp/serverauth.XXXX (random), so detect it rather than hardcode.
+xpid=$(pgrep -x Xorg | head -1)
+[ -n "$xpid" ] || exit 0
+export DISPLAY=:0
+XAUTHORITY=$(tr '\0' ' ' < "/proc/$xpid/cmdline" | sed -n 's/.*-auth \([^ ]*\).*/\1/p')
+export XAUTHORITY="${XAUTHORITY:-/home/miel/.Xauthority}"
+
+# Debounce: DRM emits several "change" events per hotplug; serialize and let it settle.
+exec 9>/run/monitor-hotplug.lock
+flock -n 9 || exit 0
+sleep 1
+
+# External (non-eDP) output connected -> extend to its right; otherwise laptop only.
+ext=$(xrandr -q 2>/dev/null | awk '/ connected/ && $1 !~ /^eDP/ {print $1; exit}')
+if [ -n "$ext" ]; then
+    xrandr --output eDP-1 --auto --output "$ext" --auto --primary --right-of eDP-1
+else
+    xrandr --output eDP-1 --auto --primary
+fi
