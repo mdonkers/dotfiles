@@ -47,14 +47,14 @@ set -euo pipefail
 case "${PINENTRY_USER_DATA-}" in
   *USE_TTY=1*)
 	# Note: Change to pinentry-curses if a Curses UI is preferred.
-	exec pinentry "$@"
+	exec pinentry-curses "$@"
 	;;
   *claudecode*)
 	# Always use X11 pinentry for Claude Code since TTY doesn't work
-	exec pinentry-x11 "$@"
+	exec pinentry-gnome3 "$@"
 	;;
 esac
 
 # Otherwise, use any X11 UI (configured by Debian Alternatives System)
 # Note: Will fall back to curses if $DISPLAY is not available.
-exec pinentry-x11 "$@"
+exec pinentry-gnome3 "$@"

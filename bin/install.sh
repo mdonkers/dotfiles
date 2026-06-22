@@ -89,9 +89,9 @@ base() {
 	bridge-utils \
 	bzip2 \
 	ca-certificates \
-	cgroupfs-mount \
 	coreutils \
 	curl \
+	dmidecode \
 	file \
 	findutils \
 	fwupd \
@@ -104,6 +104,7 @@ base() {
 	grep \
 	gzip \
 	hostname \
+	icdiff \
 	inotify-tools \
 	iproute2 \
 	jq \
@@ -130,7 +131,8 @@ base() {
 	pcscd \
 	pcsc-tools \
 	picom \
-	pinentry-gtk2 \
+	pinentry-gnome3 \
+	pinentry-curses \
 	python3-pip \
 	python3-setuptools \
 	python3-wheel \
@@ -139,7 +141,6 @@ base() {
 	python3-pygments \
 	python-is-python3 \
 	scdaemon \
-	smbios-utils \
 	silversearcher-ag \
 	ssh \
 	strace \
@@ -167,18 +168,20 @@ base() {
   cleanup
 
   install_docker
-  install_scripts
 
   # update grub with system specific and docker configs and power-saving items
   # acpi_rev_override=5                         -> necessary for bbswitch / bumblebee to disable discrete NVidia GPU
   # acpi_osi=Linux                              -> tell ACPI we're running Linux
   # pci=noaer                                   -> disable Advanced Error Reporting because sometimes flooding the logs
   # nmi_watchdog=0                              -> disable NMI Watchdog, which looks for interrupts to determine if kernel is hanging, to reboot / shutdown without problems
-  # cgroup_enable=memory swapaccount=1          -> enable cgroup memory accounting
-  # page_poison=1 slab_nomerge vsyscall=none    -> Kernel hardening around leaking sensitive data via memory
+  # cgroup_enable=memory / swapaccount=1 dropped -> cgroup v2 (Debian default) ignores these v1-only flags.
+  # apparmor=1 / security=apparmor dropped       -> AppArmor is already on by default on Debian.
+  # vsyscall=none dropped                        -> already the kernel default here (CONFIG_LEGACY_VSYSCALL_NONE=y).
+  # page_poison dropped                          -> superseded by init_on_free=1 since 5.3 (init_on_alloc=1 is default).
+  # slab_nomerge init_on_free=1                  -> KSPP kernel hardening (slab merging is default-on; this disables it).
   #sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="acpi_rev_override=5 acpi_osi=Linux pci=noaer nmi_watchdog=0 apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
 
-  sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1 apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
+  sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="slab_nomerge init_on_free=1"/g' /etc/default/grub
   grep -qx '^GRUB_DISABLE_OS_PROBER=.*' /etc/default/grub || echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
   update-grub
   echo
@@ -243,10 +246,6 @@ install_docker() {
 	containerd \
 	runc
 
-  # create docker group
-  sudo groupadd docker || true
-  sudo gpasswd -a "$USERNAME" docker
-
   curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor > /usr/share/keyrings/docker-archive-keyring.gpg
   chmod a+r /usr/share/keyrings/docker-archive-keyring.gpg
   gpg --show-keys --with-colons /usr/share/keyrings/docker-archive-keyring.gpg | grep -q -i "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
@@ -260,14 +259,42 @@ install_docker() {
 	docker-ce \
 	docker-ce-cli \
 	containerd.io \
+	docker-ce-rootless-extras \
+	docker-compose-plugin \
+	docker-buildx-plugin \
+	uidmap \
 	--no-install-recommends
 
+  # Rootless Docker: do NOT run the root daemon -- the root socket is the
+  # Shai-Hulud escalation path. dockerd runs as the user (user namespaces) instead.
   systemctl daemon-reload
-  systemctl enable docker
-  sleep 5
-  systemctl start docker
+  systemctl disable --now docker.service docker.socket || true
 
-  docker -v
+  # Ensure subuid/subgid ranges exist for rootless user namespaces.
+  grep -q "^${USERNAME}:" /etc/subuid || usermod --add-subuids 100000-165535 "$USERNAME"
+  grep -q "^${USERNAME}:" /etc/subgid || usermod --add-subgids 100000-165535 "$USERNAME"
+
+  # dockerd-rootless-setuptool.sh's iptables preflight needs the nf_tables module.
+  # Load it now and on every boot so the per-user daemon's networking survives reboots.
+  modprobe nf_tables || true
+  echo nf_tables > /etc/modules-load.d/docker-rootless.conf
+
+  # Let the user's systemd run without an active login so rootless dockerd persists.
+  # The per-user daemon setup runs later as the user via install_docker_rootless
+  # (invoked by 'install.sh dotfiles').
+  loginctl enable-linger "$USERNAME"
+}
+
+# Set up rootless Docker for the current (non-root) user. Run as the user; the
+# rootless packages are installed by 'sources' (install_docker). Safe to re-run.
+install_docker_rootless() {
+  if ! command -v dockerd-rootless-setuptool.sh >/dev/null 2>&1; then
+	echo "dockerd-rootless-setuptool.sh missing -- run 'sudo bin/install.sh sources' first."
+	return 0
+  fi
+  dockerd-rootless-setuptool.sh install
+  systemctl --user enable --now docker
+  echo "Rootless Docker set up (DOCKER_HOST is in .exports; open a new shell)."
 }
 
 # install graphics drivers
@@ -300,16 +327,6 @@ install_graphics() {
   update-initramfs -u
 }
 
-# install custom scripts/binaries
-install_scripts() {
-  # speedtest-cli and icdiff are packaged in Debian (icdiff also provides git-icdiff)
-  apt update
-  apt install -y \
-	speedtest-cli \
-	icdiff \
-	--no-install-recommends
-}
-
 # install syncthing
 install_syncthing() {
   sudo apt update
@@ -335,8 +352,8 @@ install_wmapps() {
 
   wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-linux-archive-keyring.gpg
   chmod a+r /usr/share/keyrings/google-linux-archive-keyring.gpg
-  # Validate the key if it matches the expected fingerprints
-  gpg --show-keys --with-colons /usr/share/keyrings/google-linux-archive-keyring.gpg | grep -q -i "4CCA1EAF950CEE4AB83976DCA040830F7FAC5991"
+  # Validate the downloaded key contains Google's long-lived primary signing key.
+  # (Signing subkeys rotate, so only the primary fingerprint is pinned here.)
   gpg --show-keys --with-colons /usr/share/keyrings/google-linux-archive-keyring.gpg | grep -q -i "EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796"
 
   apt update
@@ -440,6 +457,9 @@ get_dotfiles() {
   sudo update-alternatives --install /usr/bin/editor editor "$(command -v nvim)" 60
   sudo update-alternatives --config editor
   )
+
+  # Rootless Docker per-user setup (runs as the user, like the rest of this step).
+  install_docker_rootless
 }
 
 install_private() {
@@ -496,14 +516,17 @@ install_golang() {
   # subshell
   (
   curl -sSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | sudo tar -v -C /usr/local -xz
+  # go was just unpacked into $GO_SRC/bin, which isn't on PATH in this shell yet
+  export PATH="$GO_SRC/bin:$PATH"
   local user="$USER"
   # rebuild stdlib for faster builds
   sudo chown -R "${user}" /usr/local/go/pkg
   CGO_ENABLED=0 go install -a -installsuffix cgo std
   )
 
-  # get commandline tools
+  # get commandline tools (go was just unpacked into $GO_SRC/bin, not yet on PATH)
   (
+  export PATH="$GO_SRC/bin:$PATH"
   set -x
   set +e
   go install github.com/go-delve/delve/cmd/dlv@latest
@@ -531,7 +554,7 @@ install_dev() {
   apt update
   apt install -y \
 	zulu25-jdk-headless \
-	wireshark-qt \
+	wireshark \
 	ansible \
 	linux-perf \
 	cmake \
@@ -546,7 +569,11 @@ install_dev() {
 
   # Make LD (linker) configurable via 'update-alternatives' and set default to lld
   update-alternatives --install "/usr/bin/ld" "ld" "$(command -v ld.lld)" 20
-  update-alternatives --install "/usr/bin/ld" "ld" "$(command -v ld.gold)" 10
+  # ld.gold ships in binutils-gold (not installed here); register it only when
+  # present, else update-alternatives aborts on the empty (non-absolute) path.
+  if command -v ld.gold >/dev/null 2>&1; then
+	update-alternatives --install "/usr/bin/ld" "ld" "$(command -v ld.gold)" 10
+  fi
   update-alternatives --config ld
 
   # Packages linux-perf and cmake are installed to run Linux performance tests
@@ -572,6 +599,9 @@ install_dev() {
   chown "$USERNAME:$USERNAME" /Development/tools/nvm-install.sh
   chmod +x /Development/tools/nvm-install.sh
   sudo -u "$USERNAME" /Development/tools/nvm-install.sh
+
+  # CLI tools from their official signed apt repos (gh, kubectl, terraform).
+  install_clitools
 }
 
 
@@ -580,13 +610,13 @@ usage() {
   echo "Usage:"
   echo "  dist                               - setup sources & dist upgrade"
   echo "  sources                            - setup sources & install base pkgs"
-  echo "  graphics {geforce|intel}          - install graphics drivers"
+  echo "  graphics {geforce|intel}           - install graphics drivers"
   echo "  wm                                 - install window manager/desktop pkgs"
   echo "  dotfiles                           - get dotfiles (!! as user !!)"
+  echo "  docker-rootless                    - set up rootless Docker (!! as user !!)"
   echo "  private                            - install private repo and other personal stuff (!! as user !!)"
   echo "  virtualbox                         - install VirtualBox (manual, when needed)"
-  echo "  dev                                - install development environment for Java"
-  echo "  tools                              - install CLI tools (gh, kubectl, helm, terraform)"
+  echo "  dev                                - install dev env for Java + CLI tools (gh, kubectl, terraform)"
   echo "  golang                             - install golang language (!! as user !!)"
   echo "  syncthing                          - install syncthing (!! as user !!)"
   echo "  cleanup                            - clean apt etc"
@@ -608,16 +638,15 @@ install_clitools() {
   curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | gpg --dearmor > /usr/share/keyrings/kubernetes-apt-keyring.gpg
   echo "deb [signed-by=/usr/share/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /" > /etc/apt/sources.list.d/kubernetes.list
 
-  # Helm
-  curl -fsSL https://baltocdn.com/helm/signing.asc | gpg --dearmor > /usr/share/keyrings/helm.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" > /etc/apt/sources.list.d/helm-stable-debian.list
-
   # HashiCorp (terraform) -- pinned to a stable codename (no 'forky' repo upstream)
   curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /usr/share/keyrings/hashicorp-archive-keyring.gpg
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com trixie main" > /etc/apt/sources.list.d/hashicorp.list
 
+  # Helm has no working signed apt repo anymore (baltocdn was decommissioned and now
+  # returns "OK" for every path), so install it manually from its GitHub release
+  # tarball -- see debian_install.md.
   apt update
-  apt install -y gh kubectl helm terraform --no-install-recommends
+  apt install -y gh kubectl terraform --no-install-recommends
 }
 
 main() {
@@ -646,8 +675,8 @@ main() {
 	install_wmapps
   elif [[ $cmd == "dotfiles" ]]; then
 	get_dotfiles
-  elif [[ $cmd == "scripts" ]]; then
-	install_scripts
+  elif [[ $cmd == "docker-rootless" ]]; then
+	install_docker_rootless
   elif [[ $cmd == "syncthing" ]]; then
 	install_syncthing
   elif [[ $cmd == "virtualbox" ]]; then
@@ -656,9 +685,6 @@ main() {
   elif [[ $cmd == "dev" ]]; then
 	check_is_sudo
 	install_dev
-  elif [[ $cmd == "tools" ]]; then
-	check_is_sudo
-	install_clitools
   elif [[ $cmd == "golang" ]]; then
 	install_golang "$2"
   elif [[ $cmd == "private" ]]; then

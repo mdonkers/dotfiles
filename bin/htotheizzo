@@ -36,8 +36,6 @@ dcleanup(){
 }
 
 update_docker() {
-	local user_home="/home/${TARGET_USER}"
-
 	# Run some regular cleanup, just in case
 	dcleanup || true
 
@@ -45,38 +43,8 @@ update_docker() {
 	mkdir -p /etc/bash_completion.d
 	curl -sSL -o /etc/bash_completion.d/docker https://raw.githubusercontent.com/docker/cli/master/contrib/completion/bash/docker
 
-	# Get the Docker Compose plugin
-	local docker_compose_release
-	docker_compose_release=$(curl -L -s -H 'Accept: application/json' https://github.com/docker/compose/releases/latest)
-	local docker_compose_version
-	# shellcheck disable=SC2001
-	docker_compose_version=$(echo "${docker_compose_release}" | sed -e 's/.*"tag_name":"\(v[0-9\.]*\)".*/\1/')
-	local docker_compose_binary_uri
-	docker_compose_binary_uri="https://github.com/docker/compose/releases/download/${docker_compose_version}/docker-compose-Linux-x86_64"
-	mkdir -p "${user_home}/.docker/cli-plugins"
-	(
-	set -x
-	curl -fSL "${docker_compose_binary_uri}" -o "${user_home}/.docker/cli-plugins/docker-compose"
-	)
-
-	chmod a+x "${user_home}/.docker/cli-plugins/docker-compose"
-
-	# Get Docker buildx plugin
-	local docker_buildx_release
-	docker_buildx_release=$(curl -L -s -H 'Accept: application/json' https://github.com/docker/buildx/releases/latest)
-	local docker_buildx_version
-	# shellcheck disable=SC2001
-	docker_buildx_version=$(echo "${docker_buildx_release}" | sed -e 's/.*"tag_name":"\(v[0-9\.]*\)".*/\1/')
-	local docker_buildx_binary_uri
-	docker_buildx_binary_uri="https://github.com/docker/buildx/releases/download/${docker_buildx_version}/buildx-${docker_buildx_version}.linux-amd64"
-	mkdir -p "${user_home}/.docker/cli-plugins"
-	(
-	set -x
-	curl -fSL "${docker_buildx_binary_uri}" -o "${user_home}/.docker/cli-plugins/docker-buildx"
-	)
-
-	chmod a+x "${user_home}/.docker/cli-plugins/docker-buildx"
-	chown -R "${TARGET_USER}":"${TARGET_USER}" "${user_home}/.docker"
+	# Compose + buildx plugins come from the Docker apt repo now
+	# (docker-compose-plugin / docker-buildx-plugin); apt upgrade keeps them current.
 
 }
 

@@ -476,3 +476,26 @@ monitor_off() {
   echo "Disconnected from: ${monitor}"
   xrandr --output "${monitor}" --off
 }
+
+# Reset the trackpad when it stops responding (e.g. after a bad suspend/hibernate
+# resume): unbind + rebind its I2C-HID kernel driver, which re-runs the same
+# controller init a reboot would. Companion to the fix_wifi / fix_bluetooth aliases.
+fix_trackpad() {
+  local drv dir dev hit=0
+  for drv in i2c_hid_acpi i2c_hid; do
+    dir="/sys/bus/i2c/drivers/${drv}"
+    [ -d "${dir}" ] || continue
+    for dev in "${dir}"/i2c-*; do
+      [ -e "${dev}" ] || continue
+      dev=$(basename "${dev}")
+      echo "Resetting trackpad: ${dev} (${drv})"
+      echo "${dev}" | sudo tee "${dir}/unbind" >/dev/null
+      sleep 1
+      echo "${dev}" | sudo tee "${dir}/bind" >/dev/null
+      hit=1
+    done
+  done
+  if [ "${hit}" -eq 0 ]; then
+    echo "No I2C-HID device found -- try fixing manually"
+  fi
+}
