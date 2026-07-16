@@ -24,9 +24,11 @@
 	# Commit all changes
   ca = !git add -A && git commit -av
 
-	# Switch to a (remote) branch, creating it if necessary.
-	# Auto-stashes when local changes (e.g. IDE-regenerated go.work.sum) would block the switch.
-  go = "!f() { git checkout \"$1\" 2>/dev/null && return; if git show-ref --verify --quiet \"refs/heads/$1\" || git show-ref --verify --quiet \"refs/remotes/origin/$1\"; then echo 'go: auto-stashing local changes to switch branch'; git stash push --include-untracked --quiet && git checkout \"$1\" && git stash pop; else git checkout -b \"$1\"; fi; }; f"
+	# Switch to a branch (or '-' for the previous one), creating it if it doesn't exist.
+	# If local changes (e.g. an IDE-regenerated go.work.sum) block the switch, auto-stash them,
+	# switch, and reapply. If reapplying would conflict, the switch still succeeds and the change
+	# is left in 'git stash' (stash@{0}) rather than corrupting the index -- nothing is lost.
+  go = "!f() { t=\"$1\"; git checkout \"$t\" 2>/dev/null && return; if [ \"$t\" = \"-\" ] || git show-ref --verify --quiet \"refs/heads/$t\" || git show-ref --verify --quiet \"refs/remotes/origin/$t\"; then echo 'go: auto-stashing local changes to switch branch'; git stash push --include-untracked --quiet || return 1; if git checkout \"$t\"; then git stash pop --quiet 2>/dev/null || { git reset --hard --quiet HEAD; echo 'go: local changes conflicted on the target branch; kept in git stash (stash@{0})'; }; else git stash pop --quiet; fi; else git checkout -b \"$t\"; fi; }; f"
 
 	# Color graph log view
   graph = log --graph --color --pretty=format:"%C(yellow)%H%C(green)%d%C(reset)%n%x20%cd%n%x20%cn%x20(%ce)%n%x20%s%n"
