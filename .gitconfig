@@ -24,8 +24,9 @@
 	# Commit all changes
   ca = !git add -A && git commit -av
 
-	# Switch to a (remote) branch, creating it if necessary
-  go = "!f() { git checkout \"$1\" 2> /dev/null || git checkout -b \"$1\"; }; f"
+	# Switch to a (remote) branch, creating it if necessary.
+	# Auto-stashes when local changes (e.g. IDE-regenerated go.work.sum) would block the switch.
+  go = "!f() { git checkout \"$1\" 2>/dev/null && return; if git show-ref --verify --quiet \"refs/heads/$1\" || git show-ref --verify --quiet \"refs/remotes/origin/$1\"; then echo 'go: auto-stashing local changes to switch branch'; git stash push --include-untracked --quiet && git checkout \"$1\" && git stash pop; else git checkout -b \"$1\"; fi; }; f"
 
 	# Color graph log view
   graph = log --graph --color --pretty=format:"%C(yellow)%H%C(green)%d%C(reset)%n%x20%cd%n%x20%cn%x20(%ce)%n%x20%s%n"
@@ -62,14 +63,15 @@
 	# Find commits by commit message
   fm = "!f() { git log --pretty=format:'%C(yellow)%h	%Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -i --grep=\"$1\"; }; f"
 
-	# Remove branches that have already been merged with master
-	# a.k.a. ‘delete merged’
-  dm = "!git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d"
-
-	# Remove squashed / rebased branches, merged with the 'current' active branch
-	# Need to explicitly spawn a Bash shell because of the [[ ]] which only exist in Bash (not sh)
-	# a.k.a. 'delete squashed'
-  ds = "!bash -c 'git for-each-ref refs/heads/ \"--format=%(refname:short)\" | while read branch; do mergeBase=$(git merge-base $(git rev-parse --abbrev-ref HEAD) $branch) && [[ $(git cherry $(git rev-parse --abbrev-ref HEAD) $(git commit-tree $(git rev-parse $branch^{tree}) -p $mergeBase -m _)) == \"-\"* ]] && git branch -D $branch; done;' --"
+	# Delete local branches whose work is already in the CURRENT branch (run this from main/master).
+	# Two safe signals, both proving the content is integrated:
+	#   - merged:   branch tip is an ancestor of HEAD (normal / fast-forward merge)
+	#   - squashed: the branch's tree (or its upstream tip's tree) matches a commit in HEAD
+	# Testing the upstream tip also catches branches that got an extra commit (e.g. from a reviewer)
+	# before the PR was squashed. Never deletes on 'upstream gone' alone, so unmerged work is safe.
+	# Bash is needed for the loop; run 'git fetch' first for the freshest upstream detection.
+	# a.k.a. 'delete merged' (replaces the old dm + ds)
+  dm = "!bash -c 'cur=$(git rev-parse --abbrev-ref HEAD); git for-each-ref --format=\"%(refname:short)\" refs/heads/ | while read -r b; do case \"$b\" in \"$cur\"|main|master) continue;; esac; if git merge-base --is-ancestor \"$b\" HEAD 2>/dev/null; then git branch -d \"$b\" && echo \"  deleted (merged)   $b\"; continue; fi; for tip in \"$b\" \"$b@{upstream}\"; do rev=$(git rev-parse --verify --quiet \"$tip\") || continue; mb=$(git merge-base HEAD \"$rev\") || continue; synth=$(git commit-tree \"$(git rev-parse \"$rev^{tree}\")\" -p \"$mb\" -m _); if [ \"$(git cherry HEAD \"$synth\" | head -c1)\" = \"-\" ]; then git branch -D \"$b\" && echo \"  deleted (squashed) $b\"; break; fi; done; done' --"
 
 		# List remote branches with their latest commit timestamp and author (to find outdated branches)
   stale = "!f() { for branch in $(git branch -r | grep -v HEAD); do echo \"$(git show --format=\"%ci %cr %an\" $branch | head -n 1) \t$branch\"; done | sort -r; }; f"
