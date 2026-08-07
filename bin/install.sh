@@ -47,18 +47,26 @@ setup_sources() {
 	Pin-Priority: -1
 	EOF
 
-  cat <<-EOF > /etc/apt/sources.list
-	deb http://httpredir.debian.org/debian testing main contrib non-free non-free-firmware
-	deb-src http://httpredir.debian.org/debian/ testing main contrib non-free non-free-firmware
+  # deb822 format (.sources). Separate file so it never clobbers the base
+  # debian.sources the installer writes; tracks testing + experimental.
+  cat <<-EOF > /etc/apt/sources.list.d/debian-testing.sources
+	Types: deb deb-src
+	URIs: http://httpredir.debian.org/debian/
+	Suites: testing testing-updates
+	Components: main contrib non-free non-free-firmware
+	Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 
-	deb http://httpredir.debian.org/debian/ testing-updates main contrib non-free non-free-firmware
-	deb-src http://httpredir.debian.org/debian/ testing-updates main contrib non-free non-free-firmware
+	Types: deb deb-src
+	URIs: http://security.debian.org/
+	Suites: testing-security
+	Components: main contrib non-free non-free-firmware
+	Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 
-	deb http://security.debian.org/ testing-security main contrib non-free non-free-firmware
-	deb-src http://security.debian.org/ testing-security main contrib non-free non-free-firmware
-
-	deb http://httpredir.debian.org/debian experimental main contrib non-free non-free-firmware
-	deb-src http://httpredir.debian.org/debian experimental main contrib non-free non-free-firmware
+	Types: deb deb-src
+	URIs: http://httpredir.debian.org/debian/
+	Suites: experimental
+	Components: main contrib non-free non-free-firmware
+	Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 	EOF
 
   # turn off translations, speed up apt update
@@ -255,8 +263,12 @@ install_docker() {
   chmod a+r /usr/share/keyrings/docker-archive-keyring.gpg
   gpg --show-keys --with-colons /usr/share/keyrings/docker-archive-keyring.gpg | grep -q -i "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
 
-  cat <<-EOF > /etc/apt/sources.list.d/docker.list
-	deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian trixie stable
+  cat <<-EOF > /etc/apt/sources.list.d/docker.sources
+	Types: deb
+	URIs: https://download.docker.com/linux/debian/
+	Suites: trixie
+	Components: stable
+	Signed-By: /usr/share/keyrings/docker-archive-keyring.gpg
 	EOF
 
   apt update
@@ -346,13 +358,23 @@ install_syncthing() {
 # install stuff for i3 window manager
 install_wmapps() {
   # Get Firefox from unstable to use the latest version
-  cat <<-EOF > /etc/apt/sources.list.d/firefox.list
-	deb http://http.debian.net/debian unstable main
+  cat <<-EOF > /etc/apt/sources.list.d/firefox.sources
+	Types: deb
+	URIs: http://http.debian.net/debian/
+	Suites: unstable
+	Components: main
+	Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 	EOF
 
   # Google repo, because Chromium cannot play Netflix but Chrome can
-  cat <<-EOF > /etc/apt/sources.list.d/google-chrome-beta.list
-	deb [signed-by=/usr/share/keyrings/google-linux-archive-keyring.gpg] https://dl.google.com/linux/chrome/deb/ stable main
+  # own file name (google-chrome.sources): the google-chrome-beta pkg auto-writes
+  # its own google-chrome-beta.sources, so don't collide with that.
+  cat <<-EOF > /etc/apt/sources.list.d/google-chrome.sources
+	Types: deb
+	URIs: https://dl.google.com/linux/chrome/deb/
+	Suites: stable
+	Components: main
+	Signed-By: /usr/share/keyrings/google-linux-archive-keyring.gpg
 	EOF
 
   wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-linux-archive-keyring.gpg
@@ -551,7 +573,13 @@ install_dev() {
 
   # Add Azul Zulu apt repo
   curl -s https://repos.azul.com/azul-repo.key | gpg --dearmor -o /usr/share/keyrings/azul.gpg
-  echo "deb [signed-by=/usr/share/keyrings/azul.gpg] https://repos.azul.com/zulu/deb stable main" | tee /etc/apt/sources.list.d/zulu.list
+  cat <<-EOF > /etc/apt/sources.list.d/zulu.sources
+	Types: deb
+	URIs: https://repos.azul.com/zulu/deb/
+	Suites: stable
+	Components: main
+	Signed-By: /usr/share/keyrings/azul.gpg
+	EOF
 
   # Automatically accept license agreement
   #echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
@@ -637,15 +665,32 @@ install_clitools() {
   # GitHub CLI
   curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg > /usr/share/keyrings/githubcli-archive-keyring.gpg
   chmod a+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+  cat <<-EOF > /etc/apt/sources.list.d/github-cli.sources
+	Types: deb
+	URIs: https://cli.github.com/packages/
+	Suites: stable
+	Components: main
+	Signed-By: /usr/share/keyrings/githubcli-archive-keyring.gpg
+	EOF
 
   # Kubernetes (kubectl) -- bump vX.YY to the desired minor version
   curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | gpg --dearmor > /usr/share/keyrings/kubernetes-apt-keyring.gpg
-  echo "deb [signed-by=/usr/share/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /" > /etc/apt/sources.list.d/kubernetes.list
+  cat <<-EOF > /etc/apt/sources.list.d/kubernetes.sources
+	Types: deb
+	URIs: https://pkgs.k8s.io/core:/stable:/v1.33/deb/
+	Suites: /
+	Signed-By: /usr/share/keyrings/kubernetes-apt-keyring.gpg
+	EOF
 
   # HashiCorp (terraform) -- pinned to a stable codename (no 'forky' repo upstream)
   curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor > /usr/share/keyrings/hashicorp-archive-keyring.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com trixie main" > /etc/apt/sources.list.d/hashicorp.list
+  cat <<-EOF > /etc/apt/sources.list.d/hashicorp.sources
+	Types: deb
+	URIs: https://apt.releases.hashicorp.com/
+	Suites: trixie
+	Components: main
+	Signed-By: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+	EOF
 
   # Helm has no working signed apt repo anymore (baltocdn was decommissioned and now
   # returns "OK" for every path), so install it manually from its GitHub release
