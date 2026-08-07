@@ -6,6 +6,9 @@
     "swallows": [
        {
        "class": "^Slack$"
+       },
+       {
+       "title": "(?i)slack"
        }
     ],
     "type": "con"

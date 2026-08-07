@@ -31,8 +31,11 @@ bindsym $mod+o exec i3-dmenu-desktop
 # kill focused window
 bindsym $mod+Shift+q kill
 
+# slack: no border — by class (native app) or any window with Slack in the title
+for_window [class="(?i)slack"] border none
+for_window [title="(?i)slack"] border none
+
 # spotify: no border
-for_window [class="Slack"] border none
 for_window [class="^Spotify$"] border none
 for_window [class="^Spotify Premium$"] border none
 

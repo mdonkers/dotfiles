@@ -178,10 +178,15 @@ base() {
   # apparmor=1 / security=apparmor dropped       -> AppArmor is already on by default on Debian.
   # vsyscall=none dropped                        -> already the kernel default here (CONFIG_LEGACY_VSYSCALL_NONE=y).
   # page_poison dropped                          -> superseded by init_on_free=1 since 5.3 (init_on_alloc=1 is default).
-  # slab_nomerge init_on_free=1                  -> KSPP kernel hardening (slab merging is default-on; this disables it).
+  # slab_nomerge init_on_free=1 dropped          -> KSPP hardening, but init_on_free=1 corrupts the hibernation
+  #                                                 image restore: hard hang right after "100% image loaded",
+  #                                                 no logs (debugged 2026-07 on the XPS 16, kernels 7.0/7.1).
+  # resume= not needed                           -> the installer writes the machine-specific resume device to
+  #                                                 /etc/initramfs-tools/conf.d/resume, which is what locates the
+  #                                                 hibernation image at boot; just verify it exists.
   #sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="acpi_rev_override=5 acpi_osi=Linux pci=noaer nmi_watchdog=0 apparmor=1 security=apparmor page_poison=1 slab_nomerge vsyscall=none"/g' /etc/default/grub
 
-  sed -i.bak 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="slab_nomerge init_on_free=1"/g' /etc/default/grub
+  grep -H . /etc/initramfs-tools/conf.d/resume 2>/dev/null || echo "WARNING: no /etc/initramfs-tools/conf.d/resume - resume from hibernation will not work"
   grep -qx '^GRUB_DISABLE_OS_PROBER=.*' /etc/default/grub || echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
   update-grub
   echo

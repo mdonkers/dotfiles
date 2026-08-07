@@ -33,6 +33,9 @@ etc: ## Installs the etc directory files.
 	sudo systemctl daemon-reload
 	sudo systemctl enable systemd-networkd systemd-resolved
 	sudo systemctl start systemd-networkd systemd-resolved
+	# networkd manages no links (NetworkManager owns wifi), so its wait-online
+	# can never succeed and fails every boot; NM has its own wait-online.
+	sudo systemctl disable systemd-networkd-wait-online.service
 	sudo ln -snf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 .PHONY: test
