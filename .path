@@ -3,6 +3,6 @@ export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:/bin/java::" | sed "s:/jre
 
 export GOPATH="${HOME}/.go"
 
-export PATH=/usr/local/bin:${HOME}/.local/bin:${JAVA_HOME}/bin:/usr/local/go/bin:${PATH}:${GOPATH}/bin:/sbin
+export PATH=/usr/local/bin:${HOME}/.local/bin:${JAVA_HOME}/bin:/usr/local/go/bin:${HOME}/.cargo/bin:${PATH}:${GOPATH}/bin:/sbin
 
 export CDPATH=${CDPATH}:/Development/projects

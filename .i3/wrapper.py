@@ -52,6 +52,23 @@ def get_tailscale():
         color = "#00FF00"
     return {'full_text' : 'Tailscale: %s' % state, 'name' : 'tailscale', 'color' : color}
 
+def apply_mic_mute(blocks):
+    """ i3status's volume module only reads the playback switch, so the mic (capture)
+    block never renders 'muted'. Patch it from the same PipeWire source the mic-mute
+    keybind toggles (pactl @DEFAULT_SOURCE@). Targets the 'default.Capture.0' block so the
+    speaker block is untouched. """
+    try:
+        out = subprocess.run(["pactl", "get-source-mute", "@DEFAULT_SOURCE@"],
+                             timeout=1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        if b"yes" not in out.stdout.lower():
+            return
+    except Exception:
+        return
+    for b in blocks:
+        if b.get('name') == 'volume' and b.get('instance') == 'default.Capture.0':
+            b['full_text'] = '🎤 muted'
+            b['color'] = '#FFFF00'
+
 def print_line(message):
     """ Non-buffered printing to stdout. """
     sys.stdout.write(message + '\n')
@@ -87,5 +104,7 @@ if __name__ == '__main__':
         # insert information into the start of the json, but could be anywhere
         # CHANGE THIS LINE TO INSERT SOMETHING ELSE
         j.insert(3, get_tailscale())
+        # reflect the mic (capture) mute state, which i3status can't detect itself
+        apply_mic_mute(j)
         # and echo back new encoded json
         print_line(prefix+json.dumps(j))

@@ -327,8 +327,11 @@ install_graphics() {
 	"intel")
 	  # Intel Arc / Xe (Panther Lake, XPS 16): in-kernel "xe" driver, so no driver package -
 	  # just firmware (GPU, Wi-Fi, ISH sensors, SOF audio), microcode, Mesa and VA-API.
+	  # firmware-cirrus carries the Cirrus SDCA SoundWire blobs (sdca/1fa/1028/dba/* +
+	  # cs35l57 amp tuning) the mic/speakers need — Debian split these out of
+	  # firmware-misc-nonfree into a per-vendor package, so it must be listed explicitly.
 	  # Verify package names against the current testing snapshot if apt can't find one.
-	  pkgs+=( firmware-misc-nonfree firmware-intel-graphics firmware-intel-misc firmware-iwlwifi firmware-sof-signed intel-media-va-driver-non-free mesa-vulkan-drivers intel-gpu-tools vainfo intel-microcode )
+	  pkgs+=( firmware-misc-nonfree firmware-intel-graphics firmware-intel-misc firmware-iwlwifi firmware-sof-signed firmware-cirrus intel-media-va-driver-non-free mesa-vulkan-drivers intel-gpu-tools vainfo intel-microcode )
 	  ;;
 	*)
 	  echo "No system specified, assuming graphics drivers present"
@@ -400,8 +403,15 @@ install_wmapps() {
 	libnotify4 \
 	network-manager-gnome \
 	pavucontrol \
-	pulseaudio \
-	pulseaudio-module-bluetooth \
+	pipewire \
+	pipewire-pulse \
+	pipewire-alsa \
+	wireplumber \
+	libspa-0.2-bluetooth \
+	pipewire-libcamera \
+	libcamera-ipa \
+	libcamera-tools \
+	v4l-utils \
 	pulseaudio-utils \
 	pulsemixer \
 	rxvt-unicode \
@@ -414,8 +424,13 @@ install_wmapps() {
 
   apt install -y -t unstable firefox --no-install-recommends
 
-  # update Pulse audio settings (replaces entire line)
-  sed -i.bak '/flat-volumes/c\flat-volumes = no' /etc/pulse/daemon.conf
+  # Audio + camera run on PipeWire now (pipewire-pulse replaces the PulseAudio daemon;
+  # libspa-0.2-bluetooth restores BT audio; pipewire-libcamera + libcamera expose the
+  # IPU7 MIPI webcam to apps). pulseaudio-utils is kept only for `pactl` (i3 volume keys).
+  # PipeWire has no flat-volumes setting — its default already behaves like the old
+  # PulseAudio flat-volumes=no — so the previous /etc/pulse/daemon.conf tweak is dropped.
+  # The pipewire/wireplumber user services come pre-enabled via Debian presets on a fresh
+  # install, so no manual `systemctl --user enable` is needed here.
 
   # update clickpad settings
   mkdir -p /etc/X11/xorg.conf.d/
