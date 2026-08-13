@@ -1,0 +1,37 @@
+From: "Shih-Yuan Lee (FourDollars)" <sylee@canonical.com>
+Date: Mon, 9 Mar 2026 19:19:08 +0800
+Subject: Preserve bufpos2index mapping in prepare_buffer_queue()
+Origin: upstream, https://github.com/v4l2loopback/v4l2loopback/commit/0baebb6817c1a1010e707903a84cba9932875a2f
+
+Do not overwrite bufpos2index[] when clearing the output buffer queue.
+The existing mapping must remain available to sustain-framerate and
+timeout capture readers after the output queue is reset.
+
+Signed-off-by: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
+---
+ v4l2loopback.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/v4l2loopback.c b/v4l2loopback.c
+index 276159ad..f4cea6f8 100644
+--- a/v4l2loopback.c
++++ b/v4l2loopback.c
+@@ -1621,14 +1621,15 @@ static void prepare_buffer_queue(struct v4l2_loopback_device *dev, int count)
+ 		list_del_init(&bufd->list_head);
+ 	}
+ 
+-	/* buffers are no longer queued; reset write position tracking */
++	/* Preserve the existing bufpos2index mapping so that capture readers
++	 * can still reference the last written frames after the output queue
++	 * has been cleared (e.g. via sustain_framerate or timeout mechanism).
++	 * Only clear the buffer flags. */
+ 	for (pos = 0; pos < count; ++pos) {
+ 		bufd = &dev->buffers[pos];
+ 		unset_flags(bufd->buffer.flags);
+-		dev->bufpos2index[pos % count] = bufd->buffer.index;
+ 	}
+ 
+-exit_prepare_queue_unlock:
+ 	spin_unlock_bh(&dev->list_lock);
+ }
+

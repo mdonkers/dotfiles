@@ -1,0 +1,119 @@
+From: Local rebuild <local@localhost>
+Date: Wed, 12 Aug 2026 22:30:00 +0200
+Subject: Add a configurable input-pipeline idle timeout
+
+Some V4L2 consumers briefly close and reopen the virtual camera while
+negotiating capture. Immediately setting the input pipeline to NULL for
+every zero-client event repeatedly tears down and reinitializes slow
+camera pipelines.
+
+Add --idle-timeout=SECONDS. A positive value delays input-pipeline
+shutdown, allowing a returning client to cancel it. The default remains
+zero, preserving the existing immediate-shutdown behaviour.
+---
+ src/v4l2-relayd.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 47 insertions(+), 2 deletions(-)
+
+diff --git a/src/v4l2-relayd.c b/src/v4l2-relayd.c
+index 2a232af..8ff5ce9 100644
+--- a/src/v4l2-relayd.c
++++ b/src/v4l2-relayd.c
+@@ -52,5 +52,6 @@ static gboolean opt_background = FALSE;
+ static gboolean opt_debug = FALSE;
+ static gboolean opt_version = FALSE;
++static gint opt_idle_timeout = 0;
+ static gchar *opt_input = NULL;
+ static gchar *opt_output = NULL;
+ static gchar *opt_splash =
+@@ -62,5 +63,6 @@ static guint output_bus_watch_id = 0;
+ static guint splash_bus_watch_id = 0;
+ static guint v4l2_event_poll_id = 0;
++static guint input_pipeline_disable_timeout_id = 0;
+ static GstElement *input_pipeline = NULL;
+ static GstElement *output_pipeline = NULL;
+ static GstElement *splash_pipeline = NULL;
+@@ -79,5 +81,8 @@ static const GOptionEntry opt_entries[] =
+   { "debug",      'd', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE,
+     &opt_debug, "Print debugging information", NULL },
++  { "idle-timeout", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_INT,
++    &opt_idle_timeout, "Delay input pipeline shutdown after the last client",
++    "SECONDS" },
+   { "version",    'v', G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE,
+     &opt_version, "Show version", NULL },
+   { "input",      'i', G_OPTION_FLAG_NONE, G_OPTION_ARG_STRING,
+@@ -112,6 +117,11 @@ parse_args (int   argc,
+ 
+   g_option_context_free (context);
+ 
++  if (opt_idle_timeout < 0) {
++    g_printerr ("idle timeout must not be negative\n");
++    exit (1);
++  }
++
+   if (opt_version) {
+     g_print ("%s (%s)\n", g_get_prgname (), V4L2_RELAYD_VERSION);
+     exit (0);
+@@ -286,19 +296,51 @@ splash_pipeline_get ()
+ static void
+ input_pipeline_enable ()
+ {
++  if (input_pipeline_disable_timeout_id > 0) {
++    g_source_remove (input_pipeline_disable_timeout_id);
++    input_pipeline_disable_timeout_id = 0;
++  }
++
+   gst_element_set_state (splash_pipeline_get (), GST_STATE_NULL);
+   gst_element_set_state (input_pipeline_get (), GST_STATE_PLAYING);
+ }
+ 
+ static void
+-input_pipeline_disable ()
++input_pipeline_disable_now ()
+ {
+   if (input_pipeline != NULL)
+     gst_element_set_state (input_pipeline, GST_STATE_NULL);
+-  if (input_pipeline != NULL)
++  if (splash_pipeline != NULL)
+     gst_element_set_state (splash_pipeline, GST_STATE_PLAYING);
+ }
+ 
++static gboolean
++input_pipeline_disable_timeout (gpointer user_data G_GNUC_UNUSED)
++{
++  input_pipeline_disable_timeout_id = 0;
++  input_pipeline_disable_now ();
++
++  return G_SOURCE_REMOVE;
++}
++
++static void
++input_pipeline_disable ()
++{
++  if (opt_idle_timeout == 0) {
++    input_pipeline_disable_now ();
++    return;
++  }
++
++  if (input_pipeline_disable_timeout_id == 0) {
++    GST_DEBUG ("Scheduling input pipeline shutdown in %d seconds",
++               opt_idle_timeout);
++    input_pipeline_disable_timeout_id =
++        g_timeout_add_seconds (opt_idle_timeout,
++                               input_pipeline_disable_timeout,
++                               NULL);
++  }
++}
++
+ static gboolean
+ v4l2sink_event_callback (gint         fd,
+                          GIOCondition condition,
+@@ -526,6 +568,9 @@ main (int   argc,
+   GST_INFO ("Running...");
+   g_main_loop_run (loop);
+ 
++  if (input_pipeline_disable_timeout_id > 0)
++    g_source_remove (input_pipeline_disable_timeout_id);
++
+   g_source_remove (input_bus_watch_id);
+   g_source_remove (output_bus_watch_id);
+   g_source_remove (splash_bus_watch_id);

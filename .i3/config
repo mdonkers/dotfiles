@@ -230,6 +230,13 @@ bar {
 	status_command i3status --config ~/.i3/status.conf | ~/.i3/wrapper.py
 }
 
+# Export the session env to the D-Bus + systemd user activation environment, so
+# D-Bus-activated services -- notably xdg-desktop-portal, the camera portal Chrome/Slack
+# use to reach the PipeWire (libcamera) webcam -- start with the right desktop and select
+# the gtk backend. Name specific vars: `--all` also pushes bash's exported-function
+# pseudo-vars (names with `%`), which systemd's SetEnvironment rejects.
+exec --no-startup-id dbus-update-activation-environment --systemd DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP
+
 # run the network manager applet
 exec --no-startup-id nm-applet
 

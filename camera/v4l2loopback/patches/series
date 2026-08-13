@@ -1,0 +1,4 @@
+0001-fix-buffer-queue-management.patch
+0002-fix-output-dqbuf-blocking.patch
+0003-wake-output-dqbuf-on-streamoff.patch
+0004-preserve-buffer-position-mapping.patch

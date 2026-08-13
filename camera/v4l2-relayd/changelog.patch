@@ -1,0 +1,28 @@
+diff --git a/debian/changelog b/debian/changelog
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,3 +1,24 @@
++v4l2-relayd (0.2.0-0ubuntu1+keepalive3) forky; urgency=medium
++
++  * Add repeatable input-start V4L2 controls, applied after the input
++    pipeline reaches PLAYING.
++
++ -- Local rebuild <local@localhost>  Thu, 13 Aug 2026 18:00:00 +0200
++
++v4l2-relayd (0.2.0-0ubuntu1+keepalive2) forky; urgency=medium
++
++  * Configure the live appsrc bridge with time-format segments and a bounded,
++    downstream-leaky queue so stale frames cannot accumulate.
++
++ -- Local rebuild <local@localhost>  Wed, 12 Aug 2026 23:15:00 +0200
++
++v4l2-relayd (0.2.0-0ubuntu1+keepalive1) forky; urgency=medium
++
++  * Add a configurable input-pipeline idle timeout so transient V4L2 client
++    disconnects do not repeatedly reinitialize slow camera pipelines.
++
++ -- Local rebuild <local@localhost>  Wed, 12 Aug 2026 22:30:00 +0200
++
+ v4l2-relayd (0.2.0-0ubuntu1) resolute; urgency=medium
+ 
+   * New upstream 0.2.0 release (LP: #2116722, LP: #2120689)

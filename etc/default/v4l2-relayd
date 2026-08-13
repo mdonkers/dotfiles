@@ -1,0 +1,26 @@
+# GStreamer source element name (full input pipeline). NOTE: requesting a sub-sensor size
+# from libcamerasrc makes it pick a 2x2-binned mode (1928x1088) that CRASHES libcamera's
+# software ISP (std::array assertion -> service start-limit-hit). So force FULL-res capture
+# (3840x2160, the only safe mode) and downscale in GStreamer. Negotiate 15fps directly
+# with libcamerasrc so the full-resolution software ISP does not produce 30fps only for
+# videorate to discard half. Keep videoscale first so flip + colour conversion run at the
+# relay's 720p output size. v4l2-relayd applies the final size, format and framerate caps.
+VIDEOSRC="libcamerasrc ! video/x-raw,width=3840,height=2160,framerate=15/1 ! videoscale method=bilinear ! videoflip method=vertical-flip ! videoconvert"
+
+# Output format, width, height, and frame rate. This must match the framerate negotiated
+# immediately after libcamerasrc above. This caps the relay output but does not change the
+# physical sensor's default ~28.57fps timing; the camera instance applies that separately.
+# 15fps reduces full-resolution software ISP and memory-bandwidth work and does not by
+# itself prevent consumers from reopening the camera.
+# Bump both values toward 20-24 after stability is proven, or drop both to 10 for less load.
+FORMAT=YUY2
+WIDTH=1280
+HEIGHT=720
+FRAMERATE=15/1
+
+# Chrome may briefly close and reopen the virtual camera while negotiating.
+# Keep the hardware pipeline warm across those gaps, but release it after real inactivity.
+EXTRA_OPTS="--idle-timeout=3"
+
+# Virtual video device name (must match card_label in /etc/modprobe.d/v4l2-relayd.conf):
+CARD_LABEL="Integrated Camera"

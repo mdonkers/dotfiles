@@ -1,0 +1,11 @@
+# Keep the two power-managed devices in the IPU7 camera chain from autosuspending;
+# both misbehave on resume on this Panther Lake XPS 16:
+#   * Synaptics SVP7500 CVS bridge (USB 06cb:0701) -- firmware wedges on USB power
+#     transitions, killing the I2C tunnel that feeds the OV08X40 sensor.
+#     (from github.com/jibsta210/svp7500-camera-fix-pack)
+#   * IPU7 imaging unit (PCI 8086:b05d) -- its CSE re-authenticates the firmware on
+#     runtime resume and that re-auth fails (-EIO), needing a reboot to clear.
+# NOTE: TLP also manages runtime PM and can override these at boot; the durable fix is
+# TLP's USB_DENYLIST / RUNTIME_PM_DENYLIST in /etc/tlp.conf, to add once the camera works.
+SUBSYSTEM=="usb", ATTRS{idVendor}=="06cb", ATTRS{idProduct}=="0701", ATTR{power/control}="on", ATTR{power/autosuspend_delay_ms}="-1"
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0xb05d", ATTR{power/control}="on"

@@ -1,0 +1,3 @@
+# V4L2 subdevice numbers depend on probe order. Give the single built-in OV08X40
+# sensor a stable path for post-libcamera-start controls used by v4l2-relayd.
+ACTION=="add", SUBSYSTEM=="video4linux", KERNEL=="v4l-subdev*", ATTR{name}=="ov08x40 *", SYMLINK+="ov08x40-camera-sensor"

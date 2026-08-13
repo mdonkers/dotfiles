@@ -1,0 +1,148 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+usage() {
+	echo "Usage: $0 OUTPUT_DIRECTORY" >&2
+}
+
+if [ "$#" -ne 1 ]; then
+	usage
+	exit 2
+fi
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+DOTFILES_DIR=$(dirname "$SCRIPT_DIR")
+CAMERA_DIR="$DOTFILES_DIR/camera"
+OUTPUT_DIR=$1
+
+for command in curl dpkg-buildpackage dpkg-checkbuilddeps dpkg-source gcc install patch sha256sum; do
+	if ! command -v "$command" >/dev/null; then
+		echo "Missing build command: $command" >&2
+		exit 1
+	fi
+done
+
+mkdir -p "$OUTPUT_DIR"
+OUTPUT_DIR=$(readlink -f "$OUTPUT_DIR")
+BUILD_DIR=$(mktemp -d)
+
+cleanup() {
+	rm -rf -- "$BUILD_DIR"
+}
+trap cleanup EXIT
+
+download() {
+	local primary_url=$1
+	local fallback_url=$2
+	local destination=$3
+
+	if ! curl --fail --location --retry 3 --retry-all-errors \
+		--output "$destination" "$primary_url"; then
+		echo "Primary download failed; trying pinned fallback" >&2
+		curl --fail --location --retry 3 --retry-all-errors \
+			--output "$destination" "$fallback_url"
+	fi
+}
+
+verify() {
+	local expected_sha256=$1
+	local filename=$2
+
+	printf '%s  %s\n' "$expected_sha256" "$filename" | sha256sum --check -
+}
+
+apply_packaging() {
+	local package=$1
+	local source_dir=$2
+
+	install -d "$source_dir/debian/patches"
+	install -m 0644 "$CAMERA_DIR/$package/patches/"*.patch \
+		"$source_dir/debian/patches/"
+	install -m 0644 "$CAMERA_DIR/$package/patches/series" \
+		"$source_dir/debian/patches/series"
+	patch --directory="$source_dir" --strip=1 \
+		--input="$CAMERA_DIR/$package/changelog.patch"
+}
+
+build_v4l2loopback() {
+	local work_dir="$BUILD_DIR/v4l2loopback"
+	local source_dir="$work_dir/v4l2loopback-0.15.4"
+
+	mkdir -p "$work_dir"
+	install -m 0644 "$CAMERA_DIR/v4l2loopback/v4l2loopback_0.15.4-1.dsc" \
+		"$work_dir/"
+
+	download \
+		"https://deb.debian.org/debian/pool/main/v/v4l2loopback/v4l2loopback_0.15.4.orig.tar.gz" \
+		"https://snapshot.debian.org/file/8b75a916050dab03acf9418b2d8734b04d07f561" \
+		"$work_dir/v4l2loopback_0.15.4.orig.tar.gz"
+	download \
+		"https://deb.debian.org/debian/pool/main/v/v4l2loopback/v4l2loopback_0.15.4-1.debian.tar.xz" \
+		"https://snapshot.debian.org/file/073049ac1665ef5db9e190fb5abc42e519077fd3" \
+		"$work_dir/v4l2loopback_0.15.4-1.debian.tar.xz"
+
+	verify 146801c61aab204b2f1a35c830806f4ee5499f5524814ddd2a8077d367c19aea \
+		"$work_dir/v4l2loopback_0.15.4.orig.tar.gz"
+	verify cb4a38d701a917add2258fc0401d77571f7c32b85f8bc95a2329e1fff85c0765 \
+		"$work_dir/v4l2loopback_0.15.4-1.debian.tar.xz"
+
+	(
+		cd "$work_dir"
+		dpkg-source --extract v4l2loopback_0.15.4-1.dsc
+	)
+	apply_packaging v4l2loopback "$source_dir"
+	(
+		cd "$source_dir"
+		dpkg-checkbuilddeps
+		CC=gcc dpkg-buildpackage --build=binary --no-sign
+	)
+	install -m 0644 \
+		"$work_dir/v4l2loopback-dkms_0.15.4-1+queuefix1_all.deb" \
+		"$OUTPUT_DIR/"
+}
+
+build_v4l2_relayd() {
+	local work_dir="$BUILD_DIR/v4l2-relayd"
+	local source_dir="$work_dir/v4l2-relayd-0.2.0"
+	local architecture
+	architecture=$(dpkg --print-architecture)
+
+	mkdir -p "$work_dir"
+	install -m 0644 "$CAMERA_DIR/v4l2-relayd/v4l2-relayd_0.2.0-0ubuntu1.dsc" \
+		"$work_dir/"
+
+	download \
+		"https://archive.ubuntu.com/ubuntu/pool/universe/v/v4l2-relayd/v4l2-relayd_0.2.0.orig.tar.gz" \
+		"https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/v4l2-relayd/0.2.0-0ubuntu1/v4l2-relayd_0.2.0.orig.tar.gz" \
+		"$work_dir/v4l2-relayd_0.2.0.orig.tar.gz"
+	download \
+		"https://archive.ubuntu.com/ubuntu/pool/universe/v/v4l2-relayd/v4l2-relayd_0.2.0-0ubuntu1.debian.tar.xz" \
+		"https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/v4l2-relayd/0.2.0-0ubuntu1/v4l2-relayd_0.2.0-0ubuntu1.debian.tar.xz" \
+		"$work_dir/v4l2-relayd_0.2.0-0ubuntu1.debian.tar.xz"
+
+	verify 3f25808c4b9672893b83a8e1db2a7c2c9ac87226fa4ac006c1bad8870cd11294 \
+		"$work_dir/v4l2-relayd_0.2.0.orig.tar.gz"
+	verify dbf927a1838acd4e35a56e542fe232795617e7eab7a616d374a167813dfa1e50 \
+		"$work_dir/v4l2-relayd_0.2.0-0ubuntu1.debian.tar.xz"
+
+	(
+		cd "$work_dir"
+		dpkg-source --extract v4l2-relayd_0.2.0-0ubuntu1.dsc
+	)
+	apply_packaging v4l2-relayd "$source_dir"
+	(
+		cd "$source_dir"
+		dpkg-checkbuilddeps
+		CC=gcc dpkg-buildpackage --build=binary --no-sign
+	)
+	install -m 0644 \
+		"$work_dir/v4l2-relayd_0.2.0-0ubuntu1+keepalive3_${architecture}.deb" \
+		"$OUTPUT_DIR/"
+}
+
+build_v4l2loopback
+build_v4l2_relayd
+
+echo "Camera packages written to $OUTPUT_DIR:"
+find "$OUTPUT_DIR" -maxdepth 1 -type f -name '*.deb' -printf '  %f\n' | sort

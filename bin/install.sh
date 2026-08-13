@@ -5,6 +5,9 @@ set -o pipefail
 # install.sh
 #	This script installs my basic setup for a debian laptop
 
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+DOTFILES_DIR=$(dirname "$SCRIPT_DIR")
+
 # get the user that is not root
 # TODO: makes a pretty bad assumption that there is only one other user
 USERNAME=$(find /home/* -maxdepth 0 -printf "%f" -type d)
@@ -408,7 +411,11 @@ install_wmapps() {
 	pipewire-alsa \
 	wireplumber \
 	libspa-0.2-bluetooth \
-	pipewire-libcamera \
+	libspa-0.2-libcamera \
+	gstreamer1.0-libcamera \
+	gstreamer1.0-plugins-base \
+	gstreamer1.0-plugins-good \
+	gstreamer1.0-tools \
 	libcamera-ipa \
 	libcamera-tools \
 	v4l-utils \
@@ -424,11 +431,59 @@ install_wmapps() {
 
   apt install -y -t unstable firefox --no-install-recommends
 
-  # Audio + camera run on PipeWire now (pipewire-pulse replaces the PulseAudio daemon;
-  # libspa-0.2-bluetooth restores BT audio; pipewire-libcamera + libcamera expose the
-  # IPU7 MIPI webcam to apps). pulseaudio-utils is kept only for `pactl` (i3 volume keys).
-  # PipeWire has no flat-volumes setting — its default already behaves like the old
-  # PulseAudio flat-volumes=no — so the previous /etc/pulse/daemon.conf tweak is dropped.
+  # Audio runs on PipeWire now (pipewire-pulse replaces the PulseAudio daemon;
+  # libspa-0.2-bluetooth restores BT audio). pulseaudio-utils is kept only for `pactl`
+  # (i3 volume keys). PipeWire has no flat-volumes setting — its default already behaves
+  # like the old PulseAudio flat-volumes=no — so the /etc/pulse/daemon.conf tweak is gone.
+
+  # IPU7 / OV08X40 webcam. On top of the apt bits above, two out-of-repo pieces are
+  # needed; the matching /etc config
+  # (modprobe load-order, no-autosuspend udev rule, v4l2-relayd default/instance/
+  # modules-load, dma-buf sandbox drop-in) is symlinked in by `make etc`.
+  # 1. intel_cvs: drives the Synaptics SVP7500 CVS bridge so the OV08X40 sensor enumerates.
+  #    Temporary compatibility source: copy only the pinned DKMS tree from the
+  #    svp7500 fix-pack; do not execute any of that repository's installer scripts.
+  #    Re-check Debian support and intel/vision-drivers PRs #40 and #41 before the
+  #    next fresh installation, then prefer the distribution/upstream driver when
+  #    it includes the required SVP7500 and IRQ fixes. See camera/README.md.
+  #    AUTOINSTALL rebuilds the module on kernel upgrades.
+  apt install -y git dkms build-essential "linux-headers-$(uname -r)" --no-install-recommends
+  local svp7500_fix_pack_commit=5d40327c217f4279b235073f1cd9f8e40a9b4a20
+  local camera_source_dir
+  camera_source_dir=$(mktemp -d)
+  git clone https://github.com/jibsta210/svp7500-camera-fix-pack \
+	"$camera_source_dir/svp7500-camera-fix-pack"
+  git -C "$camera_source_dir/svp7500-camera-fix-pack" checkout --detach \
+	"$svp7500_fix_pack_commit"
+  test "$(git -C "$camera_source_dir/svp7500-camera-fix-pack" rev-parse HEAD)" = \
+	"$svp7500_fix_pack_commit"
+  rm -rf /usr/src/intel-cvs-1.0
+  cp -r "$camera_source_dir/svp7500-camera-fix-pack/dkms/intel-cvs-1.0" /usr/src/
+  dkms add intel-cvs/1.0 2>/dev/null || true
+  dkms install intel-cvs/1.0
+  rm -rf "$camera_source_dir"
+
+  # 2. Locally patched, package-managed v4l2loopback + v4l2-relayd. The exact source
+  #    descriptors, archive hashes, patches, rationale and rollback procedure live in
+  #    camera/. Build dependencies may be removed after installation (see its README).
+  apt install -y --no-install-recommends \
+	debhelper \
+	help2man \
+	dh-sequence-dkms \
+	autoconf-archive \
+	libgstreamer1.0-dev \
+	libgstreamer-plugins-base1.0-dev \
+	pkgconf \
+	systemd-dev
+  local camera_package_dir
+  local camera_architecture
+  camera_package_dir=$(mktemp -d)
+  camera_architecture=$(dpkg --print-architecture)
+  "$DOTFILES_DIR/bin/build-camera-packages" "$camera_package_dir"
+  apt install -y \
+	"$camera_package_dir/v4l2loopback-dkms_0.15.4-1+queuefix1_all.deb" \
+	"$camera_package_dir/v4l2-relayd_0.2.0-0ubuntu1+keepalive3_${camera_architecture}.deb"
+  rm -rf "$camera_package_dir"
   # The pipewire/wireplumber user services come pre-enabled via Debian presets on a fresh
   # install, so no manual `systemctl --user enable` is needed here.
 

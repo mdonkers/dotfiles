@@ -1,0 +1,275 @@
+From: Local rebuild <local@localhost>
+Date: Thu, 13 Aug 2026 18:00:00 +0200
+Subject: Apply configurable V4L2 controls when the input starts
+
+Some camera sensors need controls applied after their libcamera pipeline has
+configured the device. Applying them before streaming is ineffective because
+libcamera overwrites them while moving the pipeline to PLAYING.
+
+Add a repeatable --input-start-control=DEVICE:CONTROL=VALUE option. DEVICE is
+a V4L2 device path, CONTROL is either a numeric control ID or a case-insensitive
+name with punctuation normalized to underscores, and VALUE is a signed integer.
+Apply every configured control whenever the input pipeline reaches PLAYING.
+Failures are logged independently and do not stop the video stream.
+---
+ src/v4l2-relayd.c | 172 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 172 insertions(+)
+
+diff --git a/src/v4l2-relayd.c b/src/v4l2-relayd.c
+index 6c5850b..472d914 100644
+--- a/src/v4l2-relayd.c
++++ b/src/v4l2-relayd.c
+@@ -16,6 +16,7 @@
+ #endif
+ 
+ #include <errno.h>
++#include <fcntl.h>
+ #include <unistd.h>
+ #include <sys/ioctl.h>
+ #include <linux/videodev2.h>
+@@ -48,6 +49,7 @@
+ static gint opt_idle_timeout = 0;
+ static gchar *opt_input = NULL;
+ static gchar *opt_output = NULL;
++static gchar **opt_input_start_controls = NULL;
+ static gchar *opt_splash =
+     "dataurisrc uri=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAEElEQVQoz2NgGAWjYBTAAAADEAABaJFtwwAAAABJRU5ErkJggg== ! pngdec ! imagefreeze num-buffers=2 ! videoscale ! videoconvert"; /* 16x16 black PNG */
+ 
+@@ -83,11 +85,65 @@
+     &opt_input, "Specify input GStreamer pipeline description", NULL},
+   { "output",     'o', G_OPTION_FLAG_NONE, G_OPTION_ARG_FILENAME,
+     &opt_output, "Specify output GStreamer pipeline description", NULL},
++  { "input-start-control", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_STRING_ARRAY,
++    &opt_input_start_controls,
++    "Apply DEVICE:CONTROL=VALUE when the input pipeline starts",
++    "DEVICE:CONTROL=VALUE" },
+   { "splash",     's', G_OPTION_FLAG_NONE, G_OPTION_ARG_FILENAME,
+     &opt_splash, "Specify splash GStreamer pipeline description", NULL},
+   { NULL }
+ };
+ 
++static gboolean
++input_start_control_parse (const gchar  *spec,
++                           gchar       **device,
++                           gchar       **control,
++                           gint64       *value)
++{
++  const gchar *colon;
++  const gchar *equals;
++  gchar *end = NULL;
++  gint64 parsed_value;
++
++  colon = strrchr (spec, ':');
++  equals = colon != NULL ? strchr (colon + 1, '=') : NULL;
++  if (colon == NULL || colon == spec || equals == NULL ||
++      equals == colon + 1 || equals[1] == '\0')
++    return FALSE;
++
++  errno = 0;
++  parsed_value = g_ascii_strtoll (equals + 1, &end, 0);
++  if (errno == ERANGE || end == equals + 1 || *end != '\0')
++    return FALSE;
++
++  if (device != NULL)
++    *device = g_strndup (spec, colon - spec);
++  if (control != NULL)
++    *control = g_strndup (colon + 1, equals - colon - 1);
++  if (value != NULL)
++    *value = parsed_value;
++
++  return TRUE;
++}
++
++static void
++input_start_controls_validate ()
++{
++  guint i;
++
++  if (opt_input_start_controls == NULL)
++    return;
++
++  for (i = 0; opt_input_start_controls[i] != NULL; i++) {
++    if (!input_start_control_parse (opt_input_start_controls[i],
++                                    NULL, NULL, NULL)) {
++      g_printerr ("invalid input-start control: %s\n",
++                  opt_input_start_controls[i]);
++      exit (1);
++    }
++  }
++}
++
+ static void
+ parse_args (int   argc,
+             char *argv[])
+@@ -120,6 +176,8 @@
+     exit (1);
+   }
+ 
++  input_start_controls_validate ();
++
+   if (opt_version) {
+     g_print ("%s (%s)\n", g_get_prgname (), V4L2_RELAYD_VERSION);
+     exit (0);
+@@ -144,6 +202,143 @@
+   }
+ }
+ 
++static gchar *
++v4l2_control_name_normalize (const gchar *name)
++{
++  GString *normalized;
++  gboolean separator = FALSE;
++  const guchar *p;
++
++  normalized = g_string_new (NULL);
++  for (p = (const guchar *) name; *p != '\0'; p++) {
++    if (g_ascii_isalnum (*p)) {
++      g_string_append_c (normalized, g_ascii_tolower (*p));
++      separator = FALSE;
++    } else if (normalized->len > 0 && !separator) {
++      g_string_append_c (normalized, '_');
++      separator = TRUE;
++    }
++  }
++
++  if (normalized->len > 0 && normalized->str[normalized->len - 1] == '_')
++    g_string_truncate (normalized, normalized->len - 1);
++
++  return g_string_free (normalized, FALSE);
++}
++
++static gboolean
++v4l2_control_query (gint                        fd,
++                    const gchar                *name_or_id,
++                    struct v4l2_query_ext_ctrl *query)
++{
++  gchar *end = NULL;
++  guint64 numeric_id;
++  gchar *requested_name;
++
++  errno = 0;
++  numeric_id = g_ascii_strtoull (name_or_id, &end, 0);
++  if (errno != ERANGE && end != name_or_id && *end == '\0' &&
++      numeric_id <= G_MAXUINT32) {
++    memset (query, 0, sizeof (*query));
++    query->id = numeric_id;
++    return ioctl (fd, VIDIOC_QUERY_EXT_CTRL, query) == 0;
++  }
++
++  requested_name = v4l2_control_name_normalize (name_or_id);
++  memset (query, 0, sizeof (*query));
++  query->id = V4L2_CTRL_FLAG_NEXT_CTRL;
++
++  while (ioctl (fd, VIDIOC_QUERY_EXT_CTRL, query) == 0) {
++    gchar *candidate_name;
++    gboolean matches;
++
++    candidate_name = v4l2_control_name_normalize ((const gchar *) query->name);
++    matches = g_str_equal (requested_name, candidate_name);
++    g_free (candidate_name);
++    if (matches) {
++      g_free (requested_name);
++      return TRUE;
++    }
++
++    query->id |= V4L2_CTRL_FLAG_NEXT_CTRL;
++  }
++
++  g_free (requested_name);
++  errno = ENOENT;
++  return FALSE;
++}
++
++static gboolean
++input_start_control_apply (const gchar *spec)
++{
++  struct v4l2_query_ext_ctrl query;
++  struct v4l2_ext_control control_value;
++  struct v4l2_ext_controls controls;
++  gchar *device = NULL;
++  gchar *control = NULL;
++  gint64 value;
++  gint fd = -1;
++  gint saved_errno;
++  gboolean success = FALSE;
++
++  g_assert (input_start_control_parse (spec, &device, &control, &value));
++
++  fd = open (device, O_RDWR | O_NONBLOCK | O_CLOEXEC);
++  if (fd < 0)
++    goto out;
++
++  if (!v4l2_control_query (fd, control, &query))
++    goto out;
++
++  memset (&control_value, 0, sizeof (control_value));
++  control_value.id = query.id;
++  if (query.type == V4L2_CTRL_TYPE_INTEGER64) {
++    control_value.value64 = value;
++  } else {
++    if (value < G_MININT32 || value > G_MAXINT32) {
++      errno = ERANGE;
++      goto out;
++    }
++    control_value.value = value;
++  }
++
++  memset (&controls, 0, sizeof (controls));
++  controls.which = V4L2_CTRL_WHICH_CUR_VAL;
++  controls.count = 1;
++  controls.controls = &control_value;
++  if (ioctl (fd, VIDIOC_S_EXT_CTRLS, &controls) < 0)
++    goto out;
++
++  success = TRUE;
++
++out:
++  saved_errno = errno;
++  if (fd >= 0)
++    close (fd);
++
++  if (success)
++    GST_INFO ("Applied input-start control %s", spec);
++  else
++    GST_WARNING ("Could not apply input-start control %s: %s [error %u]",
++                 spec, g_strerror (saved_errno), saved_errno);
++
++  g_free (device);
++  g_free (control);
++  return success;
++}
++
++static void
++input_start_controls_apply ()
++{
++  guint i;
++
++  if (opt_input_start_controls == NULL)
++    return;
++
++  for (i = 0; opt_input_start_controls[i] != NULL; i++)
++    input_start_control_apply (opt_input_start_controls[i]);
++}
++
+ static gboolean
+ backend_pipeline_bus_call (GstBus     *bus,
+                            GstMessage *msg,
+@@ -165,6 +360,18 @@
+       gst_element_set_state (pipeline, GST_STATE_NULL);
+       break;
+     }
++    case GST_MESSAGE_STATE_CHANGED: {
++      GstState old_state, new_state;
++
++      if (GST_MESSAGE_SRC (msg) != GST_OBJECT (pipeline))
++        break;
++
++      gst_message_parse_state_changed (msg, &old_state, &new_state, NULL);
++      if (pipeline == input_pipeline && old_state != GST_STATE_PLAYING &&
++          new_state == GST_STATE_PLAYING)
++        input_start_controls_apply ();
++      break;
++    }
+     default:
+       break;
+   }
