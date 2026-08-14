@@ -5,7 +5,8 @@
 #     (from github.com/jibsta210/svp7500-camera-fix-pack)
 #   * IPU7 imaging unit (PCI 8086:b05d) -- its CSE re-authenticates the firmware on
 #     runtime resume and that re-auth fails (-EIO), needing a reboot to clear.
-# NOTE: TLP also manages runtime PM and can override these at boot; the durable fix is
-# TLP's USB_DENYLIST / RUNTIME_PM_DENYLIST in /etc/tlp.conf, to add once the camera works.
-SUBSYSTEM=="usb", ATTRS{idVendor}=="06cb", ATTRS{idProduct}=="0701", ATTR{power/control}="on", ATTR{power/autosuspend_delay_ms}="-1"
+# TLP can override udev power settings at boot. The matching USB_DENYLIST and
+# RUNTIME_PM_DISABLE entries in /etc/tlp.d/01-camera.conf are the durable policy.
+# Restrict the USB rule to the device itself: interface events do not have power/control.
+ACTION=="add|change", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="06cb", ATTR{idProduct}=="0701", ATTR{power/control}="on", ATTR{power/autosuspend_delay_ms}="-1"
 ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0xb05d", ATTR{power/control}="on"

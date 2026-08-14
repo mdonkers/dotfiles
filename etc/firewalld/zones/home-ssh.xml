@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Home SSH</short>
+  <description>Known local networks on which inbound SSH is permitted.</description>
+  <service name="ssh"/>
+  <service name="dhcpv6-client"/>
+</zone>

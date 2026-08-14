@@ -8,73 +8,41 @@ set -o pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 DOTFILES_DIR=$(dirname "$SCRIPT_DIR")
 
-# get the user that is not root
-# TODO: makes a pretty bad assumption that there is only one other user
-USERNAME=$(find /home/* -maxdepth 0 -printf "%f" -type d)
+# Resolve the account the installation belongs to. `sudo` supplies SUDO_USER;
+# user-only commands use the current account. An explicit TARGET_USER remains
+# available for a direct root login or another non-sudo provisioning flow.
+USERNAME=${TARGET_USER:-${SUDO_USER:-${USER:-}}}
+if [[ -z "$USERNAME" || "$USERNAME" == root ]]; then
+	echo "Cannot determine the target user; set TARGET_USER explicitly." >&2
+	exit 1
+fi
 export DEBIAN_FRONTEND=noninteractive
 
 check_is_sudo() {
   if [ "$EUID" -ne 0 ]; then
 	echo "Please run as root."
-	exit
+	exit 1
   fi
 }
 
 # sets up apt sources
 # assumes you are going to use debian testing
 setup_sources() {
+  # These files deliberately use the rolling "testing" suite rather than a
+  # release codename. This installer targets clean systems and therefore does
+  # not contain migration or cleanup logic for layouts from older versions.
+  install -D -m 0644 "$DOTFILES_DIR/etc/apt/sources.list.d/debian.sources" \
+	/etc/apt/sources.list.d/debian.sources
+  install -D -m 0644 "$DOTFILES_DIR/etc/apt/apt.conf" /etc/apt/apt.conf
+  install -D -m 0644 "$DOTFILES_DIR/etc/apt/preferences" /etc/apt/preferences
+  install -D -m 0644 "$DOTFILES_DIR/etc/apt/apt.conf.d/99translations" \
+	/etc/apt/apt.conf.d/99translations
+
   apt update
   apt install -y \
-	apt-transport-https \
 	dirmngr \
 	gnupg \
 	--no-install-recommends
-
-  # Set "testing" distribution as default
-  cat <<-EOF > /etc/apt/apt.conf
-	APT::Default-Release "testing";
-	EOF
-
-  # Pin packages to "testing" distribution
-  cat <<-EOF > /etc/apt/preferences
-	Package: *
-	Pin: release o=Debian,a=testing
-	Pin-Priority: 900
-
-	Package: *
-	Pin: release o=Debian,a=unstable
-	Pin-Priority: 300
-
-	Package: *
-	Pin: release o=Debian
-	Pin-Priority: -1
-	EOF
-
-  # deb822 format (.sources). Separate file so it never clobbers the base
-  # debian.sources the installer writes; tracks testing + experimental.
-  cat <<-EOF > /etc/apt/sources.list.d/debian-testing.sources
-	Types: deb deb-src
-	URIs: http://httpredir.debian.org/debian/
-	Suites: testing testing-updates
-	Components: main contrib non-free non-free-firmware
-	Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-
-	Types: deb deb-src
-	URIs: http://security.debian.org/
-	Suites: testing-security
-	Components: main contrib non-free non-free-firmware
-	Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-
-	Types: deb deb-src
-	URIs: http://httpredir.debian.org/debian/
-	Suites: experimental
-	Components: main contrib non-free non-free-firmware
-	Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-	EOF
-
-  # turn off translations, speed up apt update
-  mkdir -p /etc/apt/apt.conf.d
-  echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
 }
 
 dist_upgrade() {
@@ -87,7 +55,6 @@ dist_upgrade() {
 # the utter bare minimal shit
 base() {
   apt update
-  apt -y upgrade
 
   apt install -y \
 	acpi \
@@ -105,6 +72,7 @@ base() {
 	dmidecode \
 	file \
 	findutils \
+	firewalld \
 	fwupd \
 	fwupd-signed \
 	gcc \
@@ -136,6 +104,7 @@ base() {
 	network-manager \
 	nftables \
 	openvpn \
+	openvpn-systemd-resolved \
 	openssl \
 	opensc \
 	pamu2fcfg \
@@ -171,7 +140,9 @@ base() {
 
   # install tlp with recommends
   apt install -y tlp tlp-rdw
-  systemctl enable powertop.service
+  # TLP owns persistent power policy. powertop remains useful interactively, but
+  # its --auto-tune service overwrites TLP settings depending on service order.
+  systemctl disable --now powertop.service || true
 
   setup_sudo
   mkdir -p /mnt/sdcard
@@ -213,6 +184,51 @@ cleanup() {
   apt clean
 }
 
+# Enable the managed firewalld configuration. Network trust is deliberately
+# explicit: pass the names of NetworkManager profiles that should permit SSH.
+# This command is also called without profiles by `make etc` to install the
+# restrictive default policy before any network is marked as trusted.
+configure_firewall() {
+  local connection device
+
+  if ! command -v firewall-offline-cmd >/dev/null || ! command -v firewall-cmd >/dev/null; then
+	echo "firewalld is not installed; run the base install first." >&2
+	return 1
+  fi
+
+  for connection in "$@"; do
+	if ! nmcli -g connection.id connection show "$connection" >/dev/null 2>&1; then
+	  echo "Unknown NetworkManager connection: $connection" >&2
+	  return 1
+	fi
+  done
+
+  # Validate before reloading, so a malformed ruleset cannot replace the
+  # currently working firewall. firewall-offline-cmd must not be used while
+  # the daemon is running.
+  if systemctl is-active --quiet firewalld.service; then
+	firewall-cmd --check-config
+  else
+	firewall-offline-cmd --check-config
+  fi
+
+  # The standalone nftables unit must stay off: its /etc/nftables.conf loader
+  # would otherwise compete with firewalld for ownership of the ruleset.
+  systemctl disable --now nftables.service
+  systemctl enable --now firewalld.service
+  firewall-cmd --set-default-zone=public
+  firewall-cmd --reload
+
+  for connection in "$@"; do
+	nmcli connection modify "$connection" connection.zone home-ssh
+	while IFS= read -r device; do
+	  if [[ -n "$device" && "$device" != "--" ]]; then
+		firewall-cmd --zone=home-ssh --change-interface="$device"
+	  fi
+	done < <(nmcli -g GENERAL.DEVICES connection show "$connection")
+  done
+}
+
 # setup sudo for a user
 # because fuck typing that shit all the time
 # just have a decent password
@@ -229,25 +245,28 @@ setup_sudo() {
   gpasswd -a "$USERNAME" systemd-journal
   gpasswd -a "$USERNAME" systemd-network
 
-  local -r SUDOERS_CONFIG=$(cat <<-END
-	Defaults	secure_path="/usr/local/go/bin:/home/${USERNAME}/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-	Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR PIPX_HOME PIPX_BIN_DIR"
-	# Possibly allow 'sudo' to be used without password.
-	#${USERNAME} ALL=(ALL) NOPASSWD:ALL
-	# When using U2F with Yubikey, need to use passwords (configured to only request Yubikey in PAM) but exclude some commands from needing password.
-	${USERNAME} ALL=(ALL) ALL
-	${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery, /usr/bin/light, /usr/bin/nsenter
-END
-) || true
+  local sudoers_file sudoers_tmp
+  sudoers_file="/etc/sudoers.d/90-dotfiles-${USERNAME}"
+  sudoers_tmp=$(mktemp)
 
-  # set secure path
-  if ! grep -q -z "${SUDOERS_CONFIG}" /etc/sudoers; then
-	echo "Appending to the /etc/sudoers file"
-	printf "%s\n" "${SUDOERS_CONFIG}" >> /etc/sudoers
-	echo -e "\\n# binfmt for executing e.g. JAR files directly\\nnone\\t/proc/sys/fs/binfmt_misc\\tbinfmt_misc\\tdefaults\\t0\\t0" >> /etc/fstab
+  cat <<-END > "$sudoers_tmp"
+Defaults	secure_path="/usr/local/go/bin:/home/${USERNAME}/.go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Defaults	env_keep += "ftp_proxy http_proxy https_proxy no_proxy JAVA_HOME GOPATH EDITOR PIPX_HOME PIPX_BIN_DIR"
+# Possibly allow 'sudo' to be used without password.
+#${USERNAME} ALL=(ALL) NOPASSWD:ALL
+# When using U2F with Yubikey, require authentication generally but exempt these commands.
+${USERNAME} ALL=(ALL) ALL
+${USERNAME} ALL=NOPASSWD: /sbin/ifconfig, /sbin/ifup, /sbin/ifdown, /sbin/ifquery, /usr/bin/light, /usr/bin/nsenter
+END
+
+  chmod 0440 "$sudoers_tmp"
+  if visudo -cf "$sudoers_tmp"; then
+	install -o root -g root -m 0440 "$sudoers_tmp" "$sudoers_file"
   else
-	echo "Not appending, /etc/sudoers already in correct state"
+	rm -f "$sudoers_tmp"
+	return 1
   fi
+  rm -f "$sudoers_tmp"
 
 }
 
@@ -310,7 +329,7 @@ install_docker() {
 install_docker_rootless() {
   if ! command -v dockerd-rootless-setuptool.sh >/dev/null 2>&1; then
 	echo "dockerd-rootless-setuptool.sh missing -- run 'sudo bin/install.sh sources' first."
-	return 0
+	return 1
   fi
   dockerd-rootless-setuptool.sh install
   systemctl --user enable --now docker
@@ -342,7 +361,6 @@ install_graphics() {
   esac
 
   apt update || true
-  apt -y upgrade
 
   apt install -y "${pkgs[@]}" --no-install-recommends
 
@@ -366,7 +384,7 @@ install_wmapps() {
   # Get Firefox from unstable to use the latest version
   cat <<-EOF > /etc/apt/sources.list.d/firefox.sources
 	Types: deb
-	URIs: http://http.debian.net/debian/
+	URIs: https://deb.debian.org/debian/
 	Suites: unstable
 	Components: main
 	Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
@@ -505,6 +523,8 @@ install_wmapps() {
 }
 
 get_dotfiles() {
+  local dotfiles_checkout="/home/$USERNAME/dotfiles"
+
   # create subshell
   (
   cd "/home/$USERNAME"
@@ -518,12 +538,19 @@ get_dotfiles() {
   # Optionally setup downloads folder as tmpfs
   # echo -e "\n# tmpfs for downloads\ntmpfs\t/home/${USERNAME}/Downloads\ttmpfs\tnodev,nosuid,size=2G\t0\t0" >> /etc/fstab
 
-  # install dotfiles from repo
-  rm -rf "/home/$USERNAME/dotfiles"
-  git clone --recursive https://github.com/mdonkers/dotfiles.git "/home/$USERNAME/dotfiles"
+  # Reuse an existing checkout without modifying it. Never destroy local or
+  # uncommitted work merely to run the installer again.
+  if git -C "$dotfiles_checkout" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+	echo "Using existing dotfiles checkout: $dotfiles_checkout"
+  elif [[ -e "$dotfiles_checkout" ]]; then
+	echo "Refusing to replace non-Git path: $dotfiles_checkout" >&2
+	exit 1
+  else
+	git clone --recursive https://github.com/mdonkers/dotfiles.git "$dotfiles_checkout"
+  fi
 
   # installs all the things
-  cd "/home/$USERNAME/dotfiles"
+  cd "$dotfiles_checkout"
   make
 
   sudo systemctl enable "i3lock@${USERNAME}"
@@ -560,25 +587,52 @@ get_dotfiles() {
 }
 
 install_private() {
+  local private_checkout="/home/$USERNAME/dotfiles-private"
+
   # Install also my 'private' dotfiles repo
-  rm -rf "/home/$USERNAME/dotfiles-private"
-  git clone git@gitlab.com:mdonkers/dotfiles-private.git "/home/$USERNAME/dotfiles-private"
+  if git -C "$private_checkout" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+	echo "Using existing private dotfiles checkout: $private_checkout"
+  elif [[ -e "$private_checkout" ]]; then
+	echo "Refusing to replace non-Git path: $private_checkout" >&2
+	return 1
+  else
+	git clone git@gitlab.com:mdonkers/dotfiles-private.git "$private_checkout"
+  fi
 
   # installs all the things (in subshell because we cd)
   (
-  cd "/home/$USERNAME/dotfiles-private"
+  cd "$private_checkout"
   make
   )
 
-  # Make sure user rights for yubikey file is correct
-  sudo chown -R root:root /etc/yubikey/
+  # The global PAM mapping is opened as root. pam-u2f 1.3.1+ warns about
+  # group-writable mappings and may reject them in a future release.
+  if [[ ! -f /etc/yubikey/u2f_keys ]]; then
+	echo "Missing Yubikey mapping: /etc/yubikey/u2f_keys" >&2
+	return 1
+  fi
+  sudo chown root:root /etc/yubikey /etc/yubikey/u2f_keys
+  sudo chmod 0755 /etc/yubikey
+  sudo chmod 0644 /etc/yubikey/u2f_keys
   # Setup PAM to use the Yubikey for 2F authentication
   # Note! 'sudo' line goes BEFORE common-auth (sufficient: Yubikey touch, else fall through to password).
   # No 'nouserok' on sudo, so a missing/empty u2f_keys falls back to password instead of granting access.
   # 'login' line goes AFTER common-auth (required: password AND Yubikey = 2FA) and KEEPS 'nouserok' so that
   # root / any user without a registered key can still log in with just a (strong) password -- a recovery path.
-  sudo sed -i "\\|common-auth|i \\auth       sufficient   pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue" /etc/pam.d/sudo
-  sudo sed -i "\\|common-auth|a \\auth       required     pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue nouserok" /etc/pam.d/login
+  local sudo_u2f_pattern login_u2f_pattern
+  sudo_u2f_pattern='^[[:space:]]*auth[[:space:]]+sufficient[[:space:]]+pam_u2f\.so[[:space:]]+authfile=/etc/yubikey/u2f_keys[[:space:]]+cue[[:space:]]*$'
+  login_u2f_pattern='^[[:space:]]*auth[[:space:]]+required[[:space:]]+pam_u2f\.so[[:space:]]+authfile=/etc/yubikey/u2f_keys[[:space:]]+cue[[:space:]]+nouserok[[:space:]]*$'
+
+  if ! sudo grep -Eq "$sudo_u2f_pattern" /etc/pam.d/sudo; then
+	sudo sed -i "\\|common-auth|i \\auth       sufficient   pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue" /etc/pam.d/sudo
+  fi
+  if ! sudo grep -Eq "$login_u2f_pattern" /etc/pam.d/login; then
+	sudo sed -i "\\|common-auth|a \\auth       required     pam_u2f.so  authfile=/etc/yubikey/u2f_keys cue nouserok" /etc/pam.d/login
+  fi
+
+  # Fail instead of silently leaving authentication half-configured.
+  sudo grep -Eq "$sudo_u2f_pattern" /etc/pam.d/sudo
+  sudo grep -Eq "$login_u2f_pattern" /etc/pam.d/login
 }
 
 # install VirtualBox from Debian's contrib repo (already enabled in the apt sources).
@@ -722,7 +776,8 @@ usage() {
   echo "  dev                                - install dev env for Java + CLI tools (gh, kubectl, terraform)"
   echo "  golang                             - install golang language (!! as user !!)"
   echo "  syncthing                          - install syncthing (!! as user !!)"
-  echo "  cleanup                            - clean apt etc"
+  echo "  firewall [connection ...]         - enable firewalld; allow SSH on named NetworkManager profiles"
+  echo "  cleanup                            - remove unused apt packages and clean caches"
 }
 
 # install commonly-used CLI tools from their official, GPG-signed apt repos.
@@ -779,12 +834,12 @@ main() {
 
   if [[ $cmd == "sources" ]]; then
 	check_is_sudo
-	# setup /etc/apt/sources.list
+	# configure APT and install the base package set
 	setup_sources
 	base
   elif [[ $cmd == "dist" ]]; then
 	check_is_sudo
-	# setup /etc/apt/sources.list
+	# configure APT and perform an explicitly requested distribution upgrade
 	setup_sources
 	dist_upgrade
   elif [[ $cmd == "graphics" ]]; then
@@ -799,6 +854,10 @@ main() {
 	install_docker_rootless
   elif [[ $cmd == "syncthing" ]]; then
 	install_syncthing
+  elif [[ $cmd == "firewall" ]]; then
+	check_is_sudo
+	shift
+	configure_firewall "$@"
   elif [[ $cmd == "virtualbox" ]]; then
 	check_is_sudo
 	install_virtualbox
@@ -810,9 +869,11 @@ main() {
   elif [[ $cmd == "private" ]]; then
 	install_private
   elif [[ $cmd == "cleanup" ]]; then
+	check_is_sudo
 	cleanup
   else
 	usage
+	return 1
   fi
 }
 

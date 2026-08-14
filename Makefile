@@ -31,11 +31,13 @@ etc: ## Installs the etc directory files.
 	done
 	systemctl --user daemon-reload
 	sudo systemctl daemon-reload
-	sudo systemctl enable systemd-networkd systemd-resolved
-	sudo systemctl start systemd-networkd systemd-resolved
-	# networkd manages no links (NetworkManager owns wifi), so its wait-online
-	# can never succeed and fails every boot; NM has its own wait-online.
-	sudo systemctl disable systemd-networkd-wait-online.service
+	# NetworkManager owns all links. Running networkd without any .network files only
+	# duplicates link events and makes networkd-wait-online time out during boot.
+	sudo systemctl disable --now systemd-networkd.service systemd-networkd.socket systemd-networkd-wait-online.service
+	sudo systemctl enable --now systemd-resolved
+	# TLP owns persistent power policy. powertop --auto-tune would overwrite TLP
+	# settings in service-order-dependent ways; keep powertop for diagnostics only.
+	sudo systemctl disable --now powertop.service || true
 	sudo ln -snf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 .PHONY: test

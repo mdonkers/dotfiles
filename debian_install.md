@@ -2,7 +2,7 @@
 
 This manual assumes (at least) the following:
 - Dell XPS 16 - DA16260 model from 2026
-- Debian Forky (Testing)
+- Debian Testing (rolling)
 - i3 / X11 window manager, dual-boot alongside Windows
 
 ## Hardware ##
@@ -171,6 +171,27 @@ To allow logins / sudo via the Yubikey (U2F), generate the registration line:
 
 If a PIN is asked, it's the numeric PIN set for the Yubikey. Copy the resulting line into the file `/etc/yubikey/u2f_keys`.
 
+## Firewall
+
+The managed firewalld configuration blocks unsolicited inbound connections on
+unknown networks. After running `make`, explicitly allow SSH on each trusted
+NetworkManager connection profile:
+
+```bash
+sudo bin/install.sh firewall dnkrs_hub
+```
+
+When a wired connection is first created, find its profile name and opt it in
+the same way:
+
+```bash
+nmcli -t -f NAME,TYPE,DEVICE connection show --active
+sudo bin/install.sh firewall "Wired connection 1"
+```
+
+Do not add arbitrary wired or wireless profiles: SSH is intentionally limited
+to networks explicitly marked `home-ssh`.
+
 Then finish the remaining installation:
 
     ./bin/install.sh private
@@ -180,7 +201,10 @@ Then finish the remaining installation:
 A few things to do / verify afterwards:
 - **Snapshot-boot:** install `snapper` + `grub-btrfs`, enable `grub-btrfsd`, and add an apt pre/post snapshot hook.
 - **Validate hibernation** before relying on it: hibernate with a marker file/app open, do a cold resume, repeat, then leave it closed-lid for a few days.
-- **Webcam:** build the out-of-tree `intel_cvs` DKMS module from github.com/intel/vision-drivers. No MOK signing is needed (Secure Boot is off). Or wait for upstream support.
+- **Webcam:** `install.sh wm` installs the pinned `intel_cvs` DKMS tree and the
+  patched virtual-camera packages. Verify the result and periodically recheck
+  upstream replacement status using `camera/README.md`. No MOK signing is needed
+  while Secure Boot is off.
 
 
 ## Remaining Software ##
@@ -336,4 +360,3 @@ If that fails, the `debian` entry in the EFI boot partition may be corrupted. Re
         chkdsk z:\EFI\debian /R
 
 - This converts the directory to a file; remove it with `del debian`, exit, and reinstall GRUB as in the Rescue Mode section above.
-

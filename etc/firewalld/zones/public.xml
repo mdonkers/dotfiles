@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Public</short>
+  <description>Default for untrusted networks. Unsolicited inbound connections are not accepted.</description>
+  <service name="dhcpv6-client"/>
+</zone>

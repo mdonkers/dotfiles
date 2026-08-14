@@ -285,15 +285,15 @@ lens(){
 k9s(){
   # Generate a random to start the container multiple times under different names
   local r=$(( RANDOM % 100 ))
+  local gcloud_config="${CLOUDSDK_CONFIG:-${HOME}/.config/gcloud}"
   docker run --rm \
 	-it \
 	-v "${HOME}/certs:/certs" \
 	-v "${HOME}/.aws:/home/k9s/.aws" \
 	-v "${HOME}/.kube:/home/k9s/.kube" \
 	-v "${HOME}/.minikube:${HOME}/.minikube" \
-	-v "${HOME}/.gcloud:/home/k9s/.gcloud" \
-	-v "${HOME}/.config/gcloud:/home/k9s/.gcloud-config" \
-	-e CLOUDSDK_CONFIG=/home/k9s/.gcloud \
+	-v "${gcloud_config}:/home/k9s/.config/gcloud" \
+	-e CLOUDSDK_CONFIG=/home/k9s/.config/gcloud \
 	-v /etc/hosts:/etc/hosts \
 	--net host \
 	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
