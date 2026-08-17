@@ -2,11 +2,12 @@
 
 ## Current status
 
-**Resolved and stable as of 2026-08-14.**
+**Not yet reliable as of 2026-08-17.**
 
 The machine has completed five successful hibernate/resume round trips since
 2026-07-19, including restoration of an approximately 24 GiB image. Long s2idle
-suspends have also resumed successfully.
+suspends have also resumed successfully. However, a later hibernate exposed a
+`btintel_pcie` D3-transition bug and the subsequent retry hung during restore.
 
 Current verified setup:
 
@@ -23,6 +24,10 @@ Current verified setup:
   this machine accepts and uses `platform`, which has worked repeatedly.
 - The power key hibernates directly. Closing the lid suspends using s2idle.
   Suspend-then-hibernate is deliberately not enabled.
+- `systemd-hibernate.service` has a local drop-in that calls
+  `bin/hibernate-device-hook`. It unbinds the Intel Bluetooth PCIe device before
+  hibernation and rebinds it after either restore or rollback, avoiding the
+  driver's unreliable hibernation callback.
 
 Do not re-add `init_on_free=1`. On kernels 7.0 and 7.1 it reproducibly caused a
 hard hang immediately after the hibernation image reached 100% during restore.
@@ -60,6 +65,24 @@ Never restore the old UUID formerly recorded in this document without first
 checking the live swap configuration.
 
 ## Historical diagnosis
+
+### Bluetooth D3 failure and consumed image (2026-08-17)
+
+The first hibernate attempt wrote a complete compressed image, but
+`btintel_pcie` then timed out waiting for its D3 alive interrupt and returned
+`-EBUSY`. The kernel rolled hibernation back, with Bluetooth reprobe failures
+and IPU7 firmware-authentication errors during recovery. A second hibernate was
+requested about three minutes later. Its first restore attempt hung and was
+force-reset; the following cold boot correctly found no `S1SUSPEND` signature,
+because Linux clears that signature as soon as it accepts an image for restore.
+
+Upstream [patchwork entry 14560272](https://patchwork.kernel.org/project/bluetooth/patch/20260507203426.128975-1-vladimirkondratyev2@gmail.com/)
+documents a matching unmerged driver bug: when the alive interrupt is missed,
+`btintel_pcie_set_dxstate()` checks a stale cached boot stage and can falsely
+return `-EBUSY`. The local workaround unbinds PCI device `0000:00:14.7` before
+`systemd-sleep` invokes the kernel hibernation path. Do not retry hibernation
+after a rollback; reboot first so all affected devices start from a clean
+state.
 
 Initial failures occurred on kernels 7.0.12 and 7.1.3. The image loaded to 100%,
 then the restored kernel hard-hung before journald could record anything. Both

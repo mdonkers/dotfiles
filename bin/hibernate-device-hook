@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Devices whose kernel hibernation callbacks are not reliable on this machine.
+# Keep this list small so each workaround can be tested independently. Entries
+# use DRIVER=DEVICE, where DEVICE is the sysfs device name under that driver.
+readonly devices=(
+  "btintel_pcie=0000:00:14.7"
+)
+
+readonly runtime_dir="/run/hibernate-device-hook"
+
+if (( EUID != 0 )); then
+  echo "hibernate-device-hook must run as root" >&2
+  exit 1
+fi
+
+device_fields() {
+  local entry=$1
+  driver=${entry%%=*}
+  device=${entry#*=}
+  driver_dir="/sys/bus/pci/drivers/${driver}"
+  marker="${runtime_dir}/${driver}-${device//:/_}"
+}
+
+unbind_devices() {
+  local entry driver device driver_dir marker
+
+  install -d -m 0700 "${runtime_dir}"
+
+  for entry in "${devices[@]}"; do
+    device_fields "${entry}"
+
+    if [[ ! -e "${driver_dir}/unbind" ]]; then
+      echo "Skipping ${device}: driver ${driver} is not available"
+      continue
+    fi
+
+    if [[ ! -L "${driver_dir}/${device}" ]]; then
+      echo "Leaving ${device} unchanged: it is not bound to ${driver}"
+      continue
+    fi
+
+    # Record ownership of the unbind before doing it. ExecStopPost runs even
+    # when ExecStartPre fails, so it can safely clean up a partial operation.
+    : > "${marker}"
+    if ! printf '%s\n' "${device}" > "${driver_dir}/unbind"; then
+      echo "Failed to unbind ${device} from ${driver}" >&2
+      return 1
+    fi
+    echo "Unbound ${device} from ${driver} before hibernation"
+  done
+}
+
+rebind_devices() {
+  local entry driver device driver_dir marker
+
+  for entry in "${devices[@]}"; do
+    device_fields "${entry}"
+
+    # Do not bind devices that were already unbound before this hook ran.
+    [[ -e "${marker}" ]] || continue
+
+    if [[ ! -L "${driver_dir}/${device}" ]]; then
+      printf '%s\n' "${device}" > "${driver_dir}/bind"
+      echo "Rebound ${device} to ${driver} after hibernation"
+    fi
+    rm -f "${marker}"
+  done
+
+  rmdir "${runtime_dir}" 2>/dev/null || true
+}
+
+case "${1:-}" in
+  pre)
+    unbind_devices
+    ;;
+  post)
+    rebind_devices
+    ;;
+  *)
+    echo "Usage: $0 {pre|post}" >&2
+    exit 2
+    ;;
+esac
