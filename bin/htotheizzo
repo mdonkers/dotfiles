@@ -39,12 +39,9 @@ update_docker() {
 	# Run some regular cleanup, just in case
 	dcleanup || true
 
-	# Include contributed completions
-	mkdir -p /etc/bash_completion.d
-	curl -sSL -o /etc/bash_completion.d/docker https://raw.githubusercontent.com/docker/cli/master/contrib/completion/bash/docker
-
 	# Compose + buildx plugins come from the Docker apt repo now
 	# (docker-compose-plugin / docker-buildx-plugin); apt upgrade keeps them current.
+	# docker-ce-cli also ships its own Bash completion under /usr/share.
 
 }
 

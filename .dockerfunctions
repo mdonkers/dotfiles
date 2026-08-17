@@ -49,6 +49,17 @@ relies_on(){
   done
 }
 
+# Return the container UID/GID that maps to the current host user.
+# With rootless Docker, container root maps to the user running the daemon.
+docker_user(){
+  if docker info --format '{{json .SecurityOptions}}' 2>/dev/null | grep -q 'rootless'; then
+	printf '0:0\n'
+  else
+	printf '%s:%s\n' "$(id -u)" "$(id -g)"
+  fi
+}
+export -f docker_user
+
 # creates an nginx config for a local route
 nginx_config(){
   server=$1
@@ -115,7 +126,7 @@ aws-cli(){
 	-e AWS_ACCESS_KEY_ID \
 	-e AWS_SECRET_ACCESS_KEY \
 	-e AWS_SESSION_TOKEN \
-	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
+	-u "$(docker_user)" \
 	--name "aws-cli-${r}" \
 	amazon/aws-cli "$@"
 }
@@ -141,7 +152,7 @@ gcloud-cli(){
 	-v "${HOME}/certs:/certs" \
 	-v "${HOME}/.kube:/root/.kube" \
 	-e CLOUDSDK_CONFIG=/config/.gcloud \
-	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
+	-u "$(docker_user)" \
 	--entrypoint=gcloud \
 	--name "gcloud-${r}" \
 	google/cloud-sdk "$@"
@@ -156,21 +167,22 @@ export -f gcloud-cli
 clickhouse-client(){
   local ch_history_file="${HOME}/.clickhouse-client-history"
   test -f "${ch_history_file}" || touch -a "${ch_history_file}"
-  # Determine either to open a TTY or attach to stdin/stdout
-  case $- in
-  *i*) local args="-it";;
-  *) local args="-i --attach stdin --attach stdout --attach stderr";;
-  esac
+  local docker_args=(-i --attach stdin --attach stdout --attach stderr)
+  local interactive_args=()
+  if [[ -t 0 && -t 1 ]]; then
+	docker_args=(-it)
+	interactive_args=(--output_format_pretty_named_tuples_as_json=0)
+  fi
   # Generate a random to start the container multiple times under different names
   local r=$(( RANDOM % 100 ))
   docker run \
-	${args} \
+	"${docker_args[@]}" \
 	--rm \
 	--net=host \
 	-v "${ch_history_file}:/etc/clickhouse-client/history" \
 	--entrypoint=clickhouse-client \
 	--name "clickhouse-client-${r}" \
-	clickhouse/clickhouse-server --history_file=/etc/clickhouse-client/history --output_format_pretty_named_tuples_as_json=0 "$@"
+	clickhouse/clickhouse-server --history_file=/etc/clickhouse-client/history "${interactive_args[@]}" "$@"
 }
 # Export function to be able to use in scripts
 export -f clickhouse-client
@@ -277,7 +289,7 @@ lens(){
 	--group-add audio \
 	--group-add video \
 	--security-opt "seccomp=/etc/docker/seccomp/electron.json" \
-	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
+	-u "$(docker_user)" \
 	--name lens \
 	${DOCKER_REPO_PREFIX}/lens
 }
@@ -296,7 +308,7 @@ k9s(){
 	-e CLOUDSDK_CONFIG=/home/k9s/.config/gcloud \
 	-v /etc/hosts:/etc/hosts \
 	--net host \
-	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \
+	-u "$(docker_user)" \
 	--name "k9s-${r}" \
 	${DOCKER_REPO_PREFIX}/k9s --all-namespaces
 }

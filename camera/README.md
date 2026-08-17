@@ -26,7 +26,7 @@ libcamera `simple` pipeline performs the ISP work, and `v4l2-relayd` publishes a
 
 ## `intel-cvs` upstream status
 
-This was reviewed on 2026-08-13. The canonical driver source is
+This was reviewed on 2026-08-17. The canonical driver source is
 [`intel/vision-drivers`](https://github.com/intel/vision-drivers), but the
 working fix-pack tree still contains changes that are not in Intel's `main`
 branch:
@@ -88,8 +88,9 @@ This is the same failure documented by libcamera patchwork
 [#25007](https://patchwork.libcamera.org/patch/25007/): corrupt sparse 10/12-bit
 input frames can contain set high bits, producing out-of-range software-ISP
 histogram and lookup-table indexes. The proposed patch masks those bits in the
-CPU debayer input buffers. It was still an unmerged RFC, with state `New`, at
-the time of this test. A maintainer asked for a revised patch in
+CPU debayer input buffers. It remained unmerged and had state
+`Changes Requested` when rechecked on 2026-08-17. A maintainer asked for a
+revised patch in
 [June 2026](https://lists.libcamera.org/pipermail/libcamera-devel/2026-June/059100.html).
 The RFC also does not protect the CPU statistics path when the GPU/EGL debayer
 is active, which is the path used on this machine. Carrying it unchanged would
@@ -197,11 +198,11 @@ then remove only if the proposed list contains nothing you use for other work:
 
 ```sh
 apt-get --simulate remove --autoremove \
-  debhelper help2man dh-dkms autoconf-archive \
+  debhelper help2man dh-sequence-dkms dh-dkms autoconf-archive \
   libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev pkgconf systemd-dev
 
 sudo apt-get remove --autoremove \
-  debhelper help2man dh-dkms autoconf-archive \
+  debhelper help2man dh-sequence-dkms dh-dkms autoconf-archive \
   libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev pkgconf systemd-dev
 ```
 

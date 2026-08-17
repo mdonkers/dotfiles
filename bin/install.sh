@@ -179,28 +179,32 @@ base() {
 }
 
 cleanup() {
-  apt autoremove
+  apt autoremove -y
   apt autoclean
   apt clean
 }
 
-# Enable the managed firewalld configuration. Network trust is deliberately
-# explicit: pass the names of NetworkManager profiles that should permit SSH.
-# This command is also called without profiles by `make etc` to install the
-# restrictive default policy before any network is marked as trusted.
+# Enable the managed firewalld configuration. Zone XML cannot match an SSID,
+# and NetworkManager also owns the Tailscale interface on this machine, so bind
+# both known private connection profiles here. Do not add generic Ethernet
+# profiles: NetworkManager may reuse them on unrelated wired networks.
 configure_firewall() {
   local connection device
+  local trusted_connections=(dnkrs_hub tailscale0)
+  local available_connections=()
 
   if ! command -v firewall-offline-cmd >/dev/null || ! command -v firewall-cmd >/dev/null; then
 	echo "firewalld is not installed; run the base install first." >&2
 	return 1
   fi
 
-  for connection in "$@"; do
+  for connection in "${trusted_connections[@]}"; do
 	if ! nmcli -g connection.id connection show "$connection" >/dev/null 2>&1; then
-	  echo "Unknown NetworkManager connection: $connection" >&2
-	  return 1
+	  echo "Trusted NetworkManager connection not present: $connection" >&2
+	  echo "Leaving all ordinary Wi-Fi and Ethernet connections in public." >&2
+	  continue
 	fi
+	available_connections+=("$connection")
   done
 
   # Validate before reloading, so a malformed ruleset cannot replace the
@@ -217,10 +221,15 @@ configure_firewall() {
   systemctl disable --now nftables.service
   systemctl enable --now firewalld.service
   firewall-cmd --set-default-zone=public
+
+  for connection in "${available_connections[@]}"; do
+	nmcli connection modify "$connection" connection.zone home-ssh
+  done
   firewall-cmd --reload
 
-  for connection in "$@"; do
-	nmcli connection modify "$connection" connection.zone home-ssh
+  # Apply the persistent NetworkManager assignments immediately when a trusted
+  # profile is currently active. Future activations inherit connection.zone.
+  for connection in "${available_connections[@]}"; do
 	while IFS= read -r device; do
 	  if [[ -n "$device" && "$device" != "--" ]]; then
 		firewall-cmd --zone=home-ssh --change-interface="$device"
@@ -372,28 +381,16 @@ install_graphics() {
 install_syncthing() {
   sudo apt update
   sudo apt install -y syncthing --no-install-recommends
-
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/systemd/system/syncthing@.service > /etc/systemd/system/syncthing@.service
-
-  systemctl daemon-reload
-  systemctl enable "syncthing@${USERNAME}"
+  # Debian ships both syncthing@.service and a user unit; use its maintained
+  # system template instead of carrying a stale local copy.
+  sudo systemctl enable --now "syncthing@${USERNAME}.service"
 }
 
 # install stuff for i3 window manager
 install_wmapps() {
-  # Get Firefox from unstable to use the latest version
-  cat <<-EOF > /etc/apt/sources.list.d/firefox.sources
-	Types: deb
-	URIs: https://deb.debian.org/debian/
-	Suites: unstable
-	Components: main
-	Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-	EOF
-
-  # Google repo, because Chromium cannot play Netflix but Chrome can
-  # own file name (google-chrome.sources): the google-chrome-beta pkg auto-writes
-  # its own google-chrome-beta.sources, so don't collide with that.
-  cat <<-EOF > /etc/apt/sources.list.d/google-chrome.sources
+  # Google repo, because Chromium cannot play Netflix but Chrome can. This is a
+  # bootstrap source: the package normally writes google-chrome-beta.sources.
+  cat <<-EOF > /etc/apt/sources.list.d/google-chrome-bootstrap.sources
 	Types: deb
 	URIs: https://dl.google.com/linux/chrome/deb/
 	Suites: stable
@@ -448,6 +445,12 @@ install_wmapps() {
 	--no-install-recommends
 
   apt install -y -t unstable firefox --no-install-recommends
+
+  # Avoid duplicate targets after the Chrome package creates its maintained
+  # source. Keep the bootstrap source only if that package behavior changes.
+  if [[ -e /etc/apt/sources.list.d/google-chrome-beta.sources ]]; then
+	rm -f /etc/apt/sources.list.d/google-chrome-bootstrap.sources
+  fi
 
   # Audio runs on PipeWire now (pipewire-pulse replaces the PulseAudio daemon;
   # libspa-0.2-bluetooth restores BT audio). pulseaudio-utils is kept only for `pactl`
@@ -509,7 +512,7 @@ install_wmapps() {
   mkdir -p /etc/X11/xorg.conf.d/
 
   # pretty fonts
-  curl -sSL https://raw.githubusercontent.com/mdonkers/dotfiles/main/etc/fonts/local.conf > /etc/fonts/local.conf
+  install -D -m 0644 "$DOTFILES_DIR/etc/fonts/local.conf" /etc/fonts/local.conf
 
   echo
   echo ">>>>>>>>>>"
@@ -776,7 +779,7 @@ usage() {
   echo "  dev                                - install dev env for Java + CLI tools (gh, kubectl, terraform)"
   echo "  golang                             - install golang language (!! as user !!)"
   echo "  syncthing                          - install syncthing (!! as user !!)"
-  echo "  firewall [connection ...]         - enable firewalld; allow SSH on named NetworkManager profiles"
+  echo "  firewall                          - apply the static firewalld/NetworkManager policy"
   echo "  cleanup                            - remove unused apt packages and clean caches"
 }
 
@@ -856,8 +859,7 @@ main() {
 	install_syncthing
   elif [[ $cmd == "firewall" ]]; then
 	check_is_sudo
-	shift
-	configure_firewall "$@"
+	configure_firewall
   elif [[ $cmd == "virtualbox" ]]; then
 	check_is_sudo
 	install_virtualbox

@@ -49,6 +49,22 @@ unbind_devices() {
       echo "Failed to unbind ${device} from ${driver}" >&2
       return 1
     fi
+
+    # A sysfs driver unbind is synchronous, but verify its observable
+    # postcondition anyway. Never start writing a hibernation image while the
+    # device still appears bound, even if a buggy driver returned early.
+    for _ in {1..40}; do
+      if [[ ! -L "${driver_dir}/${device}" && \
+            ! -L "/sys/bus/pci/devices/${device}/driver" ]]; then
+        break
+      fi
+      sleep 0.05
+    done
+    if [[ -L "${driver_dir}/${device}" || \
+          -L "/sys/bus/pci/devices/${device}/driver" ]]; then
+      echo "Refusing to hibernate: ${device} is still bound after unbind" >&2
+      return 1
+    fi
     echo "Unbound ${device} from ${driver} before hibernation"
   done
 }

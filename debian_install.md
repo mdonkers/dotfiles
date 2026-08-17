@@ -13,8 +13,8 @@ This manual assumes (at least) the following:
 - Webcam Intel IPU7 -- still needs the out-of-tree `intel_cvs` module (see below).
 
 ## Decisions ##
-- **Disk:** LUKS2 (Argon2id) -> LVM -> a 64 GiB swap LV + btrfs root (subvolumes + zstd compression). One passphrase at boot unlocks everything, btrfs gives snapshots, and a swap LV inside the encrypted container means clean encrypted hibernation.
-- **Hibernation ON** (so swap must be >= RAM) -> **Secure Boot OFF**. Kernel lockdown (which Secure Boot enables) blocks hibernation; the problem was never *entering* hibernate but *resuming* from it.
+- **Disk:** LUKS2 (Argon2id) -> LVM -> a swap LV larger than installed RAM (72 GiB for this approximately 64 GiB machine) + btrfs root (subvolumes + zstd compression). One passphrase at boot unlocks everything, btrfs gives snapshots, and a swap LV inside the encrypted container means clean encrypted hibernation.
+- **Hibernation ON** (so swap needs RAM size plus a safety margin) -> **Secure Boot OFF**. Kernel lockdown (which Secure Boot enables) blocks hibernation; the problem was never *entering* hibernate but *resuming* from it.
 - **Bootloader:** GRUB + `grub-btrfs` + `snapper` (not Limine -- that's an Omarchy thing). Do **not** pin away the 7.x kernel; the Arc GPU, audio (SOF), and sensors all want it.
 
 ## Resources used ##
@@ -63,7 +63,7 @@ Download the firmware-included weekly testing netinst, verify it, and write the 
     lsblk -o NAME,SIZE,TYPE,TRAN,MODEL,LABEL         # USB = TRAN usb, matching size, NOT nvme0n1
     sudo dd if=debian-testing-amd64-netinst.iso of=/dev/sdX bs=4M status=progress oflag=sync conv=fsync && sync
 
-Firmware is bundled in this image, and the testing kernel (~6.19) is new enough for the Arc GPU. If corporate device management blocks USB access, check `lsmod | grep usb_storage`, `/etc/modprobe.d/`, `usbguard`, and any agent like `hexnode_agent`; lift the block temporarily and re-enable it afterwards.
+Firmware is bundled in this image, and the current testing kernel is new enough for the Arc GPU. If corporate device management blocks USB access, check `lsmod | grep usb_storage`, `/etc/modprobe.d/`, `usbguard`, and any agent like `hexnode_agent`; lift the block temporarily and re-enable it afterwards.
 
 
 ## Install Debian ##
@@ -96,7 +96,7 @@ Only ever touch the **FREE SPACE** you created in Windows, plus reuse the existi
    - **If no `*_crypt` device shows up, step 4 didn't take -- redo it.** Building LVM directly on the raw partition gives an **UNENCRYPTED** disk. Verify after install: `lsblk -f` should show a `crypto_LUKS` layer, `/etc/crypttab` should exist, and you should get a passphrase prompt at boot.
 6. Menu -> **"Configure the Logical Volume Manager"**:
    - *Create volume group* **vg0** on the crypt PV.
-   - *Create logical volume* **swap** = **64 GB**.
+   - *Create logical volume* **swap** = **72 GiB** (or otherwise larger than installed RAM).
    - *Create logical volume* **root** = **max**.
    - *Finish*.
 7. **Format the logical volumes** -- you must set *Use as* on each, or Finish errors with "no root filesystem defined":
@@ -107,7 +107,7 @@ Only ever touch the **FREE SPACE** you created in Windows, plus reuse the existi
 9. **Finish partitioning and write changes** -> review: format flags should be on **/boot, root, and swap only**; the ESP kept and Windows / Dell partitions untouched -> confirm.
 10. **GRUB** step: install it to the disk. os-prober should add Windows (if it doesn't, fix it post-install -- see Repair GRUB).
 
-Finish the installation. (Post-install, refine the btrfs subvolumes to `@`, `@home`, `@snapshots` with mount options `compress=zstd:1,noatime,ssd,discard=async` and qgroups off, then set up snapper + grub-btrfs. Note the swap LV UUID for the kernel `resume=` parameter.)
+Finish the installation. Post-install, refine the btrfs subvolumes to `@`, `@home`, `@snapshots` with mount options `compress=zstd:1,noatime,ssd,discard=async` and qgroups off, then set up snapper + grub-btrfs. Configure the verified swap mapper path in `/etc/initramfs-tools/conf.d/resume`; this encrypted-LVM layout does not use an early kernel-command-line `resume=` argument.
 
 
 ## Setup Debian ##
@@ -174,23 +174,19 @@ If a PIN is asked, it's the numeric PIN set for the Yubikey. Copy the resulting 
 ## Firewall
 
 The managed firewalld configuration blocks unsolicited inbound connections on
-unknown networks. After running `make`, explicitly allow SSH on each trusted
-NetworkManager connection profile:
+unknown networks. The `install.sh dotfiles` step first runs `make`, then applies
+the installed policy and assigns the specific NetworkManager profiles
+`dnkrs_hub` and (when present) `tailscale0` to the SSH-only `home-ssh` zone.
+Firewalld cannot match an SSID in zone XML, so this persistent
+connection-profile binding is what prevents other Wi-Fi networks on the same
+adapter from inheriting that trust.
 
-```bash
-sudo bin/install.sh firewall dnkrs_hub
-```
-
-When a wired connection is first created, find its profile name and opt it in
-the same way:
-
-```bash
-nmcli -t -f NAME,TYPE,DEVICE connection show --active
-sudo bin/install.sh firewall "Wired connection 1"
-```
-
-Do not add arbitrary wired or wireless profiles: SSH is intentionally limited
-to networks explicitly marked `home-ssh`.
+Ordinary Ethernet profiles—including the generic `Wired connection 1`—remain
+in the default `public` zone. NetworkManager can reuse such a profile at an
+untrusted location, so it must not be opted into LAN SSH. The specific
+`tailscale0` NetworkManager profile is also assigned to `home-ssh`; use the
+authenticated Tailscale address when SSH is needed over wired or otherwise
+untrusted networks.
 
 Then finish the remaining installation:
 
@@ -233,7 +229,56 @@ Several CLI tools have **no signed apt repo**, so install them manually and veri
 - **sops + age:** in `dotfiles-private`, run `make deps` (installs `age` via apt + `sops` via a checksum-verified `.deb`). Used to decrypt the private repo's `secrets/` via `make secrets`.
 - **helm:** the baltocdn apt repo was decommissioned (it now returns `OK` for every path). Download `helm-vX.Y.Z-linux-amd64.tar.gz` + its `.sha256sum` from github.com/helm/helm/releases, run `sha256sum -c`, and extract `linux-amd64/helm` to `/usr/local/bin` (current: v4.2.2).
 
-Optionally, **`intel-lpmd`** (the Panther Lake low-power daemon) is *not* in Debian: build it from github.com/intel/intel-lpmd and enable the service -- it noticeably improves idle battery life.
+Debian testing now packages **`intel-lpmd`** (the Panther Lake low-power daemon). It remains optional and deliberately unconfigured here: evaluate it against the existing TLP policy before installing or enabling it, rather than running two overlapping power-policy components without measurements.
+
+## Copying config from other machine
+
+Run a command similar to below (update the list of files / directories) to copy efficiently over SSH. By creating
+a tarball, this is way faster than with small individual files over SCP.
+
+```
+PATHS=(
+    Documents
+    Downloads
+    .password_files/home
+    .bash_history
+    .clickhouse-client-history
+    .ssh
+    .aws/config
+    .aws/config_backup
+    .aws/credentials_backup
+    .gcloud
+    .config/gcloud
+    .kube/config
+    .kube/gke_gcloud_auth_plugin_cache
+    .config/helm
+    .config/argocd
+    .docker/config.json
+    .claude/settings.json
+    .claude/CLAUDE.md
+    .claude/dash0-agent-plugin.local.md
+    .npmrc
+    .testcontainers.properties
+  )
+
+ssh miel@192.168.178.26 "tar -C \$HOME -cf - ${PATHS[*]}" | tar -C "$HOME/Downloads/" -xpf - --totals
+```
+
+Likewise, to copy over e.g. files from `/Development/projects` use something like:
+
+```
+ssh miel@192.168.178.26 'tar -C /Development/projects --exclude="*/node_modules" --exclude="*/dist" --exclude="*/build
+```
+
+## Displays
+
+Let Xorg use each monitor's EDID-reported physical dimensions and keep
+`Xft.dpi: 96` as the desktop font-scaling choice. Do not install a global
+`DisplaySize` override: the laptop panel and external monitor have different
+physical sizes, so one forced value cannot describe both. The lightweight
+`monitor-hotplug` udev helper extends the first external monitor to the right
+and makes it primary. `arandr` remains available for manual layouts;
+`autorandr` is only useful if multiple named display profiles are needed.
 
 
 # Misc Information

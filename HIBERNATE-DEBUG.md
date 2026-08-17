@@ -27,7 +27,10 @@ Current verified setup:
 - `systemd-hibernate.service` has a local drop-in that calls
   `bin/hibernate-device-hook`. It unbinds the Intel Bluetooth PCIe device before
   hibernation and rebinds it after either restore or rollback, avoiding the
-  driver's unreliable hibernation callback.
+  driver's unreliable hibernation callback. The sysfs unbind is synchronous,
+  and the hook additionally waits for both driver symlinks to disappear; if
+  that postcondition is not reached, `ExecStartPre` fails and hibernation is
+  aborted before an image is written.
 
 Do not re-add `init_on_free=1`. On kernels 7.0 and 7.1 it reproducibly caused a
 hard hang immediately after the hibernation image reached 100% during restore.
