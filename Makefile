@@ -16,6 +16,8 @@ dotfiles: ## Installs the dotfiles.
 		f=$$(basename $$file); \
 		ln -sfn $$file $(HOME)/$$f; \
 	done; \
+	mkdir -p $(HOME)/.config/go
+	ln -sfn $(CURDIR)/.config/go/env $(HOME)/.config/go/env
 	ln -sfn $(CURDIR)/.config/starship.toml $(HOME)/.config/starship.toml
 	ln -sfn $(CURDIR)/.gnupg/gpg.conf $(HOME)/.gnupg/gpg.conf;
 	ln -sfn $(CURDIR)/.gnupg/gpg-agent.conf $(HOME)/.gnupg/gpg-agent.conf;
@@ -31,8 +33,13 @@ etc: ## Installs the etc directory files.
 	done
 	systemctl --user daemon-reload
 	sudo systemctl daemon-reload
-	sudo systemctl enable systemd-networkd systemd-resolved
-	sudo systemctl start systemd-networkd systemd-resolved
+	# NetworkManager owns all links. Running networkd without any .network files only
+	# duplicates link events and makes networkd-wait-online time out during boot.
+	sudo systemctl disable --now systemd-networkd.service systemd-networkd.socket systemd-networkd-wait-online.service
+	sudo systemctl enable --now systemd-resolved
+	# TLP owns persistent power policy. powertop --auto-tune would overwrite TLP
+	# settings in service-order-dependent ways; keep powertop for diagnostics only.
+	sudo systemctl disable --now powertop.service || true
 	sudo ln -snf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 .PHONY: test

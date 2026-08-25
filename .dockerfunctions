@@ -156,21 +156,22 @@ export -f gcloud-cli
 clickhouse-client(){
   local ch_history_file="${HOME}/.clickhouse-client-history"
   test -f "${ch_history_file}" || touch -a "${ch_history_file}"
-  # Determine either to open a TTY or attach to stdin/stdout
-  case $- in
-  *i*) local args="-it";;
-  *) local args="-i --attach stdin --attach stdout --attach stderr";;
-  esac
+  local docker_args=(-i --attach stdin --attach stdout --attach stderr)
+  local interactive_args=()
+  if [[ -t 0 && -t 1 ]]; then
+	docker_args=(-it)
+	interactive_args=(--output_format_pretty_named_tuples_as_json=0)
+  fi
   # Generate a random to start the container multiple times under different names
   local r=$(( RANDOM % 100 ))
   docker run \
-	${args} \
+	"${docker_args[@]}" \
 	--rm \
 	--net=host \
 	-v "${ch_history_file}:/etc/clickhouse-client/history" \
 	--entrypoint=clickhouse-client \
 	--name "clickhouse-client-${r}" \
-	clickhouse/clickhouse-server --history_file=/etc/clickhouse-client/history --output_format_pretty_named_tuples_as_json=0 "$@"
+	clickhouse/clickhouse-server --history_file=/etc/clickhouse-client/history "${interactive_args[@]}" "$@"
 }
 # Export function to be able to use in scripts
 export -f clickhouse-client
@@ -285,15 +286,15 @@ lens(){
 k9s(){
   # Generate a random to start the container multiple times under different names
   local r=$(( RANDOM % 100 ))
+  local gcloud_config="${CLOUDSDK_CONFIG:-${HOME}/.config/gcloud}"
   docker run --rm \
 	-it \
 	-v "${HOME}/certs:/certs" \
 	-v "${HOME}/.aws:/home/k9s/.aws" \
 	-v "${HOME}/.kube:/home/k9s/.kube" \
 	-v "${HOME}/.minikube:${HOME}/.minikube" \
-	-v "${HOME}/.gcloud:/home/k9s/.gcloud" \
-	-v "${HOME}/.config/gcloud:/home/k9s/.gcloud-config" \
-	-e CLOUDSDK_CONFIG=/home/k9s/.gcloud \
+	-v "${gcloud_config}:/home/k9s/.config/gcloud" \
+	-e CLOUDSDK_CONFIG=/home/k9s/.config/gcloud \
 	-v /etc/hosts:/etc/hosts \
 	--net host \
 	-u "$(id -u "${USER}")":"$(id -g "${USER}")" \

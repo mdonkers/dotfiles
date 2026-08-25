@@ -12,15 +12,31 @@ export DISPLAY=:0
 XAUTHORITY=$(tr '\0' ' ' < "/proc/$xpid/cmdline" | sed -n 's/.*-auth \([^ ]*\).*/\1/p')
 export XAUTHORITY="${XAUTHORITY:-/home/miel/.Xauthority}"
 
-# Debounce: DRM emits several "change" events per hotplug; serialize and let it settle.
+# DRM emits several "change" events per hotplug. Serialize them and let Xorg
+# settle before inspecting the outputs. Do not use a non-blocking lock here:
+# the first event can arrive before Xorg has processed the disconnect, so the
+# later event is the one that applies the correct final layout.
 exec 9>/run/monitor-hotplug.lock
-flock -n 9 || exit 0
+flock 9
 sleep 1
 
-# External (non-eDP) output connected -> extend to its right; otherwise laptop only.
-ext=$(xrandr -q 2>/dev/null | awk '/ connected/ && $1 !~ /^eDP/ {print $1; exit}')
+# Keep the full output list so stale external CRTCs can explicitly be disabled
+# on disconnect. Merely enabling eDP does not necessarily shrink the X screen
+# or cause i3 to move workspaces away from the removed output.
+topology=$(xrandr -q 2>/dev/null) || exit 0
+mapfile -t outputs < <(awk '$2 == "connected" || $2 == "disconnected" {print $1}' <<<"$topology")
+ext=$(awk '$2 == "connected" && $1 !~ /^eDP/ {print $1; exit}' <<<"$topology")
+
 if [ -n "$ext" ]; then
-    xrandr --output eDP-1 --auto --output "$ext" --auto --primary --right-of eDP-1
+    args=(--output eDP-1 --auto --output "$ext" --auto --primary --right-of eDP-1)
 else
-    xrandr --output eDP-1 --auto --primary
+    args=(--output eDP-1 --auto --primary)
 fi
+
+for output in "${outputs[@]}"; do
+    if [[ "$output" != eDP-* && "$output" != "$ext" ]]; then
+        args+=(--output "$output" --off)
+    fi
+done
+
+xrandr "${args[@]}"

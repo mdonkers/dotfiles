@@ -10,6 +10,7 @@ $kubernetes\
 $aws\
 $golang\
 $python\
+$rust\
 $line_break\
 $username\
 $character\
@@ -81,6 +82,11 @@ style = "bold green"
 [python]
 format = '\[[${symbol}${pyenv_prefix}(${version})(\($virtualenv\))]($style)\]'
 style = "bold green"
+
+[rust]
+format = '\[[$symbol($version)]($style)\]'
+style = "bold green"
+
 
 # Disable the package module, hiding it from the prompt completely
 [package]

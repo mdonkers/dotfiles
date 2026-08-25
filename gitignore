@@ -171,3 +171,5 @@ out/
 # Misc
 ##
 *.sqlite
+
+**/.claude/settings.local.json

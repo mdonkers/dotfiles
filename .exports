@@ -45,6 +45,10 @@ export NVM_DIR="/Development/tools/nvm"
 # shellcheck source=/dev/null
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm
 
+export CARGO_HOME="${HOME}/.cargo"
+# shellcheck source=/dev/null
+[ -s "$CARGO_HOME/env" ] && . "$CARGO_HOME/env" # This loads Rust toolchain
+
 # pip (Python installer) should only run if there is a virtualenv currently activated
 export PIP_REQUIRE_VIRTUALENV=true
 # use syspip (= pip) to update global packages without a virtualenv environment

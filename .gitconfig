@@ -66,14 +66,14 @@
   fm = "!f() { git log --pretty=format:'%C(yellow)%h	%Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -i --grep=\"$1\"; }; f"
 
 	# Delete local branches whose work is already in the CURRENT branch (run this from main/master).
-	# Two safe signals, both proving the content is integrated:
+	# Two safe signals, both proving the local branch content is integrated:
 	#   - merged:   branch tip is an ancestor of HEAD (normal / fast-forward merge)
-	#   - squashed: the branch's tree (or its upstream tip's tree) matches a commit in HEAD
-	# Testing the upstream tip also catches branches that got an extra commit (e.g. from a reviewer)
-	# before the PR was squashed. Never deletes on 'upstream gone' alone, so unmerged work is safe.
+	#   - squashed: the local branch's complete tree change is patch-equivalent to HEAD
+	# Never use the upstream tip as proof: the local branch may contain additional
+	# unpushed commits. Never deletes on 'upstream gone' alone, so unmerged work is safe.
 	# Bash is needed for the loop; run 'git fetch' first for the freshest upstream detection.
 	# a.k.a. 'delete merged' (replaces the old dm + ds)
-  dm = "!bash -c 'cur=$(git rev-parse --abbrev-ref HEAD); git for-each-ref --format=\"%(refname:short)\" refs/heads/ | while read -r b; do case \"$b\" in \"$cur\"|main|master) continue;; esac; if git merge-base --is-ancestor \"$b\" HEAD 2>/dev/null; then git branch -d \"$b\" && echo \"  deleted (merged)   $b\"; continue; fi; for tip in \"$b\" \"$b@{upstream}\"; do rev=$(git rev-parse --verify --quiet \"$tip\") || continue; mb=$(git merge-base HEAD \"$rev\") || continue; synth=$(git commit-tree \"$(git rev-parse \"$rev^{tree}\")\" -p \"$mb\" -m _); if [ \"$(git cherry HEAD \"$synth\" | head -c1)\" = \"-\" ]; then git branch -D \"$b\" && echo \"  deleted (squashed) $b\"; break; fi; done; done' --"
+	dm = "!bash -c 'cur=$(git rev-parse --abbrev-ref HEAD); git for-each-ref --format=\"%(refname:short)\" refs/heads/ | while read -r b; do case \"$b\" in \"$cur\"|main|master) continue;; esac; if git merge-base --is-ancestor \"$b\" HEAD 2>/dev/null; then git branch -d \"$b\" && echo \"  deleted (merged)   $b\"; continue; fi; rev=$(git rev-parse --verify --quiet \"$b\") || continue; mb=$(git merge-base HEAD \"$rev\") || continue; synth=$(git commit-tree \"$(git rev-parse \"$rev^{tree}\")\" -p \"$mb\" -m _); if [ \"$(git cherry HEAD \"$synth\" | head -c1)\" = \"-\" ]; then git branch -D \"$b\" && echo \"  deleted (squashed) $b\"; fi; done' --"
 
 		# List remote branches with their latest commit timestamp and author (to find outdated branches)
   stale = "!f() { for branch in $(git branch -r | grep -v HEAD); do echo \"$(git show --format=\"%ci %cr %an\" $branch | head -n 1) \t$branch\"; done | sort -r; }; f"
@@ -186,28 +186,34 @@
   autoStash = true
 
 # URL shorthands
-[url "ssh://git@github.com/"]
-  insteadOf = https://github.com/
+[url "git@github.com:github"]
+
+  insteadOf = "https://github.com/github"
+  insteadOf = "github:github"
+  insteadOf = "git://github.com/github"
 
 [url "git@github.com:"]
 
-  pushInsteadOf = "https://github.com/"
+  insteadOf = "https://github.com/"
   pushInsteadOf = "github:"
   pushInsteadOf = "git://github.com/"
 
-[url "git://github.com/"]
+[url "https://github.com/"]
 
   insteadOf = "github:"
+  insteadOf = "git://github.com/"
 
 [url "git@gist.github.com:"]
 
   insteadOf = "gst:"
+  pushInsteadOf = "https://gist.github.com/"
   pushInsteadOf = "gist:"
   pushInsteadOf = "git://gist.github.com/"
 
-[url "git://gist.github.com/"]
+[url "https://gist.github.com/"]
 
   insteadOf = "gist:"
+  insteadOf = "git://gist.github.com/"
 
 [user]
 
@@ -233,4 +239,3 @@
 [mergetool]
 
   prompt = false
-

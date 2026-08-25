@@ -46,8 +46,9 @@ set -euo pipefail
 # Use pinentry-tty if $PINENTRY_USER_DATA contains USE_TTY=1
 case "${PINENTRY_USER_DATA-}" in
   *USE_TTY=1*)
-	# Note: Change to pinentry-curses if a Curses UI is preferred.
-	exec pinentry "$@"
+	# Must name the Curses UI explicitly: bare 'pinentry' is the Debian Alternatives
+	# symlink, which resolves to an X11 UI and so ignores USE_TTY=1 entirely.
+	exec pinentry-curses "$@"
 	;;
   *claudecode*)
 	# Always use X11 pinentry for Claude Code since TTY doesn't work

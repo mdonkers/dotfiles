@@ -52,6 +52,23 @@ def get_tailscale():
         color = "#00FF00"
     return {'full_text' : 'Tailscale: %s' % state, 'name' : 'tailscale', 'color' : color}
 
+def apply_mic_mute(blocks):
+    """ The mic-mute keybinding toggles the PulseAudio source, but the 'volume mic' block
+    reads the ALSA capture switch on hw:1 directly, so it never renders 'muted'. Patch it
+    from the same source pactl toggles (@DEFAULT_SOURCE@). Only Capture blocks are
+    touched, so the speaker block is left alone. """
+    try:
+        out = subprocess.run(["pactl", "get-source-mute", "@DEFAULT_SOURCE@"],
+                             timeout=1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        if b"yes" not in out.stdout.lower():
+            return
+    except Exception:
+        return
+    for b in blocks:
+        if b.get('name') == 'volume' and b.get('instance', '').endswith('.Capture.0'):
+            b['full_text'] = '🎤 muted'
+            b['color'] = '#FFFF00'
+
 def print_line(message):
     """ Non-buffered printing to stdout. """
     sys.stdout.write(message + '\n')
@@ -87,5 +104,7 @@ if __name__ == '__main__':
         # insert information into the start of the json, but could be anywhere
         # CHANGE THIS LINE TO INSERT SOMETHING ELSE
         j.insert(3, get_tailscale())
+        # reflect the mic (capture) mute state, which i3status can't detect itself
+        apply_mic_mute(j)
         # and echo back new encoded json
         print_line(prefix+json.dumps(j))

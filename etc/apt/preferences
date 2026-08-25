@@ -1,0 +1,15 @@
+Package: *
+Pin: release o=Debian,a=testing
+Pin-Priority: 990
+
+Package: *
+Pin: release o=Debian,a=testing-updates
+Pin-Priority: 990
+
+Package: *
+Pin: release o=Debian,a=testing-security
+Pin-Priority: 990
+
+Package: *
+Pin: release o=Debian,a=unstable
+Pin-Priority: 300

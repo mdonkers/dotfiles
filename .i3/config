@@ -31,8 +31,11 @@ bindsym $mod+o exec i3-dmenu-desktop
 # kill focused window
 bindsym $mod+Shift+q kill
 
+# slack: no border — by class (native app) or any window with Slack in the title
+for_window [class="(?i)slack"] border none
+for_window [title="(?i)slack"] border none
+
 # spotify: no border
-for_window [class="Slack"] border none
 for_window [class="^Spotify$"] border none
 for_window [class="^Spotify Premium$"] border none
 
@@ -159,18 +162,18 @@ bindsym $mod+Shift+9 move container to workspace 9
 bindsym $mod+Shift+0 move container to workspace 10
 
 # audio controls
-bindsym XF86AudioRaiseVolume exec pactl set-sink-volume 0 +5% #increase sound volume
-bindsym XF86AudioLowerVolume exec pactl set-sink-volume 0 -5% #decrease sound volume
-bindsym XF86AudioMute exec pactl set-sink-mute 0 toggle # mute sound
+bindsym XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +5% #increase sound volume
+bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -5% #decrease sound volume
+bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle # mute sound
 #bindsym XF86AudioStop exec amixer -c 1 set Capture toggle # mute mic, needs alsa-utils package
-bindsym XF86AudioStop exec pactl set-source-mute alsa_input.pci-0000_00_1f.3.analog-stereo toggle # mute mic
+bindsym XF86AudioStop exec pactl set-source-mute @DEFAULT_SOURCE@ toggle # mute mic
 # Abuse the play contols for bluetooth audio volume
 bindsym XF86AudioNext exec pactl set-sink-volume "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" +5% #increase sound volume
 bindsym XF86AudioPrev exec pactl set-sink-volume "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" -5% #decrease sound volume
 bindsym XF86AudioPlay exec pactl set-sink-mute "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" toggle # mute sound
 
 # Toggle mic also via key-combination
-bindsym $mod+m exec pactl set-source-mute alsa_input.pci-0000_00_1f.3.analog-stereo toggle # mute mic
+bindsym $mod+m exec pactl set-source-mute @DEFAULT_SOURCE@ toggle # mute mic
 
 # screen brightness controls
 bindsym XF86MonBrightnessUp exec sudo light -A 5 # increase screen brightness
@@ -250,4 +253,3 @@ exec --no-startup-id i3-msg 'workspace 1: slack; exec slack -s %U;'
 exec --no-startup-id i3-msg 'workspace 2: www; exec google-chrome;'
 exec --no-startup-id i3-msg 'workspace 3: console; exec urxvt; exec urxvt; exec urxvt; exec urxvt'
 exec --no-startup-id i3-msg 'workspace 5; exec urxvt; exec urxvt; exec urxvt; exec urxvt'
-
