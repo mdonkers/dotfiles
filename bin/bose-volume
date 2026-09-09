@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+case "${1:-}" in
+    up) command=set-sink-volume; value=+5% ;;
+    down) command=set-sink-volume; value=-5% ;;
+    mute) command=set-sink-mute; value=toggle ;;
+    *) echo "Usage: $0 {up|down|mute}" >&2; exit 1 ;;
+esac
+
+sink=$(pactl --format=json list sinks | jq -er '
+    [ .[]
+      | select(.properties["device.bus"] == "bluetooth")
+      | select([
+          .description,
+          .properties["device.description"],
+          .properties["device.alias"]
+        ] | any((. // "") | test("bose"; "i")))
+      | .name
+    ]
+    | if length == 1 then .[0]
+      elif length == 0 then error("No connected Bose Bluetooth sink found")
+      else error("Multiple Bose Bluetooth sinks found; cannot choose one")
+      end
+')
+
+exec pactl "$command" "$sink" "$value"
