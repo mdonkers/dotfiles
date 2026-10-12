@@ -167,10 +167,10 @@ bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -5% #decr
 bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle # mute sound
 #bindsym XF86AudioStop exec amixer -c 1 set Capture toggle # mute mic, needs alsa-utils package
 bindsym XF86AudioStop exec pactl set-source-mute @DEFAULT_SOURCE@ toggle # mute mic
-# Abuse the play contols for bluetooth audio volume
-bindsym XF86AudioNext exec pactl set-sink-volume "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" +5% #increase sound volume
-bindsym XF86AudioPrev exec pactl set-sink-volume "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" -5% #decrease sound volume
-bindsym XF86AudioPlay exec pactl set-sink-mute "bluez_sink.08_DF_1F_89_DD_1B.a2dp_sink" toggle # mute sound
+# Use the playback keys for the connected Bose Bluetooth speaker.
+bindsym XF86AudioNext exec --no-startup-id ~/dotfiles/bin/bose-volume up
+bindsym XF86AudioPrev exec --no-startup-id ~/dotfiles/bin/bose-volume down
+bindsym XF86AudioPlay exec --no-startup-id ~/dotfiles/bin/bose-volume mute
 
 # Toggle mic also via key-combination
 bindsym $mod+m exec pactl set-source-mute @DEFAULT_SOURCE@ toggle # mute mic
