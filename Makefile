@@ -10,7 +10,7 @@ bin: ## Installs the bin directory files.
 	done
 
 .PHONY: dotfiles
-dotfiles: ## Installs the dotfiles.
+dotfiles: agent-instructions ## Installs the dotfiles.
 	# add aliases for dotfiles
 	for file in $(shell find $(CURDIR) -name ".*" -maxdepth 1 -not -name ".gitignore" -not -name ".git" -not -name ".gitmodules" -not -name ".*.swp" -not -name ".travis.yml" -not -name ".gnupg" -not -name ".config"); do \
 		f=$$(basename $$file); \
@@ -23,6 +23,12 @@ dotfiles: ## Installs the dotfiles.
 	ln -sfn $(CURDIR)/.gnupg/gpg-agent.conf $(HOME)/.gnupg/gpg-agent.conf;
 	ln -sfn $(CURDIR)/.gnupg/pinentry-auto.sh $(HOME)/.gnupg/pinentry-auto.sh;
 	ln -fn $(CURDIR)/gitignore $(HOME)/.gitignore;
+
+.PHONY: agent-instructions
+agent-instructions: ## Links shared personal instructions for Codex and Claude.
+	mkdir -p "$(HOME)/.codex" "$(HOME)/.claude"
+	ln -sfn "$(CURDIR)/agents/AGENTS.md" "$(HOME)/.codex/AGENTS.md"
+	ln -sfn "$(HOME)/.codex/AGENTS.md" "$(HOME)/.claude/CLAUDE.md"
 
 .PHONY: etc
 etc: ## Installs the etc directory files.

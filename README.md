@@ -8,6 +8,12 @@ $ make
 
 This will create symlinks from this repo to your home folder.
 
+Personal agent instructions live in `agents/AGENTS.md`. `make dotfiles` links
+`~/.codex/AGENTS.md` to this file and `~/.claude/CLAUDE.md` to the Codex path,
+so both agents read the same instructions. To install only these links, run
+`make agent-instructions`. Codex reads global instructions from `~/.codex`
+by default, rather than `~/.agents`.
+
 **To customize / detailed guidelines:**
 
 Look at the file `debian_install.md`
