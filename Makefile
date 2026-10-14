@@ -23,6 +23,9 @@ dotfiles: ## Installs the dotfiles.
 	ln -sfn $(CURDIR)/.gnupg/gpg-agent.conf $(HOME)/.gnupg/gpg-agent.conf;
 	ln -sfn $(CURDIR)/.gnupg/pinentry-auto.sh $(HOME)/.gnupg/pinentry-auto.sh;
 	ln -fn $(CURDIR)/gitignore $(HOME)/.gitignore;
+	mkdir -p "$(HOME)/.codex" "$(HOME)/.claude"
+	ln -sfn "$(CURDIR)/agents/AGENTS.md" "$(HOME)/.codex/AGENTS.md"
+	ln -sfn "$(HOME)/.codex/AGENTS.md" "$(HOME)/.claude/CLAUDE.md"
 
 .PHONY: etc
 etc: ## Installs the etc directory files.
