@@ -17,6 +17,16 @@
 - Push with upstream tracking, create the complete PR with a description using `gh`, and return its URL for inspection on GitHub.
 - When creating a worktree, use the intended feature branch name immediately, without a `worktree-` prefix.
 
+### Worktree location
+
+- Create all new worktrees under `~/worktrees/<repo>/<branch>/`. Expand `~` to the current user's home directory and use an absolute path in Git commands. This is the single worktree root across repositories and coding agents. It keeps worktrees outside source checkouts and temporary directories, separate from Codex-managed storage and cleanup.
+- Derive `<repo>` from the main checkout's directory name, even when starting from a linked worktree. Use `git rev-parse --path-format=absolute --git-common-dir` and `git worktree list --porcelain` to identify the repository and its main checkout. If unrelated repositories share a directory name, consistently qualify their folder names with the remote owner, such as `Dash0-dash0`.
+- Use the exact branch name as the relative path beneath the repository folder, preserving `/` separators. For example, branch `fix/query-timeout` in `dash0` belongs at `~/worktrees/dash0/fix/query-timeout/`. Create parent directories as needed, then run `git -C <main-checkout> worktree add -b <branch> <absolute-worktree-path> <base-ref>`.
+- Before creating anything, inspect `git worktree list --porcelain`. Reuse the worktree already assigned to the current task or branch, including one provided by Codex, rather than creating another. If its HEAD is detached, create the intended feature branch there before editing. Do not repurpose another task's worktree or overwrite an existing path. Resolve naming collisions with a descriptive branch suffix while keeping the same root.
+- Do not create worktrees in `/tmp`, `$TMPDIR`, `~/.codex/worktrees`, inside a repository such as `.worktrees/`, or as ad hoc siblings of project checkouts. If the standard root is inaccessible, report the restriction and ask for an explicit alternative instead of silently choosing another location.
+- For worktrees created by the Codex app before the agent runs, configure Settings > Worktrees > Worktree root to `~/worktrees`, using the expanded absolute path if required. AGENTS.md governs agent-created worktrees; it does not change the app setting or its generated directory layout. Reuse app-provided worktrees in place.
+- Leave existing worktrees in place unless asked to consolidate them. Use `git worktree move` for an authorized move, and follow the approval rules above for destructive cleanup.
+
 ## Dash0 links
 
 - Copy URLs returned by Dash0 MCP verbatim. Do not reconstruct or simplify their timestamps or URL encoding.
