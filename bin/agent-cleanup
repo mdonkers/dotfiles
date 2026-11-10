@@ -1,0 +1,345 @@
+#!/usr/bin/env python3
+"""Age-based cleanup for local Codex and Claude Code installations."""
+
+import argparse
+import calendar
+import datetime as dt
+import fcntl
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import sqlite3
+import subprocess
+import sys
+import tempfile
+import tomllib
+import uuid
+
+
+VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(?:x86_64|aarch64|arm64)-[\w-]+)?$")
+
+
+def session_id(value):
+    try:
+        return str(uuid.UUID(str(value)))
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def month_ago(now):
+    year, month = (now.year - 1, 12) if now.month == 1 else (now.year, now.month - 1)
+    return now.replace(year=year, month=month,
+                       day=min(now.day, calendar.monthrange(year, month)[1]))
+
+
+def plain_path(path):
+    if path.is_symlink() or any(parent.is_symlink() for parent in path.parents):
+        raise ValueError(f'Refusing symlink in cleanup path: {path}')
+
+
+def activity(path):
+    """Include sidecar/subagent activity; never follow directory symlinks."""
+    plain_path(path)
+    latest = path.lstat().st_mtime
+    if path.is_dir():
+        for child in path.iterdir():
+            latest = max(latest, activity(child))
+    return latest
+
+
+def timestamp(value):
+    if value is None:
+        return 0
+    if isinstance(value, (int, float)):
+        return value / 1000 if value > 100_000_000_000 else value
+    return dt.datetime.fromisoformat(value.replace('Z', '+00:00')).timestamp()
+
+
+def json_lines(path):
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+def atomic_json(path, data, lines=False):
+    """Replace indexes atomically, preserving their permissions."""
+    plain_path(path)
+    fd, tmp = tempfile.mkstemp(prefix='.agent-cleanup-', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            os.fchmod(stream.fileno(), path.stat().st_mode & 0o777)
+            if lines:
+                for entry in data:
+                    stream.write(json.dumps(entry) + '\n')
+            else:
+                json.dump(data, stream, indent=2)
+                stream.write('\n')
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
+def command(name):
+    return shutil.which(name) or str(Path.home() / '.local/bin' / name)
+
+
+def codex_sessions(root, cutoff):
+    sessions = {}
+    for folder in ('sessions', 'archived_sessions'):
+        for path in sorted((root / folder).rglob('*.jsonl')):
+            if path.is_symlink():
+                raise ValueError(f"Refusing symlink: {path}")
+            latest = activity(path)
+            with path.open() as stream:
+                first = json.loads(stream.readline())
+                meta = first.get('payload', {})
+                latest = max(latest, timestamp(first.get('timestamp')))
+                for line in stream:
+                    if line.strip():
+                        latest = max(latest, timestamp(json.loads(line).get('timestamp')))
+            sid = session_id(meta.get('id'))
+            if not sid:
+                raise ValueError(f"Unrecognized Codex transcript: {path}")
+            parent = meta.get('parent_thread_id')
+            source = meta.get('source')
+            if isinstance(source, dict):
+                spawn = source.get('subagent', {})
+                if isinstance(spawn, dict):
+                    spawn = spawn.get('thread_spawn', {})
+                    if isinstance(spawn, dict):
+                        parent = parent or spawn.get('parent_thread_id')
+            previous = sessions.get(sid, {})
+            sessions[sid] = dict(parent=parent, latest=max(
+                previous.get('latest', 0), latest, timestamp(meta.get('timestamp'))))
+    database_root = root
+    if (root / 'config.toml').exists():
+        config = tomllib.loads((root / 'config.toml').read_text())
+        database_root = Path(config.get('sqlite_home', str(root))).expanduser().resolve()
+    databases = list(database_root.glob('state_*.sqlite'))
+    if len(databases) > 1:
+        raise ValueError('Multiple Codex state databases; cannot safely determine latest activity')
+    for database in databases:
+        with sqlite3.connect(database.as_uri() + '?mode=ro', uri=True) as db:
+            db.row_factory = sqlite3.Row
+            for row in db.execute('SELECT * FROM threads'):
+                sid = row['id']
+                record = sessions.setdefault(sid, dict(parent=None, latest=0))
+                for key in ('created_at', 'created_at_ms', 'updated_at', 'updated_at_ms', 'recency_at', 'recency_at_ms'):
+                    if key in row.keys():
+                        record['latest'] = max(record['latest'], timestamp(row[key]))
+                if 'attached_thread_parent_id' in row.keys():
+                    record['parent'] = record['parent'] or row['attached_thread_parent_id']
+    # Deleting a Codex parent also deletes descendants. Protect every ancestor of
+    # a recent session, including ancestors whose own transcript is old.
+    protected = {sid for sid, data in sessions.items() if data['latest'] >= cutoff}
+    for sid in list(protected):
+        seen = set()
+        while sid in sessions and sid not in seen:
+            seen.add(sid)
+            sid = sessions[sid]['parent']
+            if sid:
+                protected.add(sid)
+    old = {sid for sid in sessions if sid not in protected and session_id(sid) and sessions[sid]['latest'] > 0}
+    # Let the supported deletion command handle descendants once, with their root.
+    return sorted(sid for sid in old if sessions[sid]['parent'] not in old)
+
+
+def claude_sessions(root, cutoff):
+    sessions = {}
+    indexes = {}
+    history_path = root / 'history.jsonl'
+    history = json_lines(history_path)
+    for project in sorted((root / 'projects').glob('*')):
+        if not project.is_dir() or project.is_symlink():
+            continue
+        index = project / 'sessions-index.json'
+        if index.exists():
+            indexes[index] = json.loads(index.read_text())
+        for transcript in sorted(project.glob('*.jsonl')):
+            sid = session_id(transcript.stem)
+            if not sid:
+                continue
+            paths = [transcript]
+            for path in [project / sid] + [root / folder / sid for folder in
+                         ('file-history', 'session-env', 'tasks', 'todos')]:
+                if path.exists():
+                    paths.append(path)
+            for folder in ('todos', 'debug'):
+                paths.extend((root / folder).glob(sid + '*.json'))
+                paths.extend((root / folder).glob(sid + '*.txt'))
+            latest = max(activity(path) for path in paths)
+            # JSON timestamps also protect copied/restored transcripts with old mtimes.
+            for entry in json_lines(transcript):
+                latest = max(latest, timestamp(entry.get('timestamp')))
+            previous = sessions.get(sid, dict(paths=[], latest=0))
+            sessions[sid] = dict(paths=list(set(previous['paths'] + paths)),
+                                 latest=max(previous['latest'], latest))
+    for data in indexes.values():
+        for entry in data['entries']:
+            if entry.get('sessionId') in sessions:
+                record = sessions[entry['sessionId']]
+                record['latest'] = max(record['latest'], timestamp(entry.get('modified')))
+    for entry in history:
+        if entry.get('sessionId') in sessions:
+            record = sessions[entry['sessionId']]
+            record['latest'] = max(record['latest'], timestamp(entry.get('timestamp')))
+    old = {sid: data['paths'] for sid, data in sessions.items() if data['latest'] < cutoff}
+    return old, indexes, history_path, history
+
+
+def running_processes():
+    """Linux native installs only; preserve every executing binary version."""
+    if not Path('/proc').is_dir():
+        raise ValueError('Cleanup currently requires Linux /proc to protect running binaries')
+    executables, clients = set(), []
+    for proc in Path('/proc').glob('[0-9]*'):
+        try:
+            exe = (proc / 'exe').resolve(strict=True)
+            args = (proc / 'cmdline').read_bytes().split(b'\0')
+            executables.add(exe)
+            name = exe.name
+            is_codex = name in ('codex', 'codex-tui')
+            is_claude = name == 'claude' or ('claude/versions' in str(exe))
+            # Background app servers stay available for codex delete. Interactive
+            # clients must be closed so Claude indexes cannot be rewritten mid-run.
+            if (is_codex and b'app-server' not in args and b'app-server-daemon' not in args) or is_claude:
+                clients.append(proc.name)
+        except FileNotFoundError:
+            continue
+        except PermissionError:
+            # /proc includes other users; only this user's processes can hold
+            # this user's installed versions open.
+            if proc.stat().st_uid == os.getuid():
+                raise ValueError(f'Cannot inspect own process {proc.name}')
+    return executables, clients
+
+
+def versions(directory, executable, protected):
+    if not directory.exists():
+        return []
+    plain_path(directory)
+    candidates = []
+    for path in directory.iterdir():
+        match = VERSION.fullmatch(path.name)
+        if not match or path.is_symlink():
+            continue
+        binary = path / executable if executable else path
+        # A downloaded placeholder is not a usable installed version.
+        if binary.is_file() and binary.stat().st_size and os.access(binary, os.X_OK):
+            candidates.append((tuple(map(int, match.groups())), path))
+    ordered = sorted(candidates, reverse=True)
+    kept_versions = set(sorted({version for version, _ in ordered}, reverse=True)[:2])
+    result = []
+    for version, path in ordered:
+        if version in kept_versions:
+            continue
+        resolved = path.resolve()
+        if any(p == resolved or resolved in p.parents for p in protected):
+            continue
+        result.append(path)
+    return result
+
+
+def remove(path):
+    plain_path(path)
+    if path.is_dir():
+        shutil.rmtree(path)
+    elif path.exists():
+        path.unlink()
+
+
+def run(apply=False):
+    codex = Path(os.environ.get('CODEX_HOME', str(Path.home() / '.codex'))).expanduser().resolve()
+    claude = Path(os.environ.get('CLAUDE_CONFIG_DIR', str(Path.home() / '.claude'))).expanduser().resolve()
+    cutoff = month_ago(dt.datetime.now(dt.timezone.utc))
+    print(f"{'APPLY' if apply else 'DRY RUN'}: sessions last active before {cutoff.isoformat()}")
+    protected, clients = running_processes()
+    if apply and clients:
+        raise ValueError('Close Codex/Claude interactive clients first; running PIDs: ' + ', '.join(clients))
+    codex_old = codex_sessions(codex, cutoff.timestamp())
+    claude_old, indexes, history_path, history = claude_sessions(claude, cutoff.timestamp())
+    # Launchers and current package selections may point at a rollback version.
+    for path in [Path(command('codex')), Path(command('claude'))] + list(codex.glob('packages/*/current')):
+        if path.exists():
+            protected.add(path.resolve())
+    binary_old = []
+    for package in ('standalone', 'app-server-daemon'):
+        binary_old += versions(codex / 'packages' / package / 'releases', 'bin/codex', protected)
+    data_home = Path(os.environ.get('XDG_DATA_HOME', str(Path.home() / '.local/share')))
+    binary_old += versions(data_home / 'claude/versions', None, protected)
+    for sid in codex_old:
+        print(f'Codex session: {sid} (including old descendants)')
+    for sid in sorted(claude_old):
+        print(f'Claude session: {sid} ({len(claude_old[sid])} paths)')
+    for path in binary_old:
+        print(f'Old version: {path}')
+    print(f'{len(codex_old)} Codex session trees, {len(claude_old)} Claude sessions, {len(binary_old)} old versions')
+    if not apply:
+        print('Nothing deleted. Run agent_cleanup --apply to delete the listed data.')
+        return
+    # Check CLI availability before making any changes.
+    if codex_old:
+        subprocess.run([command('codex'), 'delete', '--help'], check=True, stdout=subprocess.DEVNULL)
+    for sid in codex_old:
+        subprocess.run([command('codex'), 'delete', sid, '--force'], check=True)
+    if claude_old:
+        # Validate every index before deleting files, and retain non-session data.
+        config_path = claude / '.claude.json'
+        if claude == (Path.home() / '.claude').resolve() and not config_path.exists():
+            config_path = Path.home() / '.claude.json'
+        config = json.loads(config_path.read_text()) if config_path.exists() else None
+        for path in [*indexes, history_path, config_path]:
+            if path.is_symlink():
+                raise ValueError(f'Refusing to replace symlink: {path}')
+        for paths in claude_old.values():
+            for path in paths:
+                remove(path)
+        for path, data in indexes.items():
+            data['entries'] = [entry for entry in data['entries'] if entry.get('sessionId') not in claude_old]
+            atomic_json(path, data)
+        if history_path.exists():
+            atomic_json(history_path, [entry for entry in history if entry.get('sessionId') not in claude_old], lines=True)
+        if config is not None:
+            for project in config.get('projects', {}).values():
+                if project.get('lastSessionId') in claude_old:
+                    project.pop('lastSessionId')
+                    project.pop('lastSessionMetrics', None)
+            atomic_json(config_path, config)
+    # Recheck process references after the supported CLI has finished.
+    active, _ = running_processes()
+    for launcher in [Path(command('codex')), Path(command('claude'))] + list(codex.glob('packages/*/current')):
+        if launcher.exists():
+            active.add(launcher.resolve())
+    for path in binary_old:
+        resolved = path.resolve()
+        if not any(p == resolved or resolved in p.parents for p in active):
+            remove(path)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--apply', action='store_true', help='delete eligible sessions and versions')
+    mode.add_argument('--dry-run', action='store_true', help='preview only (the default)')
+    args = parser.parse_args()
+    try:
+        # Serialize our own invocations without touching either tool's lock files.
+        lock_dir = Path(os.environ.get('XDG_CACHE_HOME', str(Path.home() / '.cache'))) / 'agent-cleanup'
+        if args.apply:
+            lock_dir.mkdir(parents=True, exist_ok=True)
+            with (lock_dir / 'lock').open('a') as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                run(True)
+        else:
+            run()
+    except (OSError, ValueError, KeyError, sqlite3.Error, subprocess.CalledProcessError) as error:
+        print(f'Cleanup stopped: {error}', file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

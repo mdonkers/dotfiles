@@ -499,3 +499,10 @@ fix_trackpad() {
     echo "No I2C-HID device found -- try fixing manually"
   fi
 }
+
+# Preview old agent sessions and versions; use --apply to delete them.
+agent_cleanup() {
+  local dotfiles_dir
+  dotfiles_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")") || return
+  python3 "${dotfiles_dir}/bin/agent-cleanup" "$@"
+}
