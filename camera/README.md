@@ -215,3 +215,42 @@ control behavior, do the same for the relay patches. Direct PipeWire capture is
 only a replacement once the libcamera crash and camera-specific low-light
 timing are both resolved. Do not remove the local packages first unless a
 working replacement is already installed.
+
+## Hibernation workaround
+
+The 2026-11-08 hibernation restore failed IPU7 firmware authentication with
+`Unexpected magic number 0x3` and `FW authentication failed(-110)`. USB also
+reset the SVP7500 bridge, and the OV08X40 sensor disappeared from the media
+graph. A fresh `cam -l` reported no cameras despite the relay still running.
+The runtime autosuspend settings do not prevent these system power transitions.
+
+`bin/hibernate-device-hook`, invoked by the `systemd-hibernate.service` drop-in,
+now stops the camera relay and unbinds IPU7 before hibernation. After resume it
+waits for udev and the CVS bridge driver, rebinds IPU7, and restarts the relay
+only if it was running beforehand. The same restoration runs if hibernation
+fails. A missing bridge or failed bind leaves the relay stopped and reports
+an error; state markers remain in `/run/hibernate-device-hook` for inspection
+and a manual retry with `sudo /usr/local/bin/hibernate-device-hook post`.
+
+Install the hook and drop-in from this checkout before testing:
+
+```sh
+sudo install -m 0755 bin/hibernate-device-hook /usr/local/bin/hibernate-device-hook
+sudo install -m 0644 etc/systemd/system/systemd-hibernate.service.d/unbind-devices.conf \
+  /etc/systemd/system/systemd-hibernate.service.d/unbind-devices.conf
+sudo systemctl daemon-reload
+```
+
+This workaround still needs hardware validation. Reboot to restore a clean
+camera state, verify capture, then hibernate and resume. Check:
+
+```sh
+journalctl -b -u systemd-hibernate.service
+journalctl -b -k -g 'ipu7|ov08x40|cvs'
+cam -l
+journalctl -b -u v4l2-relayd@camera.service --since '5 minutes ago'
+```
+
+Confirm the relay stops before IPU7 unbinds, IPU7 rebinds after resume, the
+sensor returns, and a browser receives live frames. Enumeration alone does
+not prove successful streaming. This hook applies to hibernation only.
