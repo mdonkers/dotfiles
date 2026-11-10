@@ -499,3 +499,10 @@ fix_trackpad() {
     echo "No I2C-HID device found -- try fixing manually"
   fi
 }
+
+# Remove agent sessions inactive for a month and obsolete native versions.
+agent_cleanup() {
+  local dotfiles_dir
+  dotfiles_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")") || return
+  bash "${dotfiles_dir}/bin/agent-cleanup" "$@"
+}

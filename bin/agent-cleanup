@@ -1,0 +1,369 @@
+#!/usr/bin/env bash
+set -euo pipefail
+shopt -s nullglob
+
+AC_UUID='[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}'
+AC_EPOCH='def epoch: if type == "number" then (if . > 100000000000 then ./1000 else . end) elif . == null then 0 else sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601 end;'
+
+ac_error() { printf 'agent_cleanup: %s\n' "$*" >&2; exit 1; }
+
+ac_plain() {
+  local path=$1
+  while [[ $path != / && $path != . ]]; do
+    [[ ! -L $path ]] || ac_error "Refusing symlink: $path"
+    path=$(dirname -- "$path")
+  done
+}
+
+ac_month_ago() {
+  local today=${1:-$(date -u +%F)} previous day last
+  previous=$(date -u -d "${today:0:7}-01 -1 month" +%Y-%m)
+  day=$((10#${today:8:2}))
+  last=$(date -u -d "$previous-01 +1 month -1 day" +%d)
+  (( day <= 10#$last )) || day=$((10#$last))
+  date -u -d "$previous-$day ${2:-$(date -u +%T)}" +%s
+}
+
+ac_recent() {
+  local path latest links
+  for path in "$@"; do
+    [[ -e $path || -L $path ]] || continue
+    ac_plain "$path"
+    # Include subagent and sidecar activity, without following directory links.
+    links=$(find "$path" -type l -print -quit) || ac_error "Cannot inspect $path"
+    [[ -z $links ]] || ac_error "Symlink in session data: $path"
+    latest=$(find "$path" -printf '%T@\n' | sort -nr | sed -n '1p') || ac_error "Cannot inspect $path"
+    if awk -v latest="$latest" -v cutoff="$ac_cutoff" 'BEGIN {exit !(latest >= cutoff)}'; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+ac_recorded_activity() {
+  jq -n "$AC_EPOCH reduce inputs as \$row (0; [., (\$row.timestamp | epoch)] | max)" "$1"
+}
+
+ac_processes() {
+  ac_live=(); ac_binaries=()
+  local proc exe arg fd target sid record pid
+  for proc in /proc/[0-9]*; do
+    [[ -O $proc ]] || continue
+    exe=$(readlink -e "$proc/exe") || continue
+    ac_binaries["$exe"]=1
+    # Only agents and shells can supply relevant live-session references.
+    # Avoid walking browsers' potentially huge descriptor tables.
+    case $exe in
+      */codex|*/codex-tui|*/claude|*/claude/versions/*|*/bash|*/sh|*/dash|*/zsh|*/fish|*/node) ;;
+      *) continue ;;
+    esac
+    [[ -r $proc/environ && -r $proc/cmdline && -r $proc/fd ]] || ac_error "Cannot inspect $proc"
+    while IFS= read -r -d '' arg; do
+      if [[ $arg =~ ^$AC_UUID$ ]]; then ac_live["${arg,,}"]=1; fi
+      if [[ $arg =~ ^(CODEX_THREAD_ID|CLAUDE_SESSION_ID|CLAUDE_CODE_SESSION_ID)=($AC_UUID)$ ]]; then
+        sid=${arg#*=}; ac_live["${sid,,}"]=1
+      fi
+    done < <(cat "$proc/cmdline" "$proc/environ" 2>/dev/null)
+    case $exe in */codex|*/codex-tui|*/claude|*/claude/versions/*) ;; *) continue ;; esac
+    for fd in "$proc"/fd/*; do
+      target=$(readlink "$fd") || continue
+      if [[ ${target##*/} =~ $AC_UUID ]]; then ac_live["${BASH_REMATCH[0],,}"]=1; fi
+    done
+  done
+  for record in "$ac_claude"/sessions/*.json; do
+    read -r pid sid < <(jq -er '[.pid, .sessionId] | @tsv' "$record")
+    if [[ $pid =~ ^[1-9][0-9]*$ && $sid =~ ^$AC_UUID$ ]] && kill -0 "$pid" 2>/dev/null; then
+      ac_live["${sid,,}"]=1
+    fi
+  done
+}
+
+ac_selections() {
+  local path name
+  for name in codex claude; do
+    path=$(command -v "$name" || true)
+    [[ -n $path ]] || path=$HOME/.local/bin/$name
+    if path=$(readlink -e "$path"); then ac_binaries["$path"]=1; fi
+  done
+  for path in "$ac_codex"/packages/*/current; do
+    path=$(readlink -e "$path") || continue
+    ac_binaries["$path"]=1
+  done
+}
+
+# Claude 2.1.318 uses proper-lockfile's mkdir protocol for history/config.
+# Keep directory mtimes fresh, and never steal an existing writer's lock.
+ac_lock() {
+  local path=$1 attempt inode
+  ac_plain "$path"
+  for ((attempt=0; attempt<60; attempt++)); do
+    if mkdir -m 700 -- "$path.lock" 2>/dev/null; then
+      inode=$(stat -c %i -- "$path.lock")
+      ac_locks+=("$path.lock")
+      ac_lock_inodes+=("$inode")
+      (
+        exec {ac_lock_fd}>&-
+        while sleep 1; do
+          [[ $(stat -c %i -- "$path.lock" 2>/dev/null) == "$inode" ]] || exit
+          touch -- "$path.lock" || exit
+        done
+      ) &
+      ac_heartbeats+=("$!")
+      return
+    fi
+    sleep 0.05
+  done
+  ac_error "Claude metadata is busy; try again shortly: $path"
+}
+
+ac_unlock() {
+  local index pid
+  for pid in "${ac_heartbeats[@]}"; do kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; done
+  for index in "${!ac_locks[@]}"; do
+    if [[ $(stat -c %i -- "${ac_locks[index]}" 2>/dev/null) == "${ac_lock_inodes[index]}" ]]; then
+      rmdir -- "${ac_locks[index]}"
+    fi
+  done
+  ac_locks=(); ac_lock_inodes=(); ac_heartbeats=()
+}
+
+ac_json_update() {
+  local path=$1 filter=$2 temp
+  ac_plain "$path"
+  temp=$(mktemp "${path}.cleanup.XXXXXX")
+  ac_temps+=("$temp")
+  jq --slurpfile deleted "$ac_tmp/deleted" "$filter" "$path" > "$temp"
+  chmod --reference="$path" -- "$temp"
+  mv -- "$temp" "$path"
+}
+
+ac_claude_cleanup() {
+  local history=$ac_claude/history.jsonl config=$ac_claude/.claude.json
+  local project index transcript sid path latest
+  local -a paths=() metadata=()
+  [[ $ac_claude != "$(readlink -m "$HOME/.claude")" || -e $config ]] || config=$HOME/.claude.json
+  for path in "$history" "$config" "$ac_claude"/projects/*/sessions-index.json; do
+    [[ ! -e $path ]] || metadata+=("$path")
+  done
+  # Read fresh metadata after locking, so concurrent history appends survive.
+  for path in "${metadata[@]}"; do ac_lock "$path"; done
+  for path in "${metadata[@]}"; do
+    if [[ $path == "$history" ]]; then
+      jq empty "$path"
+    else
+      jq -e 'type == "object"' "$path" >/dev/null
+    fi
+  done
+  : > "$ac_tmp/deleted"
+  for project in "$ac_claude"/projects/*; do
+    [[ -d $project && ! -L $project ]] || continue
+    for transcript in "$project"/*.jsonl; do
+      sid=${transcript##*/}; sid=${sid%.jsonl}
+      [[ $sid =~ ^$AC_UUID$ ]] || continue
+      paths=("$transcript")
+      for path in "$project/$sid" "$ac_claude"/{file-history,session-env,tasks,todos}/"$sid" \
+        "$ac_claude"/{todos,debug}/"$sid"*.{json,txt}; do
+        [[ ! -e $path && ! -L $path ]] || paths+=("$path")
+      done
+      if ac_recent "${paths[@]}"; then continue; fi
+      latest=$(ac_recorded_activity "$transcript")
+      if [[ -f $history ]]; then
+        latest=$(jq -n --arg sid "$sid" --argjson latest "$latest" "$AC_EPOCH
+          reduce inputs as \$row (\$latest; if \$row.sessionId == \$sid then [., (\$row.timestamp | epoch)] | max else . end)" "$history")
+      fi
+      index=$project/sessions-index.json
+      if [[ -f $index ]]; then
+        latest=$(jq --arg sid "$sid" --argjson latest "$latest" "$AC_EPOCH
+          [\$latest, (.entries[] | select(.sessionId == \$sid) | .modified | epoch)] | max" "$index")
+      fi
+      awk -v latest="$latest" -v cutoff="$ac_cutoff" 'BEGIN {exit !(latest < cutoff)}' || continue
+      ac_processes
+      [[ ! ${ac_live[${sid,,}]+yes} ]] || continue
+      if ac_recent "${paths[@]}"; then continue; fi
+      for path in "${paths[@]}"; do ac_plain "$path"; rm -rf -- "$path"; done
+      printf '%s\n' "$sid" >> "$ac_tmp/deleted"
+      printf 'Claude session removed: %s\n' "$sid"
+    done
+  done
+  if [[ -s $ac_tmp/deleted ]]; then
+    jq -Rn '[inputs]' "$ac_tmp/deleted" > "$ac_tmp/deleted.json"
+    mv "$ac_tmp/deleted.json" "$ac_tmp/deleted"
+    # jq variables must remain literal in these filters.
+    # shellcheck disable=SC2016
+    [[ ! -f $history ]] || ac_json_update "$history" 'select(.sessionId as $id | $deleted[0] | index($id) | not)'
+    for index in "$ac_claude"/projects/*/sessions-index.json; do
+      # shellcheck disable=SC2016
+      ac_json_update "$index" '.entries |= map(select(.sessionId as $id | $deleted[0] | index($id) | not))'
+    done
+    # shellcheck disable=SC2016
+    [[ ! -f $config ]] || ac_json_update "$config" '
+      if .projects then .projects |= with_entries(if (.value.lastSessionId as $id | $deleted[0] | index($id)) != null
+      then .value |= del(.lastSessionId, .lastSessionMetrics) else . end) else . end'
+  fi
+  ac_unlock
+}
+
+ac_rpc() {
+  local method=$1 params=$2 line
+  jq -cn --argjson id 1 --arg method "$method" --argjson params "$params" \
+    '{id:$id,method:$method,params:$params}' >&"$ac_write"
+  while IFS= read -r -t 60 line <&"$ac_read"; do
+    if [[ $(jq -r '.id // empty' <<< "$line") == 1 ]]; then
+      jq -e 'if .error then error(.error.message) else .result end' <<< "$line"
+      return
+    fi
+  done
+  ac_error "Codex app server did not answer $method"
+}
+
+ac_codex_list() {
+  local ancestor=${1:-} archived cursor response params
+  for archived in false true; do
+    cursor=null
+    while :; do
+      params=$(jq -cn --argjson archived "$archived" --argjson cursor "$cursor" --arg ancestor "$ancestor" '
+        {archived:$archived,cursor:$cursor,limit:100,modelProviders:[],
+         sourceKinds:["cli","vscode","exec","appServer","subAgent","subAgentReview","subAgentCompact","subAgentThreadSpawn","subAgentOther","unknown"]}
+        + if $ancestor == "" then {} else {ancestorThreadId:$ancestor} end')
+      response=$(ac_rpc thread/list "$params")
+      jq -c '.data[]' <<< "$response"
+      cursor=$(jq -c '.nextCursor' <<< "$response")
+      [[ $cursor != null ]] || break
+    done
+  done
+}
+
+ac_codex_cleanup() {
+  [[ -d $ac_codex/sessions || -d $ac_codex/archived_sessions ]] || return 0
+  local cli sid thread path updated safe child server_in server_out
+  local -A removed=()
+  cli=$(command -v codex || true); [[ -n $cli ]] || cli=$HOME/.local/bin/codex
+  [[ -x $cli ]] || ac_error 'Codex is required to delete saved Codex sessions'
+  coproc AC_SERVER { exec {ac_lock_fd}>&-; exec "$cli" app-server --listen stdio:// 2>"$ac_tmp/codex.log"; }
+  # Bash assigns this PID when starting the named coprocess.
+  # shellcheck disable=SC2153
+  ac_server_pid=$AC_SERVER_PID
+  server_in=${AC_SERVER[1]}; server_out=${AC_SERVER[0]}
+  exec {ac_write}>&"$server_in" {ac_read}<&"$server_out"
+  exec {server_in}>&- {server_out}<&-
+  ac_rpc initialize '{"clientInfo":{"name":"agent_cleanup","version":"1"},"capabilities":{"experimentalApi":true}}' >/dev/null
+  printf '%s\n' '{"method":"initialized","params":{}}' >&"$ac_write"
+  ac_codex_list > "$ac_tmp/codex"
+  while IFS= read -r sid; do
+    [[ ! ${removed[$sid]+yes} ]] || continue
+    # Read current root/descendant metadata just before deleting the tree.
+    ac_rpc thread/read "$(jq -cn --arg id "$sid" '{threadId:$id,includeTurns:false}')" | jq -c .thread > "$ac_tmp/tree"
+    ac_codex_list "$sid" >> "$ac_tmp/tree"
+    ac_processes
+    safe=1
+    while IFS= read -r thread; do
+      child=$(jq -er .id <<< "$thread")
+      updated=$(jq -er .updatedAt <<< "$thread")
+      path=$(jq -r '.path // empty' <<< "$thread")
+      if [[ ${ac_live[${child,,}]+yes} ]] || (( updated >= ac_cutoff )); then safe=0; break; fi
+      if [[ -n $path && -e $path ]]; then
+        if ac_recent "$path"; then safe=0; break; fi
+        updated=$(ac_recorded_activity "$path")
+        if awk -v latest="$updated" -v cutoff="$ac_cutoff" 'BEGIN {exit !(latest >= cutoff)}'; then safe=0; break; fi
+      fi
+    done < "$ac_tmp/tree"
+    (( safe )) || continue
+    ac_rpc thread/delete "$(jq -cn --arg id "$sid" '{threadId:$id}')" >/dev/null
+    while IFS= read -r child; do removed["$child"]=1; done < <(jq -r .id "$ac_tmp/tree")
+    printf 'Codex session tree removed: %s\n' "$sid"
+  done < <(jq -r --argjson cutoff "$ac_cutoff" 'select(.updatedAt < $cutoff) | .id' "$ac_tmp/codex")
+  ac_stop_server
+}
+
+ac_versions() {
+  local directory=$1 suffix=${2:-} path binary selected current='' previous='' version
+  local -a ordered=() keep=()
+  [[ -d $directory ]] || return 0
+  ac_plain "$directory"
+  for path in "$directory"/*; do
+    version=${path##*/}
+    [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(x86_64|aarch64|arm64)-[a-z0-9_-]+)?$ && ! -L $path ]] || continue
+    binary=$path${suffix:+/$suffix}
+    [[ -x $binary && -f $binary && -s $binary ]] || continue
+    printf '%s\n' "$path"
+  done | sort -Vr > "$ac_tmp/versions"
+  mapfile -t ordered < "$ac_tmp/versions"
+  ac_processes; ac_selections
+  for path in "${ordered[@]}"; do
+    for selected in "${!ac_binaries[@]}"; do
+      if [[ $selected == "$path" || $selected == "$path/"* ]]; then keep+=("$path"); break; fi
+    done
+  done
+  if (( ${#keep[@]} == 0 && ${#ordered[@]} > 0 )); then keep=("${ordered[0]}"); fi
+  if (( ${#keep[@]} == 1 )); then
+    current=${keep[0]}
+    for path in "${ordered[@]}"; do
+      if [[ $previous == yes ]]; then keep+=("$path"); break; fi
+      [[ $path != "$current" ]] || previous=yes
+    done
+  fi
+  for path in "${ordered[@]}"; do
+    for selected in "${keep[@]}"; do [[ $path != "$selected" ]] || continue 2; done
+    ac_processes; ac_selections
+    for selected in "${!ac_binaries[@]}"; do
+      [[ $selected != "$path" && $selected != "$path/"* ]] || continue 2
+    done
+    ac_plain "$path"; rm -rf -- "$path"
+    printf 'Old version removed: %s\n' "$path"
+  done
+}
+
+ac_stop_server() {
+  [[ -n ${ac_server_pid:-} ]] || return 0
+  local watchdog
+  # EOF lets the private server finish; its original pipe descriptors were closed
+  # after duplication so they cannot keep stdin open indefinitely.
+  exec {ac_write}>&- {ac_read}<&-
+  (exec {ac_lock_fd}>&-; sleep 2; kill -KILL "$ac_server_pid" 2>/dev/null || true) &
+  watchdog=$!
+  wait "$ac_server_pid" 2>/dev/null || true
+  kill "$watchdog" 2>/dev/null || true
+  wait "$watchdog" 2>/dev/null || true
+  ac_server_pid=
+}
+
+ac_exit() {
+  ac_unlock
+  ac_stop_server
+  local temp
+  for temp in "${ac_temps[@]}"; do rm -f -- "$temp"; done
+  rm -rf -- "$ac_tmp"
+}
+
+ac_main() {
+  if (( $# )); then
+    [[ $1 == --help || $1 == -h ]] || ac_error 'Usage: agent_cleanup'
+    printf 'Usage: agent_cleanup\nRemove sessions inactive for a month and obsolete native versions.\n'
+    return
+  fi
+  local dependency lock_dir
+  for dependency in jq flock date find sort stat readlink awk; do
+    command -v "$dependency" >/dev/null || ac_error "Required command missing: $dependency"
+  done
+  ac_codex=$(readlink -m "${CODEX_HOME:-$HOME/.codex}")
+  ac_claude=$(readlink -m "${CLAUDE_CONFIG_DIR:-$HOME/.claude}")
+  ac_cutoff=$(ac_month_ago)
+  ac_tmp=$(mktemp -d)
+  declare -gA ac_live=() ac_binaries=()
+  declare -ga ac_locks=() ac_lock_inodes=() ac_heartbeats=() ac_temps=()
+  ac_server_pid=
+  trap ac_exit EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  lock_dir=${XDG_CACHE_HOME:-$HOME/.cache}/agent-cleanup
+  mkdir -p -- "$lock_dir"
+  exec {ac_lock_fd}>"$lock_dir/lock"
+  flock -n "$ac_lock_fd" || ac_error 'Another cleanup is already running'
+  ac_codex_cleanup
+  ac_claude_cleanup
+  ac_versions "$ac_codex/packages/standalone/releases" bin/codex
+  ac_versions "$ac_codex/packages/app-server-daemon/releases" bin/codex
+  ac_versions "${XDG_DATA_HOME:-$HOME/.local/share}/claude/versions"
+}
+
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then ac_main "$@"; fi

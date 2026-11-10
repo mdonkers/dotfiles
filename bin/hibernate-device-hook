@@ -7,9 +7,14 @@ set -euo pipefail
 # use DRIVER=DEVICE, where DEVICE is the sysfs device name under that driver.
 readonly devices=(
   "btintel_pcie=0000:00:14.7"
+  "intel-ipu7=0000:00:05.0"
 )
 
 readonly runtime_dir="/run/hibernate-device-hook"
+readonly camera_service="v4l2-relayd@camera.service"
+readonly relay_marker="${runtime_dir}/restart-camera-relay"
+readonly camera_marker="${runtime_dir}/intel-ipu7-0000_00_05.0"
+readonly bridge_device="/sys/bus/i2c/devices/i2c-INTC10E1:00"
 
 if (( EUID != 0 )); then
   echo "hibernate-device-hook must run as root" >&2
@@ -22,6 +27,42 @@ device_fields() {
   device=${entry#*=}
   driver_dir="/sys/bus/pci/drivers/${driver}"
   marker="${runtime_dir}/${driver}-${device//:/_}"
+}
+
+stop_camera_relay() {
+  local state
+
+  # Leave the relay alone when this machine has no bound IPU7 to detach.
+  [[ -L /sys/bus/pci/drivers/intel-ipu7/0000:00:05.0 ]] || return 0
+  state=$(systemctl show --property=ActiveState --value "${camera_service}")
+  case "${state}" in
+    active|activating|reloading)
+      install -d -m 0700 "${runtime_dir}"
+      # Record intent first so a failed pre hook can restore the service too.
+      : > "${relay_marker}"
+      systemctl stop "${camera_service}"
+      echo "Stopped ${camera_service} before detaching IPU7"
+      ;;
+  esac
+}
+
+wait_for_camera_bridge() {
+  # Hibernation resets USB and recreates the CVS bridge's I2C devices. Give
+  # their drivers time to finish probing before IPU7 discovers its sensors.
+  udevadm settle --timeout=10 || return 1
+  for _ in {1..100}; do
+    [[ -L "${bridge_device}/driver" ]] && return 0
+    sleep 0.1
+  done
+  echo "Camera bridge did not reattach; leaving IPU7 detached" >&2
+  return 1
+}
+
+restart_camera_relay() {
+  [[ -e "${relay_marker}" ]] || return 0
+  systemctl start "${camera_service}"
+  rm -f "${relay_marker}"
+  echo "Restarted ${camera_service} after reattaching IPU7"
 }
 
 unbind_devices() {
@@ -79,17 +120,26 @@ rebind_devices() {
     [[ -e "${marker}" ]] || continue
 
     if [[ ! -L "${driver_dir}/${device}" ]]; then
+      if [[ "${marker}" == "${camera_marker}" ]]; then
+        wait_for_camera_bridge || return 1
+      fi
       printf '%s\n' "${device}" > "${driver_dir}/bind"
+      if [[ ! -L "${driver_dir}/${device}" ]]; then
+        echo "Failed to rebind ${device} to ${driver}" >&2
+        return 1
+      fi
       echo "Rebound ${device} to ${driver} after hibernation"
     fi
     rm -f "${marker}"
   done
 
+  restart_camera_relay
   rmdir "${runtime_dir}" 2>/dev/null || true
 }
 
 case "${1:-}" in
   pre)
+    stop_camera_relay
     unbind_devices
     ;;
   post)
