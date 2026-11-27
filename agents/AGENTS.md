@@ -14,6 +14,8 @@ No approval needed, including in new sessions: read-only Git inspection; creatin
 
 Approval needed, after presenting the exact operations: discarding uncommitted work, deleting a branch or worktree that holds unmerged work, rewriting existing branch history, force-pushing, and merging into an existing branch. Approval covers the agreed operations; ask again when their scope changes.
 
+A "full stop" request (the `full-stop` skill) approves rebasing that task's own branch and force-pushing it with `--force-with-lease`; other branches still need approval.
+
 ### PR lifecycle
 
 Implementation work is done when its PR is open for review: when I ask to implement, execute, or fix
@@ -23,6 +25,8 @@ something, run steps 1–3 without asking and return the PR URL, also when a ski
 2. Commit with `PINENTRY_USER_DATA=claudecode` set so GPG signing works with pinentry. Keep subjects under 70 characters.
 3. Push with upstream tracking, create the PR with a complete description using `gh`, and return its URL.
 4. When the PR is landed (merged, or queued in a merge queue), read `~/dotfiles/agents/pr-cleanup.md` and follow it to remove the local worktree and branch.
+
+When a spec or parent issue splits work into tickets or lists separate PRs, open one PR per ticket, even when a skill builds on a single integration branch. Base a PR on `main` when it can merge on its own; stack it on another PR only when it needs that PR's unmerged changes. Fixes that span several tickets go in their own PR.
 
 ### Worktrees
 
@@ -42,7 +46,8 @@ something, run steps 1–3 without asking and return the PR URL, also when a ski
 ## ClickHouse queries
 
 - Connect as `claude_ch_analysis` (empty password), including with `clickhouse-client --database otel`. Temporary servers created via Docker are the exception.
-- Before any DDL (`CREATE`, `DROP`, `ALTER`, including on temporary and `Memory` tables), present the exact full statement and get approval.
+- DDL on a ClickHouse container spun up locally (Docker) needs no approval.
+- On DEV or PROD ClickHouse reached through port-forwarding, before any DDL (`CREATE`, `DROP`, `ALTER`, including on temporary and `Memory` tables), present the exact full statement and get approval. This holds during `full-stop` too.
 - To verify behavior with a table, prefer a temporary or `Memory` table.
 
 ## Agent skills (dash0 repo only)
